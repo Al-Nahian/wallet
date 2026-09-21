@@ -32,6 +32,8 @@ import com.example.wallet.feature.notifications.NotificationRoutes
 import com.example.wallet.feature.profile.ProfileRoutes
 import com.example.wallet.feature.profile.ProfileScreen
 import com.example.wallet.feature.reports.ReportsScreen
+import com.example.wallet.feature.transactions.TransactionFormScreen
+import com.example.wallet.feature.transactions.TransactionRoutes
 import com.example.wallet.feature.transactions.TransactionsScreen
 
 private val screenTitles = mapOf(
@@ -47,18 +49,32 @@ fun WalletNavHost() {
 
     NavHost(navController = navController, startDestination = WalletDestination.Home.route) {
         composable(WalletDestination.Home.route) {
-            TopLevelScaffold(navController, WalletDestination.Home.route, fabOnClick = { }) {
+            TopLevelScaffold(
+                navController = navController,
+                currentRoute = WalletDestination.Home.route,
+                fabOnClick = { navController.navigate(TransactionRoutes.CREATE) },
+            ) {
                 DashboardScreen()
             }
         }
         composable(WalletDestination.Transactions.route) {
-            TopLevelScaffold(navController, WalletDestination.Transactions.route, fabOnClick = { }) {
-                // No-op FAB in this tab until Phase 5 (Transactions Core) wires add-expense/income.
-                TransactionsScreen()
+            TopLevelScaffold(
+                navController = navController,
+                currentRoute = WalletDestination.Transactions.route,
+                fabOnClick = { navController.navigate(TransactionRoutes.CREATE) },
+            ) {
+                TransactionsScreen(
+                    onAddTransaction = { navController.navigate(TransactionRoutes.CREATE) },
+                    onTransactionClick = { id -> navController.navigate(TransactionRoutes.edit(id)) },
+                )
             }
         }
         composable(WalletDestination.Reports.route) {
-            TopLevelScaffold(navController, WalletDestination.Reports.route, fabOnClick = { }) {
+            TopLevelScaffold(
+                navController = navController,
+                currentRoute = WalletDestination.Reports.route,
+                fabOnClick = { navController.navigate(TransactionRoutes.CREATE) },
+            ) {
                 ReportsScreen()
             }
         }
@@ -91,6 +107,7 @@ fun WalletNavHost() {
                 onBack = { navController.popBackStack() },
                 onEdit = { id -> navController.navigate(AccountRoutes.edit(id)) },
                 onArchived = { navController.popBackStack() },
+                onTransactionClick = { id -> navController.navigate(TransactionRoutes.edit(id)) },
             )
         }
         composable(
@@ -98,6 +115,23 @@ fun WalletNavHost() {
             arguments = listOf(navArgument(AccountRoutes.ACCOUNT_ID_ARG) { type = NavType.StringType }),
         ) {
             AccountFormScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+            )
+        }
+
+        // Transaction sub-screens: same pattern as the account ones above.
+        composable(TransactionRoutes.CREATE) {
+            TransactionFormScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+            )
+        }
+        composable(
+            route = TransactionRoutes.EDIT_PATTERN,
+            arguments = listOf(navArgument(TransactionRoutes.TRANSACTION_ID_ARG) { type = NavType.StringType }),
+        ) {
+            TransactionFormScreen(
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
             )

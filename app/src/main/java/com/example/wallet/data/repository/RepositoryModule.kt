@@ -1,8 +1,10 @@
 package com.example.wallet.data.repository
 
 import com.example.wallet.domain.repository.AccountRepository
+import com.example.wallet.domain.repository.CategoryRepository
 import com.example.wallet.domain.repository.InstitutionRepository
 import com.example.wallet.domain.repository.NotificationRepository
+import com.example.wallet.domain.repository.TransactionRepository
 import com.example.wallet.domain.repository.UserRepository
 import dagger.Binds
 import dagger.Module
@@ -24,4 +26,10 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
+
+    @Binds
+    abstract fun bindTransactionRepository(impl: TransactionRepositoryImpl): TransactionRepository
+
+    @Binds
+    abstract fun bindCategoryRepository(impl: CategoryRepositoryImpl): CategoryRepository
 }

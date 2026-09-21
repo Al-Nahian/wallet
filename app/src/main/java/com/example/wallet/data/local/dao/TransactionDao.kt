@@ -38,6 +38,12 @@ interface TransactionDao {
     )
     suspend fun sumByAccountAndType(accountId: String, type: TransactionType): Long
 
+    @Query(
+        "SELECT COALESCE(SUM(amountMinor), 0) FROM transactions WHERE deletedAt IS NULL " +
+            "AND type = :type AND date BETWEEN :startInclusive AND :endInclusive",
+    )
+    suspend fun sumByTypeInRange(type: TransactionType, startInclusive: Long, endInclusive: Long): Long
+
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(transaction: TransactionEntity)
 

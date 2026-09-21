@@ -22,6 +22,17 @@ fun parseMoneyToMinorUnits(input: String): Long? {
     return if (negative) -minor else minor
 }
 
+/** Minor units -> an editable decimal string (e.g. `100050L` -> `"1000.50"`), for prefilling a
+ * form field in edit mode. The inverse of [parseMoneyToMinorUnits]; avoids floating point. */
+fun minorUnitsToEditableString(amountMinor: Long): String {
+    val negative = amountMinor < 0
+    val absMinor = kotlin.math.abs(amountMinor)
+    val whole = absMinor / 100
+    val fraction = absMinor % 100
+    val sign = if (negative) "-" else ""
+    return "$sign$whole.${fraction.toString().padStart(2, '0')}"
+}
+
 fun formatMoney(amountMinor: Long, currency: String): String {
     val negative = amountMinor < 0
     val absMinor = kotlin.math.abs(amountMinor)

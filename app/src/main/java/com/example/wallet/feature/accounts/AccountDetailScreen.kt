@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Receipt
@@ -32,6 +34,7 @@ import com.example.wallet.core.design.components.BalanceCard
 import com.example.wallet.core.design.components.ConfirmationDialog
 import com.example.wallet.core.design.components.EmptyState
 import com.example.wallet.core.design.components.SecondaryButton
+import com.example.wallet.core.design.components.TransactionRow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,11 +42,13 @@ fun AccountDetailScreen(
     onBack: () -> Unit,
     onEdit: (String) -> Unit,
     onArchived: () -> Unit,
+    onTransactionClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AccountDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showArchiveConfirmation by remember { mutableStateOf(false) }
+    var pendingDeleteTransactionId by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         modifier = modifier,
@@ -81,32 +86,51 @@ fun AccountDetailScreen(
                 Column(
                     modifier = Modifier
                         .padding(paddingValues)
-                        .padding(16.dp)
                         .fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    BalanceCard(
-                        label = "Balance",
-                        amountMinor = account.balanceMinor,
-                        currency = account.currency,
-                    )
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        BalanceCard(
+                            label = "Balance",
+                            amountMinor = account.balanceMinor,
+                            currency = account.currency,
+                        )
 
-                    Text(text = account.type.label(), style = MaterialTheme.typography.bodyMedium)
-                    if (account.institutionName != null) {
-                        Text(text = account.institutionName, style = MaterialTheme.typography.bodyMedium)
+                        Text(text = account.type.label(), style = MaterialTheme.typography.bodyMedium)
+                        if (account.institutionName != null) {
+                            Text(text = account.institutionName, style = MaterialTheme.typography.bodyMedium)
+                        }
+
+                        ActionButtonsRow(
+                            onEdit = { onEdit(account.id) },
+                            onArchive = { showArchiveConfirmation = true },
+                        )
                     }
 
-                    ActionButtonsRow(
-                        onEdit = { onEdit(account.id) },
-                        onArchive = { showArchiveConfirmation = true },
-                    )
-
-                    EmptyState(
-                        title = "No transactions yet",
-                        subtitle = "Adding expenses and income arrives in Phase 5.",
-                        icon = Icons.Filled.Receipt,
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                    if (uiState.transactions.isEmpty()) {
+                        EmptyState(
+                            title = "No transactions yet",
+                            subtitle = "Transactions you record against this account show up here.",
+                            icon = Icons.Filled.Receipt,
+                            modifier = Modifier.weight(1f),
+                        )
+                    } else {
+                        LazyColumn(modifier = Modifier.weight(1f)) {
+                            items(uiState.transactions, key = { it.id }) { transaction ->
+                                TransactionRow(
+                                    title = transaction.title,
+                                    subtitle = transaction.categoryName ?: "Uncategorized",
+                                    amountMinor = transaction.amountMinor,
+                                    currency = transaction.currency,
+                                    isIncome = transaction.isIncome,
+                                    onClick = { onTransactionClick(transaction.id) },
+                                    onDelete = { pendingDeleteTransactionId = transaction.id },
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -122,6 +146,20 @@ fun AccountDetailScreen(
                 viewModel.archive(onDone = onArchived)
             },
             onDismiss = { showArchiveConfirmation = false },
+        )
+    }
+
+    val deleteId = pendingDeleteTransactionId
+    if (deleteId != null) {
+        ConfirmationDialog(
+            title = "Delete this transaction?",
+            message = "This can't be undone from here, but the record stays recoverable in the database.",
+            confirmLabel = "Delete",
+            onConfirm = {
+                viewModel.deleteTransaction(deleteId)
+                pendingDeleteTransactionId = null
+            },
+            onDismiss = { pendingDeleteTransactionId = null },
         )
     }
 }
