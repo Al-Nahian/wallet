@@ -41,3 +41,16 @@ enum class RecurringFrequency {
     MONTHLY,
     YEARLY,
 }
+
+/** plan.md §86 — Notification Center. */
+enum class NotificationType {
+    TRANSACTION_CAPTURED,
+    TRANSACTION_NEEDS_REVIEW,
+    BUDGET_WARNING,
+    BUDGET_EXCEEDED,
+    RECURRING_DUE,
+    GOAL_MILESTONE,
+    POSSIBLE_DUPLICATE,
+    SYNC_CONFLICT,
+    SYSTEM,
+}

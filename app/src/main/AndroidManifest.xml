@@ -1,5 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Only used to show a system notification while the app is backgrounded (plan.md §86);
+         the Notification Center itself works without it. Not requested at runtime yet — §59
+         says request contextually, and there's no automation feature to justify prompting yet. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".WalletApplication"
         android:allowBackup="true"

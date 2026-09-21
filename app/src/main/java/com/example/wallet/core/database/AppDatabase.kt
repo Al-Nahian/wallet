@@ -14,10 +14,12 @@ import com.example.wallet.data.local.dao.GoalDao
 import com.example.wallet.data.local.dao.InstitutionDao
 import com.example.wallet.data.local.dao.LabelDao
 import com.example.wallet.data.local.dao.MerchantDao
+import com.example.wallet.data.local.dao.NotificationDao
 import com.example.wallet.data.local.dao.RecurringTransactionDao
 import com.example.wallet.data.local.dao.TransactionDao
 import com.example.wallet.data.local.dao.TransactionLabelDao
 import com.example.wallet.data.local.dao.TransactionSplitDao
+import com.example.wallet.data.local.dao.UserDao
 import com.example.wallet.data.local.entity.AccountEntity
 import com.example.wallet.data.local.entity.BudgetCategoryEntity
 import com.example.wallet.data.local.entity.BudgetEntity
@@ -29,22 +31,22 @@ import com.example.wallet.data.local.entity.InstitutionEntity
 import com.example.wallet.data.local.entity.LabelEntity
 import com.example.wallet.data.local.entity.MerchantAliasEntity
 import com.example.wallet.data.local.entity.MerchantEntity
+import com.example.wallet.data.local.entity.NotificationEntity
 import com.example.wallet.data.local.entity.RecurringTransactionEntity
 import com.example.wallet.data.local.entity.TransactionEntity
 import com.example.wallet.data.local.entity.TransactionLabelEntity
 import com.example.wallet.data.local.entity.TransactionSplitEntity
+import com.example.wallet.data.local.entity.UserEntity
 
 /**
- * The real v1 schema (plan.md §11-§19). Phase 1's placeholder `AppMetadataEntity` proved the
- * Room+Hilt wiring and has been deleted now that this phase adds the real financial schema.
- * `exportSchema = true` from here on — every future change goes through a real, tested
- * migration (see androidTest/.../AppDatabaseMigrationTest.kt for the harness).
+ * v2 (plan.md §11-§19, §84, §86). `notifications` and `users` arrived in migration v1 -> v2
+ * (Phase 4, see Migrations.kt) — the first real, tested migration since Phase 2's initial
+ * schema. `exportSchema = true` remains on: every future change goes through a real migration
+ * (see androidTest/.../AppDatabaseMigrationTest.kt for the harness).
  *
- * Deliberately absent: `users` and `notifications` (Phase 4 owns those, per plan.md §83-§86),
- * `sync_operations` (Phase 17), and every §12/§74 "future field" not yet needed by a built
- * phase (transferId, source, confidence, version, ...) — each arrives via its own migration
- * when the phase that needs it is built, per §69 rule 11 ("every schema change requires a
- * migration").
+ * Still deliberately absent: `sync_operations` (Phase 17) and every §12/§74 "future field" not
+ * yet needed by a built phase (transferId, source, confidence, version, ...) — each arrives via
+ * its own migration when the phase that needs it is built, per §69 rule 11.
  */
 @Database(
     entities = [
@@ -63,8 +65,10 @@ import com.example.wallet.data.local.entity.TransactionSplitEntity
         GoalContributionEntity::class,
         MerchantEntity::class,
         MerchantAliasEntity::class,
+        NotificationEntity::class,
+        UserEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -83,4 +87,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun goalDao(): GoalDao
     abstract fun goalContributionDao(): GoalContributionDao
     abstract fun merchantDao(): MerchantDao
+    abstract fun notificationDao(): NotificationDao
+    abstract fun userDao(): UserDao
 }

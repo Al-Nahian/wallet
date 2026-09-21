@@ -4,6 +4,7 @@ import androidx.room.TypeConverter
 import com.example.wallet.domain.model.AccountType
 import com.example.wallet.domain.model.BudgetPeriod
 import com.example.wallet.domain.model.CategoryType
+import com.example.wallet.domain.model.NotificationType
 import com.example.wallet.domain.model.RecurringFrequency
 import com.example.wallet.domain.model.TransactionType
 
@@ -38,4 +39,10 @@ class Converters {
 
     @TypeConverter
     fun toRecurringFrequency(value: String): RecurringFrequency = RecurringFrequency.valueOf(value)
+
+    @TypeConverter
+    fun fromNotificationType(value: NotificationType): String = value.name
+
+    @TypeConverter
+    fun toNotificationType(value: String): NotificationType = NotificationType.valueOf(value)
 }

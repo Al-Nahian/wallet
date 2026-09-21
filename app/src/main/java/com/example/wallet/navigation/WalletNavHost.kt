@@ -7,7 +7,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -23,6 +26,11 @@ import com.example.wallet.feature.accounts.AccountFormScreen
 import com.example.wallet.feature.accounts.AccountRoutes
 import com.example.wallet.feature.accounts.AccountsScreen
 import com.example.wallet.feature.dashboard.DashboardScreen
+import com.example.wallet.feature.notifications.NotificationBadgeViewModel
+import com.example.wallet.feature.notifications.NotificationCenterScreen
+import com.example.wallet.feature.notifications.NotificationRoutes
+import com.example.wallet.feature.profile.ProfileRoutes
+import com.example.wallet.feature.profile.ProfileScreen
 import com.example.wallet.feature.reports.ReportsScreen
 import com.example.wallet.feature.transactions.TransactionsScreen
 
@@ -94,6 +102,18 @@ fun WalletNavHost() {
                 onSaved = { navController.popBackStack() },
             )
         }
+
+        // Reachable from every top-level screen's shared top bar (plan.md §83), each with its
+        // own back-button Scaffold rather than the bottom-nav/FAB chrome.
+        composable(ProfileRoutes.PROFILE) {
+            ProfileScreen(onBack = { navController.popBackStack() })
+        }
+        composable(NotificationRoutes.NOTIFICATION_CENTER) {
+            NotificationCenterScreen(
+                onBack = { navController.popBackStack() },
+                onDeepLink = { route -> navController.navigate(route) },
+            )
+        }
     }
 }
 
@@ -105,15 +125,16 @@ private fun TopLevelScaffold(
     fabOnClick: () -> Unit,
     content: @Composable () -> Unit,
 ) {
+    val badgeViewModel: NotificationBadgeViewModel = hiltViewModel()
+    val unreadCount by badgeViewModel.unreadCount.collectAsStateWithLifecycle()
+
     WalletScaffold(
         topBar = {
             WalletTopBar(
                 title = screenTitles[currentRoute] ?: "Wallet",
-                // Profile → Account screen and bell → Notification Center are both
-                // no-ops until Phase 4 (Notification Center & Account Shell) wires
-                // their real destinations and the live unread count.
-                onProfileClick = { },
-                onNotificationsClick = { },
+                unreadNotificationCount = unreadCount,
+                onProfileClick = { navController.navigate(ProfileRoutes.PROFILE) },
+                onNotificationsClick = { navController.navigate(NotificationRoutes.NOTIFICATION_CENTER) },
             )
         },
         bottomBar = {

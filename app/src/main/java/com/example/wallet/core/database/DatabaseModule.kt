@@ -12,10 +12,12 @@ import com.example.wallet.data.local.dao.GoalDao
 import com.example.wallet.data.local.dao.InstitutionDao
 import com.example.wallet.data.local.dao.LabelDao
 import com.example.wallet.data.local.dao.MerchantDao
+import com.example.wallet.data.local.dao.NotificationDao
 import com.example.wallet.data.local.dao.RecurringTransactionDao
 import com.example.wallet.data.local.dao.TransactionDao
 import com.example.wallet.data.local.dao.TransactionLabelDao
 import com.example.wallet.data.local.dao.TransactionSplitDao
+import com.example.wallet.data.local.dao.UserDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,7 +32,9 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(context, AppDatabase::class.java, "wallet.db").build()
+        Room.databaseBuilder(context, AppDatabase::class.java, "wallet.db")
+            .addMigrations(MIGRATION_1_2)
+            .build()
 
     @Provides
     fun provideInstitutionDao(db: AppDatabase): InstitutionDao = db.institutionDao()
@@ -74,4 +78,10 @@ object DatabaseModule {
 
     @Provides
     fun provideMerchantDao(db: AppDatabase): MerchantDao = db.merchantDao()
+
+    @Provides
+    fun provideNotificationDao(db: AppDatabase): NotificationDao = db.notificationDao()
+
+    @Provides
+    fun provideUserDao(db: AppDatabase): UserDao = db.userDao()
 }

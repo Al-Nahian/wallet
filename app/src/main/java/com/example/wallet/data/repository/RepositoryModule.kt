@@ -2,6 +2,8 @@ package com.example.wallet.data.repository
 
 import com.example.wallet.domain.repository.AccountRepository
 import com.example.wallet.domain.repository.InstitutionRepository
+import com.example.wallet.domain.repository.NotificationRepository
+import com.example.wallet.domain.repository.UserRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -16,4 +18,10 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindInstitutionRepository(impl: InstitutionRepositoryImpl): InstitutionRepository
+
+    @Binds
+    abstract fun bindNotificationRepository(impl: NotificationRepositoryImpl): NotificationRepository
+
+    @Binds
+    abstract fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
 }
