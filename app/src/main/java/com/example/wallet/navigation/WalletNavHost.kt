@@ -35,7 +35,16 @@ fun WalletNavHost() {
     val currentRoute = backStackEntry?.destination?.route ?: WalletDestination.Home.route
 
     WalletScaffold(
-        topBar = { WalletTopBar(title = screenTitles[currentRoute] ?: "Wallet") },
+        topBar = {
+            WalletTopBar(
+                title = screenTitles[currentRoute] ?: "Wallet",
+                // Profile → Account screen and bell → Notification Center are both
+                // no-ops until Phase 4 (Notification Center & Account Shell) wires
+                // their real destinations and the live unread count.
+                onProfileClick = { },
+                onNotificationsClick = { },
+            )
+        },
         bottomBar = {
             WalletBottomNavigation(
                 items = walletBottomNavItems,
@@ -52,7 +61,7 @@ fun WalletNavHost() {
             )
         },
         floatingActionButton = {
-            // No-op in Phase 1 — the real add-transaction flow lands in Phase 4.
+            // No-op in Phase 1 — the real add-transaction flow lands in Phase 5.
             FloatingActionButton(onClick = { }) {
                 Icon(Icons.Filled.Add, contentDescription = "Add transaction")
             }
