@@ -16,6 +16,9 @@ interface InstitutionDao {
     @Query("SELECT * FROM institutions WHERE id = :id")
     suspend fun getById(id: String): InstitutionEntity?
 
+    @Query("SELECT * FROM institutions WHERE name = :name COLLATE NOCASE LIMIT 1")
+    suspend fun getByName(name: String): InstitutionEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(institution: InstitutionEntity)
 

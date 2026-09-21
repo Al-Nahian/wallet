@@ -1,0 +1,23 @@
+package com.example.wallet.data.repository
+
+import com.example.wallet.core.common.newId
+import com.example.wallet.data.local.dao.InstitutionDao
+import com.example.wallet.data.local.entity.InstitutionEntity
+import com.example.wallet.domain.model.Institution
+import com.example.wallet.domain.repository.InstitutionRepository
+import javax.inject.Inject
+
+class InstitutionRepositoryImpl @Inject constructor(
+    private val institutionDao: InstitutionDao,
+) : InstitutionRepository {
+
+    override suspend fun getById(id: String): Institution? = institutionDao.getById(id)?.toDomain()
+
+    override suspend fun findOrCreateByName(name: String): Institution {
+        institutionDao.getByName(name)?.let { return it.toDomain() }
+
+        val entity = InstitutionEntity(id = newId(), name = name, type = "OTHER")
+        institutionDao.upsert(entity)
+        return entity.toDomain()
+    }
+}

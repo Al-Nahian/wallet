@@ -20,6 +20,8 @@ fun EmptyState(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     icon: ImageVector? = null,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier
@@ -46,6 +48,13 @@ fun EmptyState(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
+            )
+        }
+        if (actionLabel != null && onAction != null) {
+            PrimaryButton(
+                text = actionLabel,
+                onClick = onAction,
+                modifier = Modifier.padding(top = 16.dp),
             )
         }
     }
