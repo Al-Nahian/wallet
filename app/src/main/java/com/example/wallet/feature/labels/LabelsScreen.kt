@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,7 +28,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,7 +43,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.design.components.ConfirmationDialog
 import com.example.wallet.core.design.components.EmptyState
+import com.example.wallet.core.design.components.GlassScreenTopBar
 import com.example.wallet.core.design.components.LabelChip
+import com.example.wallet.core.design.glass.GlassFab
+import com.example.wallet.core.design.glass.GlassStyle
+import com.example.wallet.core.design.glass.GlassWindowBlur
+import com.example.wallet.core.design.glass.glassDialogContainerColor
 import com.example.wallet.core.design.parseHexColor
 import com.example.wallet.domain.model.Label
 
@@ -74,8 +77,8 @@ fun LabelsScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = { Text("Labels") },
+            GlassScreenTopBar(
+                title = "Labels",
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -84,8 +87,8 @@ fun LabelsScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showCreateDialog = true }) {
-                Icon(Icons.Filled.Add, contentDescription = "Add label")
+            GlassFab(onClick = { showCreateDialog = true }, contentDescription = "Add label") {
+                Icon(Icons.Filled.Add, contentDescription = null)
             }
         },
     ) { paddingValues ->
@@ -177,6 +180,7 @@ private fun LabelFormDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
+            GlassWindowBlur()
             Column {
                 OutlinedTextField(
                     value = name,
@@ -217,5 +221,6 @@ private fun LabelFormDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
         },
+        containerColor = glassDialogContainerColor(GlassStyle.Thick),
     )
 }

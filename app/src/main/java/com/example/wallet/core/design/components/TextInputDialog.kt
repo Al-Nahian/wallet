@@ -11,6 +11,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.example.wallet.core.design.glass.GlassStyle
+import com.example.wallet.core.design.glass.GlassWindowBlur
+import com.example.wallet.core.design.glass.glassDialogContainerColor
 
 /** A single-text-field create/rename dialog, reused by category and label management. */
 @Composable
@@ -28,6 +31,7 @@ fun TextInputDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
+            GlassWindowBlur()
             OutlinedTextField(
                 value = value,
                 onValueChange = { value = it },
@@ -44,5 +48,6 @@ fun TextInputDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
         },
+        containerColor = glassDialogContainerColor(GlassStyle.Thick),
     )
 }

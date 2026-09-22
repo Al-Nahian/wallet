@@ -10,6 +10,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.example.wallet.core.design.glass.GlassMotionPreferences
+import com.example.wallet.core.design.glass.LocalGlassMotionPreferences
+import com.example.wallet.core.design.glass.rememberSystemPrefersReducedMotion
 
 private val LightScheme = lightColorScheme(
     primary = LightPrimary,
@@ -68,8 +71,12 @@ fun WalletAppTheme(
 ) {
     val colorScheme = if (darkTheme) DarkScheme else LightScheme
     val extended = if (darkTheme) DarkExtended else LightExtended
+    val motionPreferences = GlassMotionPreferences(reduceMotion = rememberSystemPrefersReducedMotion())
 
-    CompositionLocalProvider(LocalWalletExtendedColors provides extended) {
+    CompositionLocalProvider(
+        LocalWalletExtendedColors provides extended,
+        LocalGlassMotionPreferences provides motionPreferences,
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = WalletTypography,

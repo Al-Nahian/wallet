@@ -23,7 +23,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.design.components.DateField
+import com.example.wallet.core.design.components.GlassScreenTopBar
 import com.example.wallet.core.design.components.PrimaryButton
 import com.example.wallet.core.design.components.SelectorField
 import com.example.wallet.core.design.components.SelectorOption
@@ -59,8 +59,8 @@ fun BudgetFormScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = { Text(if (uiState.isEditMode) "Edit Budget" else "New Budget") },
+            GlassScreenTopBar(
+                title = if (uiState.isEditMode) "Edit Budget" else "New Budget",
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")

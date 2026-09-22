@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -25,7 +24,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.example.wallet.core.design.glass.GlassSheet
 import com.example.wallet.core.design.parseHexColor
 import com.example.wallet.domain.model.Category
 import com.example.wallet.domain.model.CategoryGroup
@@ -99,8 +98,7 @@ private fun CategoryPickerDialog(
     val categoriesByGroup = remember(categories) { categories.groupBy { it.groupId } }
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(20.dp),
+        GlassSheet(
             modifier = Modifier.fillMaxWidth().heightIn(max = 560.dp),
         ) {
             val group = expandedGroup

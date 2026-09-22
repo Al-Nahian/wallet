@@ -20,7 +20,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.design.components.BalanceCard
 import com.example.wallet.core.design.components.ConfirmationDialog
 import com.example.wallet.core.design.components.EmptyState
+import com.example.wallet.core.design.components.GlassScreenTopBar
 import com.example.wallet.core.design.components.SecondaryButton
 import com.example.wallet.core.design.components.TransactionRow
 
@@ -56,8 +56,8 @@ fun AccountDetailScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = { Text(uiState.account?.name ?: "Account") },
+            GlassScreenTopBar(
+                title = uiState.account?.name ?: "Account",
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")

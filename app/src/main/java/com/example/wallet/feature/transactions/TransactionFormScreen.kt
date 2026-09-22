@@ -29,7 +29,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,9 +47,13 @@ import com.example.wallet.core.design.components.AccountSelector
 import com.example.wallet.core.design.components.AmountInput
 import com.example.wallet.core.design.components.CategoryPickerField
 import com.example.wallet.core.design.components.DateField
+import com.example.wallet.core.design.components.GlassScreenTopBar
 import com.example.wallet.core.design.components.LabelChip
 import com.example.wallet.core.design.components.PrimaryButton
 import com.example.wallet.core.design.components.SecondaryButton
+import com.example.wallet.core.design.glass.GlassStyle
+import com.example.wallet.core.design.glass.GlassWindowBlur
+import com.example.wallet.core.design.glass.glassDialogContainerColor
 import com.example.wallet.domain.model.Category
 import com.example.wallet.domain.model.CategoryGroup
 import com.example.wallet.domain.model.Label
@@ -73,8 +76,8 @@ fun TransactionFormScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = { Text(if (uiState.isEditMode) "Edit Transaction" else "New Transaction") },
+            GlassScreenTopBar(
+                title = if (uiState.isEditMode) "Edit Transaction" else "New Transaction",
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -318,6 +321,7 @@ private fun LabelPickerSection(
             onDismissRequest = { showPicker = false },
             title = { Text("Labels") },
             text = {
+                GlassWindowBlur()
                 if (allLabels.isEmpty()) {
                     Text("No labels yet. Create some from Profile > Manage labels.")
                 } else {
@@ -341,6 +345,7 @@ private fun LabelPickerSection(
             confirmButton = {
                 TextButton(onClick = { showPicker = false }) { Text("Done") }
             },
+            containerColor = glassDialogContainerColor(GlassStyle.Thick),
         )
     }
 }

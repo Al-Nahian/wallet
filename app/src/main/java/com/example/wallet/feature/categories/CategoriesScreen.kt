@@ -23,7 +23,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,6 +37,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.design.components.CategoryIcon
 import com.example.wallet.core.design.components.ConfirmationDialog
+import com.example.wallet.core.design.components.GlassScreenTopBar
 import com.example.wallet.core.design.components.TextInputDialog
 import com.example.wallet.core.design.parseHexColor
 import com.example.wallet.domain.model.Category
@@ -67,8 +67,8 @@ fun CategoriesScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = { Text("Categories") },
+            GlassScreenTopBar(
+                title = "Categories",
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")

@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,6 +20,7 @@ import androidx.navigation.navArgument
 import com.example.wallet.core.design.components.WalletBottomNavigation
 import com.example.wallet.core.design.components.WalletScaffold
 import com.example.wallet.core.design.components.WalletTopBar
+import com.example.wallet.core.design.glass.GlassFab
 import com.example.wallet.feature.accounts.AccountDetailScreen
 import com.example.wallet.feature.accounts.AccountFormScreen
 import com.example.wallet.feature.accounts.AccountRoutes
@@ -250,15 +250,15 @@ private fun TopLevelScaffold(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = fabOnClick) {
-                Icon(
-                    Icons.Filled.Add,
-                    contentDescription = if (currentRoute == WalletDestination.Accounts.route) {
-                        "Add account"
-                    } else {
-                        "Add transaction"
-                    },
-                )
+            GlassFab(
+                onClick = fabOnClick,
+                contentDescription = if (currentRoute == WalletDestination.Accounts.route) {
+                    "Add account"
+                } else {
+                    "Add transaction"
+                },
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = null)
             }
         },
     ) { paddingValues ->
