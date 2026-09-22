@@ -18,19 +18,21 @@ data class CategorySpend(
  * split's own category (never to the parent's, which is deliberately null for a split — Phase
  * 6/7), so the breakdown always reflects real category spend rather than lumping split purchases
  * under "Uncategorized". Pure function operating on an already-loaded fixture, independently
- * unit-testable per plan.md's test plan.
+ * unit-testable per plan.md's test plan. [type] defaults to EXPENSE (the dashboard's only caller)
+ * but Phase 9's income report reuses this same attribution logic with `TransactionType.INCOME`.
  */
 class GetCategorySpendUseCase @Inject constructor() {
     operator fun invoke(
         transactions: List<Transaction>,
         splits: List<TransactionSplit>,
         categoriesById: Map<String, Category>,
+        type: TransactionType = TransactionType.EXPENSE,
     ): List<CategorySpend> {
         val splitsByTransaction = splits.groupBy { it.transactionId }
         val totals = LinkedHashMap<String?, Long>()
 
         for (transaction in transactions) {
-            if (transaction.type != TransactionType.EXPENSE) continue
+            if (transaction.type != type) continue
 
             val transactionSplits = splitsByTransaction[transaction.id]
             if (transactionSplits.isNullOrEmpty()) {

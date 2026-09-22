@@ -3,6 +3,7 @@ package com.example.wallet.feature.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.wallet.core.common.currentDayOfMonth
+import com.example.wallet.core.common.monthRange
 import com.example.wallet.core.common.startOfCurrentMonthMillis
 import com.example.wallet.domain.model.AccountType
 import com.example.wallet.domain.repository.AccountRepository
@@ -42,6 +43,7 @@ sealed interface DashboardUiState {
         val currency: String,
         val monthlyIncomeMinor: Long,
         val monthlyExpenseMinor: Long,
+        val previousMonthNetMinor: Long,
         val savingsMinor: Long,
         val savingsRatePercent: Double,
         val averageDailySpendMinor: Long,
@@ -93,6 +95,10 @@ class DashboardViewModel @Inject constructor(
         }
         val monthlyIncome = getMonthlyIncome(monthStart, now)
         val monthlyExpense = getMonthlyExpenses(monthStart, now)
+        val previousMonth = monthRange(1, now)
+        val previousMonthIncome = getMonthlyIncome(previousMonth.startInclusive, previousMonth.endInclusive)
+        val previousMonthExpense = getMonthlyExpenses(previousMonth.startInclusive, previousMonth.endInclusive)
+        val previousMonthNet = previousMonthIncome - previousMonthExpense
         val savings = getSavings(monthlyIncome, monthlyExpense)
         val savingsRate = getSavingsRate(savings, monthlyIncome)
         val averageDailySpend = getAverageDailySpend(monthlyExpense, currentDayOfMonth(now))
@@ -114,6 +120,7 @@ class DashboardViewModel @Inject constructor(
             currency = accounts.firstOrNull()?.currency ?: "BDT",
             monthlyIncomeMinor = monthlyIncome,
             monthlyExpenseMinor = monthlyExpense,
+            previousMonthNetMinor = previousMonthNet,
             savingsMinor = savings,
             savingsRatePercent = savingsRate,
             averageDailySpendMinor = averageDailySpend,

@@ -50,6 +50,13 @@ class TransactionRepositoryImpl @Inject constructor(
     override suspend fun sumByTypeInRange(type: TransactionType, startInclusive: Long, endInclusive: Long): Long =
         transactionDao.sumByTypeInRange(type, startInclusive, endInclusive)
 
+    override suspend fun sumByAccountAndTypeInRange(
+        accountId: String,
+        type: TransactionType,
+        startInclusive: Long,
+        endInclusive: Long,
+    ): Long = transactionDao.sumByAccountAndTypeInRange(accountId, type, startInclusive, endInclusive)
+
     override suspend fun createTransferPair(outgoing: Transaction, incoming: Transaction) {
         appDatabase.withTransaction {
             transactionDao.insert(outgoing.toEntity())

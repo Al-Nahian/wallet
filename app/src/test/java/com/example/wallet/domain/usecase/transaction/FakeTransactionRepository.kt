@@ -47,6 +47,18 @@ class FakeTransactionRepository : TransactionRepository {
             .filter { it.deletedAt == null && it.type == type && it.date in startInclusive..endInclusive }
             .sumOf { it.amountMinor }
 
+    override suspend fun sumByAccountAndTypeInRange(
+        accountId: String,
+        type: TransactionType,
+        startInclusive: Long,
+        endInclusive: Long,
+    ): Long = transactions.value.values
+        .filter {
+            it.deletedAt == null && it.accountId == accountId && it.type == type &&
+                it.date in startInclusive..endInclusive
+        }
+        .sumOf { it.amountMinor }
+
     override suspend fun createTransferPair(outgoing: Transaction, incoming: Transaction) {
         transactions.value = transactions.value + (outgoing.id to outgoing) + (incoming.id to incoming)
     }
