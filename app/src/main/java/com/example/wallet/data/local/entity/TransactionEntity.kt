@@ -8,11 +8,10 @@ import com.example.wallet.domain.model.TransactionType
 
 /**
  * plan.md §12. Only the "Initial model" fields plus `deletedAt` (§44 soft delete, needed
- * from Phase 5 onward) are included here. §12's "Future fields" (source, confidence,
- * isReviewed, externalId, transferId, version, cross-currency fields...) are deliberately
- * left out until the phase that actually needs them adds it via a real migration —
- * Phase 6 adds `transferId`, Phase 14 adds `source`/`confidence`/`isReviewed`/`externalId`,
- * Phase 17 adds `version`.
+ * from Phase 5 onward) and `transferId` (§22, Phase 6) are included here. §12's other "Future
+ * fields" (source, confidence, isReviewed, externalId, version, cross-currency fields...) are
+ * deliberately left out until the phase that actually needs them adds it via a real migration —
+ * Phase 14 adds `source`/`confidence`/`isReviewed`/`externalId`, Phase 17 adds `version`.
  */
 @Entity(
     tableName = "transactions",
@@ -36,6 +35,7 @@ import com.example.wallet.domain.model.TransactionType
         Index("categoryId"),
         Index("payee"),
         Index("type"),
+        Index("transferId"),
     ],
 )
 data class TransactionEntity(
@@ -52,4 +52,5 @@ data class TransactionEntity(
     val updatedAt: Long,
     val isRecurring: Boolean = false,
     val deletedAt: Long? = null,
+    val transferId: String? = null,
 )

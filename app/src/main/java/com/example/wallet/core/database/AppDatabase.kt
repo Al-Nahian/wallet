@@ -39,14 +39,14 @@ import com.example.wallet.data.local.entity.TransactionSplitEntity
 import com.example.wallet.data.local.entity.UserEntity
 
 /**
- * v2 (plan.md §11-§19, §84, §86). `notifications` and `users` arrived in migration v1 -> v2
- * (Phase 4, see Migrations.kt) — the first real, tested migration since Phase 2's initial
- * schema. `exportSchema = true` remains on: every future change goes through a real migration
- * (see androidTest/.../AppDatabaseMigrationTest.kt for the harness).
+ * v3 (plan.md §11-§19, §84, §86). `notifications` and `users` arrived in migration v1 -> v2
+ * (Phase 4); `transactions.transferId` arrived in migration v2 -> v3 (Phase 6, §22) — see
+ * Migrations.kt. `exportSchema = true` remains on: every future change goes through a real
+ * migration (see androidTest/.../AppDatabaseMigrationTest.kt for the harness).
  *
  * Still deliberately absent: `sync_operations` (Phase 17) and every §12/§74 "future field" not
- * yet needed by a built phase (transferId, source, confidence, version, ...) — each arrives via
- * its own migration when the phase that needs it is built, per §69 rule 11.
+ * yet needed by a built phase (source, confidence, version, ...) — each arrives via its own
+ * migration when the phase that needs it is built, per §69 rule 11.
  */
 @Database(
     entities = [
@@ -68,7 +68,7 @@ import com.example.wallet.data.local.entity.UserEntity
         NotificationEntity::class,
         UserEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

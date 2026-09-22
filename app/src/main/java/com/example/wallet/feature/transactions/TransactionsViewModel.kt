@@ -6,6 +6,7 @@ import com.example.wallet.core.common.dateGroupLabel
 import com.example.wallet.domain.repository.AccountRepository
 import com.example.wallet.domain.repository.CategoryRepository
 import com.example.wallet.domain.repository.TransactionRepository
+import com.example.wallet.domain.repository.TransactionSplitRepository
 import com.example.wallet.domain.usecase.transaction.DeleteTransactionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -25,6 +26,7 @@ class TransactionsViewModel @Inject constructor(
     transactionRepository: TransactionRepository,
     accountRepository: AccountRepository,
     categoryRepository: CategoryRepository,
+    transactionSplitRepository: TransactionSplitRepository,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
 ) : ViewModel() {
 
@@ -32,9 +34,12 @@ class TransactionsViewModel @Inject constructor(
         transactionRepository.observeTransactions(),
         accountRepository.observeAllAccounts(),
         categoryRepository.observeCategories(),
-    ) { transactions, accounts, categories ->
+        transactionSplitRepository.observeAllSplits(),
+    ) { transactions, accounts, categories, splits ->
         val accountsById = accounts.associateBy { it.id }
         val categoriesById = categories.associateBy { it.id }
+        val splitsByTransaction = splits.groupBy { it.transactionId }
+        val transferLegsByTransferId = transactions.filter { it.transferId != null }.groupBy { it.transferId }
 
         val sorted = transactions.sortedByDescending { it.date }
         val groups = sorted
@@ -43,16 +48,7 @@ class TransactionsViewModel @Inject constructor(
                 TransactionGroupUi(
                     dateLabel = label,
                     transactions = txs.map { tx ->
-                        TransactionUi(
-                            id = tx.id,
-                            type = tx.type,
-                            amountMinor = tx.amountMinor,
-                            currency = tx.currency,
-                            categoryName = tx.categoryId?.let { categoriesById[it]?.name },
-                            payee = tx.payee,
-                            accountName = accountsById[tx.accountId]?.name ?: "Unknown account",
-                            date = tx.date,
-                        )
+                        tx.toTransactionUi(accountsById, categoriesById, splitsByTransaction, transferLegsByTransferId)
                     },
                 )
             }

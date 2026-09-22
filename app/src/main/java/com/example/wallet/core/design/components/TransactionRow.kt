@@ -29,8 +29,13 @@ fun TransactionRow(
     isIncome: Boolean,
     onClick: () -> Unit,
     onDelete: () -> Unit,
+    isTransfer: Boolean = false,
 ) {
-    val amountColor = if (isIncome) WalletTheme.extendedColors.income else WalletTheme.extendedColors.expense
+    val amountColor = when {
+        isTransfer -> MaterialTheme.colorScheme.onSurfaceVariant
+        isIncome -> WalletTheme.extendedColors.income
+        else -> WalletTheme.extendedColors.expense
+    }
     val sign = if (isIncome) "+" else "-"
 
     ListItem(

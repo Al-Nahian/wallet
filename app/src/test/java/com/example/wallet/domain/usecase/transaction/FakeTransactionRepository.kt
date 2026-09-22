@@ -46,4 +46,18 @@ class FakeTransactionRepository : TransactionRepository {
         transactions.value.values
             .filter { it.deletedAt == null && it.type == type && it.date in startInclusive..endInclusive }
             .sumOf { it.amountMinor }
+
+    override suspend fun createTransferPair(outgoing: Transaction, incoming: Transaction) {
+        transactions.value = transactions.value + (outgoing.id to outgoing) + (incoming.id to incoming)
+    }
+
+    override suspend fun deleteTransferPair(transactionIds: List<String>) {
+        val deletedAt = System.currentTimeMillis()
+        transactions.value = transactions.value.mapValues { (id, tx) ->
+            if (id in transactionIds) tx.copy(deletedAt = deletedAt) else tx
+        }
+    }
+
+    override suspend fun getByTransferId(transferId: String): List<Transaction> =
+        transactions.value.values.filter { it.deletedAt == null && it.transferId == transferId }
 }

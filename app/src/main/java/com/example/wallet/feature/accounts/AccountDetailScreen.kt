@@ -1,5 +1,6 @@
 package com.example.wallet.feature.accounts
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,6 +49,7 @@ fun AccountDetailScreen(
     viewModel: AccountDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     var showArchiveConfirmation by remember { mutableStateOf(false) }
     var pendingDeleteTransactionId by remember { mutableStateOf<String?>(null) }
 
@@ -121,11 +124,18 @@ fun AccountDetailScreen(
                             items(uiState.transactions, key = { it.id }) { transaction ->
                                 TransactionRow(
                                     title = transaction.title,
-                                    subtitle = transaction.categoryName ?: "Uncategorized",
+                                    subtitle = transaction.subtitle,
                                     amountMinor = transaction.amountMinor,
                                     currency = transaction.currency,
                                     isIncome = transaction.isIncome,
-                                    onClick = { onTransactionClick(transaction.id) },
+                                    isTransfer = transaction.isTransfer,
+                                    onClick = {
+                                        if (transaction.isTransfer) {
+                                            Toast.makeText(context, "Transfers can't be edited yet — delete and re-create if needed.", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            onTransactionClick(transaction.id)
+                                        }
+                                    },
                                     onDelete = { pendingDeleteTransactionId = transaction.id },
                                 )
                             }

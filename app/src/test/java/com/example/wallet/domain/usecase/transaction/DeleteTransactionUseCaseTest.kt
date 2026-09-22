@@ -17,6 +17,7 @@ class DeleteTransactionUseCaseTest {
     private lateinit var accountRepository: FakeAccountRepository
     private lateinit var transactionRepository: FakeTransactionRepository
     private lateinit var createUseCase: CreateTransactionUseCase
+    private lateinit var createTransferUseCase: CreateTransferUseCase
     private lateinit var deleteUseCase: DeleteTransactionUseCase
 
     @Before
@@ -24,12 +25,26 @@ class DeleteTransactionUseCaseTest {
         accountRepository = FakeAccountRepository()
         transactionRepository = FakeTransactionRepository()
         createUseCase = CreateTransactionUseCase(transactionRepository, accountRepository)
+        createTransferUseCase = CreateTransferUseCase(transactionRepository, accountRepository)
         deleteUseCase = DeleteTransactionUseCase(transactionRepository)
 
         accountRepository.create(
             Account(
                 id = "account-1",
                 name = "Cash",
+                type = AccountType.CASH,
+                institutionId = null,
+                currency = "BDT",
+                openingBalanceMinor = 0L,
+                isArchived = false,
+                createdAt = 0L,
+                updatedAt = 0L,
+            ),
+        )
+        accountRepository.create(
+            Account(
+                id = "account-2",
+                name = "Wallet",
                 type = AccountType.CASH,
                 institutionId = null,
                 currency = "BDT",
@@ -53,6 +68,20 @@ class DeleteTransactionUseCaseTest {
         assertTrue(transactionRepository.observeTransactions().first().isEmpty())
         val stillThere = transactionRepository.getTransaction(transaction.id)
         assertNotNull(stillThere?.deletedAt)
+    }
+
+    @Test
+    fun `deleting one leg of a transfer soft-deletes both legs atomically`() = runTest {
+        createTransferUseCase("account-1", "account-2", "10000", null, 1000L)
+        val outgoing = transactionRepository.observeTransactions().first().single { it.accountId == "account-1" }
+        val incoming = transactionRepository.observeTransactions().first().single { it.accountId == "account-2" }
+
+        val result = deleteUseCase(outgoing.id)
+
+        assertTrue(result.isSuccess)
+        assertTrue(transactionRepository.observeTransactions().first().isEmpty())
+        assertNotNull(transactionRepository.getTransaction(outgoing.id)?.deletedAt)
+        assertNotNull(transactionRepository.getTransaction(incoming.id)?.deletedAt)
     }
 
     @Test

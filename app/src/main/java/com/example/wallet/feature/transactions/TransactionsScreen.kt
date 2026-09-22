@@ -86,7 +86,14 @@ fun TransactionsScreen(
                                     amountMinor = transaction.amountMinor,
                                     currency = transaction.currency,
                                     isIncome = transaction.isIncome,
-                                    onClick = { onTransactionClick(transaction.id) },
+                                    isTransfer = transaction.isTransfer,
+                                    onClick = {
+                                        if (transaction.isTransfer) {
+                                            Toast.makeText(context, "Transfers can't be edited yet — delete and re-create if needed.", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            onTransactionClick(transaction.id)
+                                        }
+                                    },
                                     onDelete = { pendingDeleteId = transaction.id },
                                 )
                             }

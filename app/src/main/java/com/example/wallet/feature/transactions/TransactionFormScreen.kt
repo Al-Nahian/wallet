@@ -1,8 +1,6 @@
 package com.example.wallet.feature.transactions
 
-import android.app.DatePickerDialog
 import android.widget.Toast
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -27,29 +26,30 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.wallet.core.common.minorUnitsToEditableString
+import com.example.wallet.core.common.parseMoneyToMinorUnits
 import com.example.wallet.core.design.components.AccountSelector
 import com.example.wallet.core.design.components.AmountInput
 import com.example.wallet.core.design.components.CategorySelector
+import com.example.wallet.core.design.components.DateField
 import com.example.wallet.core.design.components.PrimaryButton
 import com.example.wallet.core.design.components.SecondaryButton
+import com.example.wallet.core.design.components.SelectorOption
+import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.domain.model.TransactionType
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionFormScreen(
     onBack: () -> Unit,
     onSaved: () -> Unit,
+    onTransfer: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TransactionFormViewModel = hiltViewModel(),
 ) {
@@ -101,11 +101,13 @@ fun TransactionFormScreen(
                 onSelected = viewModel::onAccountChange,
             )
 
-            CategorySelector(
-                categories = uiState.categoryOptions,
-                selectedCategoryId = uiState.categoryId,
-                onSelected = viewModel::onCategoryChange,
-            )
+            if (!uiState.isSplitEnabled) {
+                CategorySelector(
+                    categories = uiState.categoryOptions,
+                    selectedCategoryId = uiState.categoryId,
+                    onSelected = viewModel::onCategoryChange,
+                )
+            }
 
             OutlinedTextField(
                 value = uiState.payee,
@@ -125,12 +127,39 @@ fun TransactionFormScreen(
             )
 
             SecondaryButton(
+                text = if (uiState.isSplitEnabled) "Remove split" else "Split this transaction",
+                onClick = { viewModel.onToggleSplit(!uiState.isSplitEnabled) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            if (uiState.isSplitEnabled) {
+                SplitEditor(
+                    rows = uiState.splitRows,
+                    categoryOptions = uiState.categoryOptions,
+                    targetAmountInput = uiState.amountInput,
+                    onAddRow = viewModel::addSplitRow,
+                    onRemoveRow = viewModel::removeSplitRow,
+                    onCategoryChange = viewModel::onSplitCategoryChange,
+                    onAmountChange = viewModel::onSplitAmountChange,
+                    onNoteChange = viewModel::onSplitNoteChange,
+                )
+            }
+
+            SecondaryButton(
                 text = "Add labels (coming soon)",
                 onClick = {
                     Toast.makeText(context, "Labels arrive in a later phase.", Toast.LENGTH_SHORT).show()
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            if (!uiState.isEditMode) {
+                SecondaryButton(
+                    text = "Record a transfer instead",
+                    onClick = onTransfer,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
             if (uiState.errorMessage != null) {
                 Text(
@@ -167,40 +196,58 @@ private fun TransactionTypeToggle(selected: TransactionType, onSelected: (Transa
     }
 }
 
+/** plan.md §13 split entry: category + amount rows plus a running total vs. the transaction's
+ * own amount, so a mismatched split is visible before Save is even tapped. */
 @Composable
-private fun DateField(dateMillis: Long, onDateChange: (Long) -> Unit) {
-    val context = LocalContext.current
-    val formatted = remember(dateMillis) {
-        SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(dateMillis))
-    }
+private fun SplitEditor(
+    rows: List<SplitRowState>,
+    categoryOptions: List<SelectorOption>,
+    targetAmountInput: String,
+    onAddRow: () -> Unit,
+    onRemoveRow: (String) -> Unit,
+    onCategoryChange: (String, String) -> Unit,
+    onAmountChange: (String, String) -> Unit,
+    onNoteChange: (String, String) -> Unit,
+) {
+    val targetMinor = parseMoneyToMinorUnits(targetAmountInput) ?: 0L
+    val runningTotal = rows.sumOf { parseMoneyToMinorUnits(it.amountInput) ?: 0L }
+    val isBalanced = runningTotal == targetMinor
 
-    Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = formatted,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Date") },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .clickable {
-                    val calendar = Calendar.getInstance().apply { timeInMillis = dateMillis }
-                    DatePickerDialog(
-                        context,
-                        { _, year, month, dayOfMonth ->
-                            val picked = Calendar.getInstance().apply {
-                                set(year, month, dayOfMonth, 0, 0, 0)
-                                set(Calendar.MILLISECOND, 0)
-                            }
-                            onDateChange(picked.timeInMillis)
-                        },
-                        calendar.get(Calendar.YEAR),
-                        calendar.get(Calendar.MONTH),
-                        calendar.get(Calendar.DAY_OF_MONTH),
-                    ).show()
-                },
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        rows.forEach { row ->
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    CategorySelector(
+                        categories = categoryOptions,
+                        selectedCategoryId = row.categoryId,
+                        onSelected = { id -> id?.let { onCategoryChange(row.key, it) } },
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = { onRemoveRow(row.key) }) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Remove split")
+                    }
+                }
+                AmountInput(
+                    value = row.amountInput,
+                    onValueChange = { onAmountChange(row.key, it) },
+                    label = "Split amount",
+                )
+                OutlinedTextField(
+                    value = row.note,
+                    onValueChange = { onNoteChange(row.key, it) },
+                    label = { Text("Note (optional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        SecondaryButton(text = "Add split", onClick = onAddRow, modifier = Modifier.fillMaxWidth())
+
+        Text(
+            text = "Split total: ${minorUnitsToEditableString(runningTotal)} of ${minorUnitsToEditableString(targetMinor)}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (isBalanced) WalletTheme.extendedColors.income else MaterialTheme.colorScheme.error,
         )
     }
 }

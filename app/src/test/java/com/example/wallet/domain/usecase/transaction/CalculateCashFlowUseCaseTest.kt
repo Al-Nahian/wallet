@@ -14,6 +14,7 @@ class CalculateCashFlowUseCaseTest {
     private lateinit var accountRepository: FakeAccountRepository
     private lateinit var transactionRepository: FakeTransactionRepository
     private lateinit var createUseCase: CreateTransactionUseCase
+    private lateinit var createTransferUseCase: CreateTransferUseCase
     private lateinit var cashFlowUseCase: CalculateCashFlowUseCase
 
     @Before
@@ -21,6 +22,7 @@ class CalculateCashFlowUseCaseTest {
         accountRepository = FakeAccountRepository()
         transactionRepository = FakeTransactionRepository()
         createUseCase = CreateTransactionUseCase(transactionRepository, accountRepository)
+        createTransferUseCase = CreateTransferUseCase(transactionRepository, accountRepository)
         cashFlowUseCase = CalculateCashFlowUseCase(transactionRepository)
 
         accountRepository.create(
@@ -36,6 +38,30 @@ class CalculateCashFlowUseCaseTest {
                 updatedAt = 0L,
             ),
         )
+        accountRepository.create(
+            Account(
+                id = "account-2",
+                name = "Wallet",
+                type = AccountType.CASH,
+                institutionId = null,
+                currency = "BDT",
+                openingBalanceMinor = 0L,
+                isArchived = false,
+                createdAt = 0L,
+                updatedAt = 0L,
+            ),
+        )
+    }
+
+    @Test
+    fun `transfers are excluded from cash flow`() = runTest {
+        createUseCase(TransactionType.INCOME, "account-1", "50000", null, null, null, date = 500L)
+        createUseCase(TransactionType.EXPENSE, "account-1", "20000", null, null, null, date = 500L)
+        createTransferUseCase("account-1", "account-2", "10000", null, 500L)
+
+        val cashFlow = cashFlowUseCase(startInclusive = 0L, endInclusive = 1000L)
+
+        assertEquals(30_000_00L, cashFlow)
     }
 
     @Test

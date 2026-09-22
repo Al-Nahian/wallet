@@ -4,6 +4,7 @@ import com.example.wallet.domain.model.Account
 import com.example.wallet.domain.model.AccountType
 import com.example.wallet.domain.model.TransactionType
 import com.example.wallet.domain.usecase.transaction.CreateTransactionUseCase
+import com.example.wallet.domain.usecase.transaction.CreateTransferUseCase
 import com.example.wallet.domain.usecase.transaction.FakeTransactionRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -15,6 +16,7 @@ class CalculateBalanceUseCaseTest {
     private lateinit var accountRepository: FakeAccountRepository
     private lateinit var transactionRepository: FakeTransactionRepository
     private lateinit var createTransactionUseCase: CreateTransactionUseCase
+    private lateinit var createTransferUseCase: CreateTransferUseCase
     private lateinit var useCase: CalculateBalanceUseCase
     private lateinit var account: Account
 
@@ -23,6 +25,7 @@ class CalculateBalanceUseCaseTest {
         accountRepository = FakeAccountRepository()
         transactionRepository = FakeTransactionRepository()
         createTransactionUseCase = CreateTransactionUseCase(transactionRepository, accountRepository)
+        createTransferUseCase = CreateTransferUseCase(transactionRepository, accountRepository)
         useCase = CalculateBalanceUseCase(transactionRepository)
 
         account = Account(
@@ -74,5 +77,18 @@ class CalculateBalanceUseCaseTest {
 
         // opening 100,000 - expense 20,000 = 80,000 (the other account's income must not count)
         assertEquals(80_000_00L, useCase(account))
+    }
+
+    @Test
+    fun `a transfer reduces the source account and increases the destination account`() = runTest {
+        val destination = account.copy(id = "account-2", openingBalanceMinor = 0L)
+        accountRepository.create(destination)
+
+        createTransferUseCase(account.id, destination.id, "10000", null, 1000L)
+
+        // opening 100,000 - transfer out 10,000 = 90,000
+        assertEquals(90_000_00L, useCase(account))
+        // opening 0 + transfer in 10,000 = 10,000
+        assertEquals(10_000_00L, useCase(destination))
     }
 }

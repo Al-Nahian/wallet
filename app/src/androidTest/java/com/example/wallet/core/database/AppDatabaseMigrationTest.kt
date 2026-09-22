@@ -81,4 +81,28 @@ class AppDatabaseMigrationTest {
 
         db.close()
     }
+
+    /**
+     * Phase 6's real migration: v2 -> v3 adds `transactions.transferId` (plan.md §22).
+     * `runMigrationsAndValidate` replays both MIGRATION_1_2 and MIGRATION_2_3 against a real v1
+     * database and checks the result against the exported v3 schema.
+     */
+    @Test
+    fun migration2To3AddsTransferIdColumn() {
+        helper.createDatabase(TEST_DB_NAME, 1).close()
+
+        val db = helper.runMigrationsAndValidate(TEST_DB_NAME, 3, true, MIGRATION_1_2, MIGRATION_2_3)
+
+        val columns = mutableSetOf<String>()
+        db.query("PRAGMA table_info(`transactions`)").use { cursor ->
+            val nameIndex = cursor.getColumnIndex("name")
+            while (cursor.moveToNext()) {
+                columns += cursor.getString(nameIndex)
+            }
+        }
+
+        assertTrue("transferId" in columns)
+
+        db.close()
+    }
 }

@@ -30,3 +30,17 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         )
     }
 }
+
+/**
+ * v2 -> v3 (Phase 6, plan.md §22): adds `transferId` to `transactions`, linking the two legs of
+ * a transfer created by `CreateTransferUseCase`. Nullable, so every pre-existing row is
+ * unaffected (they were never transfers).
+ */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `transactions` ADD COLUMN `transferId` TEXT")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_transactions_transferId` ON `transactions` (`transferId`)",
+        )
+    }
+}

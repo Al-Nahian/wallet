@@ -11,10 +11,28 @@ data class TransactionUi(
     val payee: String?,
     val accountName: String,
     val date: Long,
+    val isIncome: Boolean,
+    /** plan.md §22 — true for both legs of a transfer. */
+    val isTransfer: Boolean = false,
+    /** The other leg's account name, e.g. "Wallet" for a transfer shown on the "Cash" account. */
+    val transferAccountName: String? = null,
+    /** plan.md §13 — true when this transaction has split rows attached. */
+    val isSplit: Boolean = false,
+    val splitCategoryNames: List<String> = emptyList(),
 ) {
-    val title: String get() = payee ?: categoryName ?: "Transaction"
-    val subtitle: String get() = listOfNotNull(categoryName ?: "Uncategorized", accountName).joinToString(" • ")
-    val isIncome: Boolean get() = type == TransactionType.INCOME
+    val title: String
+        get() = when {
+            isTransfer && transferAccountName != null ->
+                if (isIncome) "Transfer from $transferAccountName" else "Transfer to $transferAccountName"
+            else -> payee ?: categoryName ?: "Transaction"
+        }
+
+    val subtitle: String
+        get() = when {
+            isTransfer -> accountName
+            isSplit -> "Split • " + splitCategoryNames.joinToString(", ")
+            else -> listOfNotNull(categoryName ?: "Uncategorized", accountName).joinToString(" • ")
+        }
 }
 
 data class TransactionGroupUi(

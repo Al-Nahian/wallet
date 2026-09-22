@@ -49,4 +49,21 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun sumByTypeInRange(type: TransactionType, startInclusive: Long, endInclusive: Long): Long =
         transactionDao.sumByTypeInRange(type, startInclusive, endInclusive)
+
+    override suspend fun createTransferPair(outgoing: Transaction, incoming: Transaction) {
+        appDatabase.withTransaction {
+            transactionDao.insert(outgoing.toEntity())
+            transactionDao.insert(incoming.toEntity())
+        }
+    }
+
+    override suspend fun deleteTransferPair(transactionIds: List<String>) {
+        val deletedAt = System.currentTimeMillis()
+        appDatabase.withTransaction {
+            transactionIds.forEach { id -> transactionDao.softDelete(id, deletedAt) }
+        }
+    }
+
+    override suspend fun getByTransferId(transferId: String): List<Transaction> =
+        transactionDao.getByTransferId(transferId).map { it.toDomain() }
 }

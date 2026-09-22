@@ -32,6 +32,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun getById(id: String): TransactionEntity?
 
+    @Query("SELECT * FROM transactions WHERE transferId = :transferId AND deletedAt IS NULL")
+    suspend fun getByTransferId(transferId: String): List<TransactionEntity>
+
     @Query(
         "SELECT COALESCE(SUM(amountMinor), 0) FROM transactions WHERE deletedAt IS NULL " +
             "AND accountId = :accountId AND type = :type",

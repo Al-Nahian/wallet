@@ -9,9 +9,10 @@ fun AccountSelector(
     selectedAccountId: String?,
     onSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
+    label: String = "Account",
 ) {
     SelectorField(
-        label = "Account",
+        label = label,
         options = accounts,
         selectedId = selectedAccountId,
         onSelected = onSelected,

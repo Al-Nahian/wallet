@@ -14,6 +14,8 @@ data class Transaction(
     val updatedAt: Long,
     val isRecurring: Boolean,
     val deletedAt: Long?,
+    /** plan.md §22 — links the two legs of a transfer (Phase 6). Null for every other type. */
+    val transferId: String? = null,
 )
 
 data class TransactionSplit(

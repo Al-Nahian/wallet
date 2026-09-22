@@ -10,8 +10,11 @@ import javax.inject.Inject
  * Sums via database aggregation (§54 — never load the full transaction list to sum in Kotlin);
  * soft-deleted transactions are excluded at the query level (§44).
  *
- * Transfers (Phase 6) aren't summed here yet — there's no `TRANSFER`-type transaction possible
- * until that phase adds it, so this is deliberately income/expense-only for now, not a gap.
+ * Transfers (§22) are included via [TransactionType.TRANSFER]'s own signed sum:
+ * `CreateTransferUseCase` stores the outgoing leg's `amountMinor` negated and the incoming leg
+ * positive, so `SUM(amountMinor)` for a given account already nets to the correct delta — no
+ * separate direction column needed, and transfers never touch the income/expense sums above
+ * (§26 rule 1).
  */
 class CalculateBalanceUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository,
@@ -19,6 +22,7 @@ class CalculateBalanceUseCase @Inject constructor(
     suspend operator fun invoke(account: Account): Long {
         val income = transactionRepository.sumByAccountAndType(account.id, TransactionType.INCOME)
         val expense = transactionRepository.sumByAccountAndType(account.id, TransactionType.EXPENSE)
-        return account.openingBalanceMinor + income - expense
+        val transferNet = transactionRepository.sumByAccountAndType(account.id, TransactionType.TRANSFER)
+        return account.openingBalanceMinor + income - expense + transferNet
     }
 }

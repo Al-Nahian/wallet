@@ -35,6 +35,7 @@ import com.example.wallet.feature.reports.ReportsScreen
 import com.example.wallet.feature.transactions.TransactionFormScreen
 import com.example.wallet.feature.transactions.TransactionRoutes
 import com.example.wallet.feature.transactions.TransactionsScreen
+import com.example.wallet.feature.transactions.TransferFormScreen
 
 private val screenTitles = mapOf(
     WalletDestination.Home.route to "Wallet",
@@ -125,6 +126,11 @@ fun WalletNavHost() {
             TransactionFormScreen(
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
+                onTransfer = {
+                    navController.navigate(TransactionRoutes.TRANSFER_CREATE) {
+                        popUpTo(TransactionRoutes.CREATE) { inclusive = true }
+                    }
+                },
             )
         }
         composable(
@@ -132,6 +138,13 @@ fun WalletNavHost() {
             arguments = listOf(navArgument(TransactionRoutes.TRANSACTION_ID_ARG) { type = NavType.StringType }),
         ) {
             TransactionFormScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+                onTransfer = { navController.navigate(TransactionRoutes.TRANSFER_CREATE) },
+            )
+        }
+        composable(TransactionRoutes.TRANSFER_CREATE) {
+            TransferFormScreen(
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
             )
