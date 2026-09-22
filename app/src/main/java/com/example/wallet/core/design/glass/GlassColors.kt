@@ -17,13 +17,17 @@ object GlassColors {
 
     /** The material's translucent fill: base surface color blended with [tint] (plan §13 — "base
      * glass + contextual accent"). Every style except [GlassStyle.Vivid] uses a barely-there
-     * accent blend; [GlassStyle.Vivid] blends much further toward the tint so headline cards read
-     * as saturated color while still compositing over the page (never a flat opaque rainbow fill). */
+     * accent blend. [GlassStyle.Vivid] blends almost entirely to the tint itself — not toward
+     * [MaterialTheme]'s surface color — so a headline card reads as the same saturated color in
+     * both light and dark theme (blending toward a near-white light-theme surface would wash the
+     * tint out to a pale pastel, breaking contrast with the card's white text/icons). */
     @Composable
     fun fill(style: GlassStyle, tint: Color?, motion: GlassMotionPreferences = LocalGlassMotionPreferences.current): Color {
         val base = MaterialTheme.colorScheme.surface
         val blendStrength = if (style == GlassStyle.Vivid) GlassTokens.vividTintBlend else GlassTokens.contextTintAlpha
-        val blended = tint?.let { lerp(base, it, blendStrength) } ?: base
+        val blended = tint?.let {
+            if (style == GlassStyle.Vivid) it else lerp(base, it, blendStrength)
+        } ?: base
         return blended.copy(alpha = resolveAlpha(style, motion))
     }
 

@@ -75,12 +75,12 @@ fun GlassSurface(
     val pressTintBoost = if (reactsToPress && isPressed) GlassTokens.selectedTintAlpha else 0f
 
     Box(
+        // Shadow must be the outermost modifier: it draws unclipped, extending past the box's
+        // layout bounds. If it sat inside the graphicsLayer's Offscreen-composited buffer below
+        // (sized to the layout bounds, for the translucent-layer blending that buffer exists
+        // for), its soft blur would get hard-cut into a visible rectangle — the bug this order
+        // avoids.
         modifier = modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                compositingStrategy = CompositingStrategy.Offscreen
-            }
             .let { base ->
                 if (glow && tint != null) {
                     base.shadow(
@@ -93,6 +93,11 @@ fun GlassSurface(
                 } else {
                     base.shadow(elevation = if (enabled) elevation else 0.dp, shape = shape, clip = false)
                 }
+            }
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                compositingStrategy = CompositingStrategy.Offscreen
             }
             .clip(shape),
     ) {
