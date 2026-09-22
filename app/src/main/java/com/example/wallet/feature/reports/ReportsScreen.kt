@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.common.formatMoney
-import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.components.BalanceCard
 import com.example.wallet.core.design.components.CategoryBreakdownRow
 import com.example.wallet.core.design.components.DateRangeSelector
@@ -38,6 +37,14 @@ private val ReportsAccentPalette = listOf(
     Color(0xFF42B5E8), Color(0xFF9C6ADE), Color(0xFFFF9F1C), Color(0xFF26A69A),
     Color(0xFFEC407A), Color(0xFF7CB342),
 )
+
+/** Solid, full-opacity card colors — mirrors the dashboard's palette so the two screens feel
+ * like one cohesive app rather than each inventing its own tinting. */
+private val IncomeColor = Color(0xFF16A34A)
+private val ExpenseColor = Color(0xFFDC2626)
+private val NetCashFlowColor = Color(0xFF5B4FE0)
+private val SavingsColor = Color(0xFF16A34A)
+private val SavingsRateColor = Color(0xFF0D9488)
 
 @Composable
 fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = hiltViewModel()) {
@@ -72,16 +79,16 @@ fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = h
                             amountMinor = state.totalIncomeMinor,
                             currency = state.currency,
                             modifier = Modifier.weight(1f),
-                            containerColor = WalletTheme.extendedColors.income.copy(alpha = 0.15f),
-                            contentColor = WalletTheme.extendedColors.income,
+                            containerColor = IncomeColor,
+                            contentColor = Color.White,
                         )
                         BalanceCard(
                             label = "Expense",
                             amountMinor = state.totalExpenseMinor,
                             currency = state.currency,
                             modifier = Modifier.weight(1f),
-                            containerColor = WalletTheme.extendedColors.expense.copy(alpha = 0.15f),
-                            contentColor = WalletTheme.extendedColors.expense,
+                            containerColor = ExpenseColor,
+                            contentColor = Color.White,
                         )
                     }
                 }
@@ -92,16 +99,16 @@ fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = h
                             amountMinor = state.cashFlowMinor,
                             currency = state.currency,
                             modifier = Modifier.weight(1f),
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            containerColor = NetCashFlowColor,
+                            contentColor = Color.White,
                         )
                         BalanceCard(
                             label = "Savings",
                             amountMinor = state.savingsMinor,
                             currency = state.currency,
                             modifier = Modifier.weight(1f),
-                            containerColor = WalletTheme.extendedColors.success.copy(alpha = 0.15f),
-                            contentColor = WalletTheme.extendedColors.success,
+                            containerColor = SavingsColor,
+                            contentColor = Color.White,
                         )
                     }
                 }
@@ -110,8 +117,8 @@ fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = h
                         label = "Savings Rate",
                         value = String.format(Locale.getDefault(), "%.1f%%", state.savingsRatePercent),
                         modifier = Modifier.fillMaxWidth(),
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        containerColor = SavingsRateColor,
+                        contentColor = Color.White,
                     )
                 }
 
@@ -189,12 +196,12 @@ private fun AccountReportCard(report: AccountReport) {
                 Text(
                     text = "In ${formatMoney(report.inflowMinor, report.currency)}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = WalletTheme.extendedColors.income,
+                    color = IncomeColor,
                 )
                 Text(
                     text = "Out ${formatMoney(report.outflowMinor, report.currency)}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = WalletTheme.extendedColors.expense,
+                    color = ExpenseColor,
                 )
             }
         }

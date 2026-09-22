@@ -1,6 +1,7 @@
 package com.example.wallet.core.design.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,16 +27,28 @@ import com.example.wallet.core.common.formatMoney
 import java.util.Locale
 import kotlin.math.abs
 
-private val CashFlowCardBackground = Color(0xFF1C1C1E)
-private val CashFlowMutedText = Color(0xFFAEAEB2)
-private val CashFlowTrackColor = Color(0xFF3A3A3C)
-private val CashFlowIncomeColor = Color(0xFF32D74B)
-private val CashFlowExpenseColor = Color(0xFFFF453A)
+private val CashFlowIncomeColor = Color(0xFF16A34A)
+private val CashFlowExpenseColor = Color(0xFFDC2626)
 
-/** plan.md §20 — income vs. expense at a glance, styled as a fixed-dark elevated card
- * (independent of the app's light/dark theme, matching modern finance-app conventions) rather
- * than the translucent theme-tinted cards elsewhere on the dashboard. [previousNetMinor], when
- * given, renders a "vs past period" delta; omit it to hide that row. */
+private data class CashFlowPalette(val background: Color, val text: Color, val mutedText: Color, val track: Color)
+
+private val DarkCashFlowPalette = CashFlowPalette(
+    background = Color(0xFF1C1C1E),
+    text = Color.White,
+    mutedText = Color(0xFFAEAEB2),
+    track = Color(0xFF3A3A3C),
+)
+private val LightCashFlowPalette = CashFlowPalette(
+    background = Color(0xFFF2F2F7),
+    text = Color(0xFF1C1C1E),
+    mutedText = Color(0xFF6D6D72),
+    track = Color(0xFFE0E0E5),
+)
+
+/** plan.md §20 — income vs. expense at a glance, styled as an elevated card with a fixed
+ * light/dark palette pair (so it reads correctly whichever theme is active, unlike a single
+ * hardcoded dark background) rather than the theme-tinted cards elsewhere on the dashboard.
+ * [previousNetMinor], when given, renders a "vs past period" delta; omit it to hide that row. */
 @Composable
 fun CashFlowCard(
     periodLabel: String,
@@ -45,6 +58,7 @@ fun CashFlowCard(
     modifier: Modifier = Modifier,
     previousNetMinor: Long? = null,
 ) {
+    val palette = if (isSystemInDarkTheme()) DarkCashFlowPalette else LightCashFlowPalette
     val netMinor = incomeMinor - expenseMinor
     val changePercent = previousNetMinor
         ?.takeIf { it != 0L }
@@ -53,14 +67,14 @@ fun CashFlowCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = CashFlowCardBackground, contentColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = palette.background, contentColor = palette.text),
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             Text(
                 text = "Cash Flow",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.White,
+                color = palette.text,
             )
             Spacer(Modifier.height(14.dp))
 
@@ -68,10 +82,10 @@ fun CashFlowCard(
                 Text(
                     text = periodLabel.uppercase(Locale.getDefault()),
                     style = MaterialTheme.typography.labelSmall,
-                    color = CashFlowMutedText,
+                    color = palette.mutedText,
                 )
                 if (changePercent != null) {
-                    Text(text = "vs past period", style = MaterialTheme.typography.labelSmall, color = CashFlowMutedText)
+                    Text(text = "vs past period", style = MaterialTheme.typography.labelSmall, color = palette.mutedText)
                 }
             }
             Row(
@@ -83,7 +97,7 @@ fun CashFlowCard(
                     text = formatMoney(netMinor, currency),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = palette.text,
                 )
                 if (changePercent != null) {
                     val sign = if (changePercent >= 0) "+" else ""
@@ -102,7 +116,9 @@ fun CashFlowCard(
                 label = "Income",
                 amountMinor = incomeMinor,
                 currency = currency,
-                color = CashFlowIncomeColor,
+                textColor = palette.text,
+                trackColor = palette.track,
+                barColor = CashFlowIncomeColor,
                 fraction = incomeMinor.toFloat() / maxMagnitude,
             )
             Spacer(Modifier.height(14.dp))
@@ -110,7 +126,9 @@ fun CashFlowCard(
                 label = "Expenses",
                 amountMinor = -expenseMinor,
                 currency = currency,
-                color = CashFlowExpenseColor,
+                textColor = palette.text,
+                trackColor = palette.track,
+                barColor = CashFlowExpenseColor,
                 fraction = expenseMinor.toFloat() / maxMagnitude,
             )
         }
@@ -118,11 +136,19 @@ fun CashFlowCard(
 }
 
 @Composable
-private fun CashFlowRow(label: String, amountMinor: Long, currency: String, color: Color, fraction: Float) {
+private fun CashFlowRow(
+    label: String,
+    amountMinor: Long,
+    currency: String,
+    textColor: Color,
+    trackColor: Color,
+    barColor: Color,
+    fraction: Float,
+) {
     Column {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Text(text = label, style = MaterialTheme.typography.bodyMedium, color = Color.White)
-            Text(text = formatMoney(amountMinor, currency), style = MaterialTheme.typography.bodyMedium, color = Color.White)
+            Text(text = label, style = MaterialTheme.typography.bodyMedium, color = textColor)
+            Text(text = formatMoney(amountMinor, currency), style = MaterialTheme.typography.bodyMedium, color = textColor)
         }
         Spacer(Modifier.height(6.dp))
         Box(
@@ -130,14 +156,14 @@ private fun CashFlowRow(label: String, amountMinor: Long, currency: String, colo
                 .fillMaxWidth()
                 .height(8.dp)
                 .clip(RoundedCornerShape(4.dp))
-                .background(CashFlowTrackColor),
+                .background(trackColor),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(fraction.coerceIn(0f, 1f))
                     .fillMaxSize()
                     .clip(RoundedCornerShape(4.dp))
-                    .background(color),
+                    .background(barColor),
             )
         }
     }

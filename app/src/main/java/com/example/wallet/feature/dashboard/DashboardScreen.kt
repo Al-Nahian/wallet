@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.common.formatMoney
-import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.components.AccountSummaryCard
 import com.example.wallet.core.design.components.BalanceCard
 import com.example.wallet.core.design.components.CashFlowCard
@@ -49,6 +48,14 @@ private val DashboardAccentPalette = listOf(
     Color(0xFF42B5E8), Color(0xFF9C6ADE), Color(0xFFFF9F1C), Color(0xFF26A69A),
     Color(0xFFEC407A), Color(0xFF7CB342),
 )
+
+/** Solid, full-opacity card colors for the dashboard's headline metrics — fixed (not
+ * theme-tinted) so each card reads clearly against either a light or dark page background,
+ * mirroring the accounts grid's already-approved solid-tile look. */
+private val TotalBalanceColor = Color(0xFF5B4FE0)
+private val SavingsColor = Color(0xFF16A34A)
+private val SavingsRateColor = Color(0xFF0D9488)
+private val AvgDailySpendColor = Color(0xFFEA580C)
 
 @Composable
 fun DashboardScreen(
@@ -108,11 +115,10 @@ fun DashboardScreen(
                         label = "Total Balance",
                         amountMinor = state.totalBalanceMinor,
                         currency = state.currency,
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        containerColor = TotalBalanceColor,
+                        contentColor = Color.White,
                     )
                 }
-                item { SectionHeader("Cash Flow") }
                 item {
                     CashFlowCard(
                         periodLabel = "This Month",
@@ -127,8 +133,8 @@ fun DashboardScreen(
                         label = "Savings",
                         amountMinor = state.savingsMinor,
                         currency = state.currency,
-                        containerColor = WalletTheme.extendedColors.success.copy(alpha = 0.15f),
-                        contentColor = WalletTheme.extendedColors.success,
+                        containerColor = SavingsColor,
+                        contentColor = Color.White,
                     )
                 }
                 item {
@@ -137,15 +143,15 @@ fun DashboardScreen(
                             label = "Savings Rate",
                             value = String.format(Locale.getDefault(), "%.1f%%", state.savingsRatePercent),
                             modifier = Modifier.weight(1f),
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            containerColor = SavingsRateColor,
+                            contentColor = Color.White,
                         )
                         StatCard(
                             label = "Avg. Daily Spend",
                             value = formatMoney(state.averageDailySpendMinor, state.currency),
                             modifier = Modifier.weight(1f),
-                            containerColor = WalletTheme.extendedColors.warning.copy(alpha = 0.18f),
-                            contentColor = WalletTheme.extendedColors.warning,
+                            containerColor = AvgDailySpendColor,
+                            contentColor = Color.White,
                         )
                     }
                 }
