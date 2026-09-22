@@ -75,7 +75,7 @@ fun CashFlowCard(
         modifier = modifier.fillMaxWidth(),
         style = GlassStyle.Thick,
         shape = GlassShapes.large,
-        elevation = 8.dp,
+        elevation = 0.dp,
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             Row(

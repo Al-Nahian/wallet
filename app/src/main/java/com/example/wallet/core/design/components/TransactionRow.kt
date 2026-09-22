@@ -52,7 +52,10 @@ fun TransactionRow(
         modifier = Modifier.fillMaxWidth(),
         style = GlassStyle.Thin,
         shape = GlassShapes.small,
-        elevation = 2.dp,
+        // No drop shadow: at this small size/elevation, Android's shadow renders as a tight grey
+        // ring hugging the card edge rather than a soft lift — on a white/light background that
+        // reads as an unwanted outline. The fill-color contrast alone defines the card edge.
+        elevation = 0.dp,
     ) {
         ListItem(
             modifier = Modifier.clickable(onClick = onClick),

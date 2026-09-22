@@ -184,7 +184,7 @@ private fun EmptyRowText(text: String) {
 
 @Composable
 private fun AccountReportCard(report: AccountReport) {
-    GlassSurface(modifier = Modifier.fillMaxWidth(), style = GlassStyle.Thick, elevation = 6.dp) {
+    GlassSurface(modifier = Modifier.fillMaxWidth(), style = GlassStyle.Thick, elevation = 0.dp) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = report.accountName, style = MaterialTheme.typography.labelLarge)
             Text(
@@ -210,7 +210,7 @@ private fun AccountReportCard(report: AccountReport) {
 
 @Composable
 private fun CategoryTrendCard(trend: CategoryTrend, currency: String) {
-    GlassSurface(modifier = Modifier.fillMaxWidth(), style = GlassStyle.Thick, elevation = 6.dp) {
+    GlassSurface(modifier = Modifier.fillMaxWidth(), style = GlassStyle.Thick, elevation = 0.dp) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = trend.categoryName, style = MaterialTheme.typography.labelLarge)
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {

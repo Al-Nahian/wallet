@@ -78,7 +78,7 @@ private fun AccountRow(account: AccountUi, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         style = GlassStyle.Thin,
         shape = GlassShapes.small,
-        elevation = 2.dp,
+        elevation = 0.dp,
     ) {
         ListItem(
             modifier = Modifier.clickable(onClick = onClick),
