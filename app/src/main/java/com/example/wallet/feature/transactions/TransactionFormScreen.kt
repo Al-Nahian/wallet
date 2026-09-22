@@ -46,12 +46,13 @@ import com.example.wallet.core.common.parseMoneyToMinorUnits
 import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.components.AccountSelector
 import com.example.wallet.core.design.components.AmountInput
-import com.example.wallet.core.design.components.CategorySelector
+import com.example.wallet.core.design.components.CategoryPickerField
 import com.example.wallet.core.design.components.DateField
 import com.example.wallet.core.design.components.LabelChip
 import com.example.wallet.core.design.components.PrimaryButton
 import com.example.wallet.core.design.components.SecondaryButton
-import com.example.wallet.core.design.components.SelectorOption
+import com.example.wallet.domain.model.Category
+import com.example.wallet.domain.model.CategoryGroup
 import com.example.wallet.domain.model.Label
 import com.example.wallet.domain.model.TransactionType
 
@@ -60,7 +61,6 @@ import com.example.wallet.domain.model.TransactionType
 fun TransactionFormScreen(
     onBack: () -> Unit,
     onSaved: () -> Unit,
-    onTransfer: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TransactionFormViewModel = hiltViewModel(),
 ) {
@@ -101,31 +101,51 @@ fun TransactionFormScreen(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            TransactionTypeToggle(selected = uiState.type, onSelected = viewModel::onTypeChange)
+            TransactionTypeToggle(
+                selected = uiState.type,
+                isEditMode = uiState.isEditMode,
+                onSelected = viewModel::onTypeChange,
+            )
 
             AmountInput(value = uiState.amountInput, onValueChange = viewModel::onAmountChange)
 
-            AccountSelector(
-                accounts = uiState.accountOptions,
-                selectedAccountId = uiState.accountId,
-                onSelected = viewModel::onAccountChange,
-            )
+            if (uiState.type == TransactionType.TRANSFER) {
+                AccountSelector(
+                    accounts = uiState.accountOptions,
+                    selectedAccountId = uiState.accountId,
+                    onSelected = viewModel::onAccountChange,
+                    label = "From Account",
+                )
+                AccountSelector(
+                    accounts = uiState.accountOptions.filter { it.id != uiState.accountId },
+                    selectedAccountId = uiState.toAccountId,
+                    onSelected = viewModel::onToAccountChange,
+                    label = "To Account",
+                )
+            } else {
+                AccountSelector(
+                    accounts = uiState.accountOptions,
+                    selectedAccountId = uiState.accountId,
+                    onSelected = viewModel::onAccountChange,
+                )
 
-            if (!uiState.isSplitEnabled) {
-                CategorySelector(
-                    categories = uiState.categoryOptions,
-                    selectedCategoryId = uiState.categoryId,
-                    onSelected = viewModel::onCategoryChange,
+                if (!uiState.isSplitEnabled) {
+                    CategoryPickerField(
+                        groups = uiState.categoryGroups,
+                        categories = uiState.categories,
+                        selectedCategoryId = uiState.categoryId,
+                        onSelected = viewModel::onCategoryChange,
+                    )
+                }
+
+                OutlinedTextField(
+                    value = uiState.payee,
+                    onValueChange = viewModel::onPayeeChange,
+                    label = { Text("Payee (optional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
-
-            OutlinedTextField(
-                value = uiState.payee,
-                onValueChange = viewModel::onPayeeChange,
-                label = { Text("Payee (optional)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
 
             DateField(dateMillis = uiState.date, onDateChange = viewModel::onDateChange)
 
@@ -136,36 +156,31 @@ fun TransactionFormScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            SecondaryButton(
-                text = if (uiState.isSplitEnabled) "Remove split" else "Split this transaction",
-                onClick = { viewModel.onToggleSplit(!uiState.isSplitEnabled) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            if (uiState.isSplitEnabled) {
-                SplitEditor(
-                    rows = uiState.splitRows,
-                    categoryOptions = uiState.categoryOptions,
-                    targetAmountInput = uiState.amountInput,
-                    onAddRow = viewModel::addSplitRow,
-                    onRemoveRow = viewModel::removeSplitRow,
-                    onCategoryChange = viewModel::onSplitCategoryChange,
-                    onAmountChange = viewModel::onSplitAmountChange,
-                    onNoteChange = viewModel::onSplitNoteChange,
-                )
-            }
-
-            LabelPickerSection(
-                allLabels = uiState.labelOptions,
-                selectedLabelIds = uiState.selectedLabelIds,
-                onToggleLabel = viewModel::onToggleLabel,
-            )
-
-            if (!uiState.isEditMode) {
+            if (uiState.type != TransactionType.TRANSFER) {
                 SecondaryButton(
-                    text = "Record a transfer instead",
-                    onClick = onTransfer,
+                    text = if (uiState.isSplitEnabled) "Remove split" else "Split this transaction",
+                    onClick = { viewModel.onToggleSplit(!uiState.isSplitEnabled) },
                     modifier = Modifier.fillMaxWidth(),
+                )
+
+                if (uiState.isSplitEnabled) {
+                    SplitEditor(
+                        rows = uiState.splitRows,
+                        categoryGroups = uiState.categoryGroups,
+                        categories = uiState.categories,
+                        targetAmountInput = uiState.amountInput,
+                        onAddRow = viewModel::addSplitRow,
+                        onRemoveRow = viewModel::removeSplitRow,
+                        onCategoryChange = viewModel::onSplitCategoryChange,
+                        onAmountChange = viewModel::onSplitAmountChange,
+                        onNoteChange = viewModel::onSplitNoteChange,
+                    )
+                }
+
+                LabelPickerSection(
+                    allLabels = uiState.labelOptions,
+                    selectedLabelIds = uiState.selectedLabelIds,
+                    onToggleLabel = viewModel::onToggleLabel,
                 )
             }
 
@@ -187,9 +202,12 @@ fun TransactionFormScreen(
     }
 }
 
+/** plan.md §10/§22 — Expense/Income/Transfer as one toggle. Transfer can't be switched to (or
+ * from) in edit mode: transfers have no edit support yet, and an existing expense/income can't
+ * be converted into a transfer's two linked rows via this same edit flow. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TransactionTypeToggle(selected: TransactionType, onSelected: (TransactionType) -> Unit) {
+private fun TransactionTypeToggle(selected: TransactionType, isEditMode: Boolean, onSelected: (TransactionType) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         FilterChip(
             selected = selected == TransactionType.EXPENSE,
@@ -201,6 +219,13 @@ private fun TransactionTypeToggle(selected: TransactionType, onSelected: (Transa
             onClick = { onSelected(TransactionType.INCOME) },
             label = { Text("Income") },
         )
+        if (!isEditMode) {
+            FilterChip(
+                selected = selected == TransactionType.TRANSFER,
+                onClick = { onSelected(TransactionType.TRANSFER) },
+                label = { Text("Transfer") },
+            )
+        }
     }
 }
 
@@ -209,7 +234,8 @@ private fun TransactionTypeToggle(selected: TransactionType, onSelected: (Transa
 @Composable
 private fun SplitEditor(
     rows: List<SplitRowState>,
-    categoryOptions: List<SelectorOption>,
+    categoryGroups: List<CategoryGroup>,
+    categories: List<Category>,
     targetAmountInput: String,
     onAddRow: () -> Unit,
     onRemoveRow: (String) -> Unit,
@@ -225,8 +251,9 @@ private fun SplitEditor(
         rows.forEach { row ->
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    CategorySelector(
-                        categories = categoryOptions,
+                    CategoryPickerField(
+                        groups = categoryGroups,
+                        categories = categories,
                         selectedCategoryId = row.categoryId,
                         onSelected = { id -> id?.let { onCategoryChange(row.key, it) } },
                         modifier = Modifier.weight(1f),

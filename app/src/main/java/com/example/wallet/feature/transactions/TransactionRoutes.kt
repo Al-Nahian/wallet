@@ -6,7 +6,6 @@ object TransactionRoutes {
     const val TRANSACTION_ID_ARG = "transactionId"
     const val CREATE = "transactions/create"
     const val EDIT_PATTERN = "transactions/{$TRANSACTION_ID_ARG}/edit"
-    const val TRANSFER_CREATE = "transactions/transfer/create"
 
     fun edit(transactionId: String) = "transactions/$transactionId/edit"
 }

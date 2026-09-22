@@ -1,5 +1,6 @@
 package com.example.wallet.feature.budgets
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,7 +8,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -26,6 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,8 +37,10 @@ import com.example.wallet.core.design.components.DateField
 import com.example.wallet.core.design.components.PrimaryButton
 import com.example.wallet.core.design.components.SelectorField
 import com.example.wallet.core.design.components.SelectorOption
+import com.example.wallet.core.design.parseHexColor
 import com.example.wallet.domain.model.BudgetPeriod
 import com.example.wallet.domain.model.Category
+import com.example.wallet.domain.model.CategoryGroup
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,14 +119,18 @@ fun BudgetFormScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            uiState.expenseCategories.forEach { category ->
-                CategoryLimitRow(
-                    category = category,
-                    isSelected = category.id in uiState.selectedCategoryLimits,
-                    limitInput = uiState.selectedCategoryLimits[category.id].orEmpty(),
-                    onToggle = { viewModel.onToggleCategory(category.id) },
-                    onLimitChange = { value -> viewModel.onCategoryLimitChange(category.id, value) },
-                )
+            val categoriesByGroup = uiState.expenseCategories.groupBy { it.groupId }
+            uiState.expenseGroups.forEach { group ->
+                CategoryGroupHeader(group)
+                categoriesByGroup[group.id].orEmpty().forEach { category ->
+                    CategoryLimitRow(
+                        category = category,
+                        isSelected = category.id in uiState.selectedCategoryLimits,
+                        limitInput = uiState.selectedCategoryLimits[category.id].orEmpty(),
+                        onToggle = { viewModel.onToggleCategory(category.id) },
+                        onLimitChange = { value -> viewModel.onCategoryLimitChange(category.id, value) },
+                    )
+                }
             }
 
             if (uiState.errorMessage != null) {
@@ -138,6 +148,23 @@ fun BudgetFormScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+@Composable
+private fun CategoryGroupHeader(group: CategoryGroup) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(parseHexColor(group.color)),
+        )
+        Text(
+            text = group.name,
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(start = 8.dp),
+        )
     }
 }
 

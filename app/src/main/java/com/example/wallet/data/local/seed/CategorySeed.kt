@@ -120,6 +120,7 @@ object CategorySeed {
             color = "#26A69A",
             type = CategoryType.EXPENSE,
             subcategories = listOf(
+                "Financial Expense",
                 "Child Support",
                 "Charges & Fees",
                 "Advisory",
@@ -133,6 +134,7 @@ object CategorySeed {
             color = "#2E8B57",
             type = CategoryType.INCOME,
             subcategories = listOf(
+                "Income",
                 "Gifts",
                 "Child Support",
                 "Refunds (Tax, Purchase)",

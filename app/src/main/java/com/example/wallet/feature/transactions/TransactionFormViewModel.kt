@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.wallet.core.common.minorUnitsToEditableString
 import com.example.wallet.core.common.parseMoneyToMinorUnits
 import com.example.wallet.core.design.components.SelectorOption
+import com.example.wallet.domain.model.Category
+import com.example.wallet.domain.model.CategoryGroup
 import com.example.wallet.domain.model.Label
 import com.example.wallet.domain.model.TransactionType
 import com.example.wallet.domain.repository.AccountRepository
@@ -16,6 +18,7 @@ import com.example.wallet.domain.repository.TransactionSplitRepository
 import com.example.wallet.domain.usecase.budget.CheckBudgetAlertsUseCase
 import com.example.wallet.domain.usecase.label.AssignLabelUseCase
 import com.example.wallet.domain.usecase.transaction.CreateTransactionUseCase
+import com.example.wallet.domain.usecase.transaction.CreateTransferUseCase
 import com.example.wallet.domain.usecase.transaction.SplitInput
 import com.example.wallet.domain.usecase.transaction.SplitTransactionUseCase
 import com.example.wallet.domain.usecase.transaction.TransactionValidationException
@@ -31,6 +34,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/** Kotlin's stdlib only has Pair/Triple — a small local holder for the 4-way `combine` below. */
+private data class CategoryFormData(
+    val accountOptions: List<SelectorOption>,
+    val groups: List<CategoryGroup>,
+    val categories: List<Category>,
+    val labels: List<Label>,
+)
+
 /** One row in the split editor (plan.md §13). [key] is a stable Compose list key, independent
  * of the eventual persisted split id. */
 data class SplitRowState(
@@ -45,13 +56,15 @@ data class TransactionFormState(
     val isLoading: Boolean = false,
     val type: TransactionType = TransactionType.EXPENSE,
     val accountId: String? = null,
+    val toAccountId: String? = null,
     val amountInput: String = "",
     val categoryId: String? = null,
     val payee: String = "",
     val note: String = "",
     val date: Long = System.currentTimeMillis(),
     val accountOptions: List<SelectorOption> = emptyList(),
-    val categoryOptions: List<SelectorOption> = emptyList(),
+    val categoryGroups: List<CategoryGroup> = emptyList(),
+    val categories: List<Category> = emptyList(),
     val isSplitEnabled: Boolean = false,
     val splitRows: List<SplitRowState> = emptyList(),
     val labelOptions: List<Label> = emptyList(),
@@ -73,6 +86,7 @@ class TransactionFormViewModel @Inject constructor(
     categoryRepository: CategoryRepository,
     private val createTransactionUseCase: CreateTransactionUseCase,
     private val updateTransactionUseCase: UpdateTransactionUseCase,
+    private val createTransferUseCase: CreateTransferUseCase,
     private val splitTransactionUseCase: SplitTransactionUseCase,
     private val assignLabelUseCase: AssignLabelUseCase,
     private val checkBudgetAlertsUseCase: CheckBudgetAlertsUseCase,
@@ -89,16 +103,15 @@ class TransactionFormViewModel @Inject constructor(
         viewModelScope.launch {
             combine(
                 accountRepository.observeActiveAccounts(),
+                categoryRepository.observeGroups(),
                 categoryRepository.observeCategories(),
                 labelRepository.observeLabels(),
-            ) { accounts, categories, labels ->
-                Triple(
-                    accounts.map { SelectorOption(it.id, it.name) },
-                    categories.map { SelectorOption(it.id, it.name) },
-                    labels,
-                )
-            }.collect { (accountOptions, categoryOptions, labels) ->
-                _uiState.update { it.copy(accountOptions = accountOptions, categoryOptions = categoryOptions, labelOptions = labels) }
+            ) { accounts, groups, categories, labels ->
+                CategoryFormData(accounts.map { SelectorOption(it.id, it.name) }, groups, categories, labels)
+            }.collect { (accountOptions, groups, categories, labels) ->
+                _uiState.update {
+                    it.copy(accountOptions = accountOptions, categoryGroups = groups, categories = categories, labelOptions = labels)
+                }
             }
         }
 
@@ -112,6 +125,12 @@ class TransactionFormViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = false, errorMessage = "Transaction not found.") }
                 return@launch
             }
+            if (transaction.type == TransactionType.TRANSFER) {
+                // Transfers are two linked rows (plan.md §22) with no dedicated edit path yet —
+                // blocked at the screens that navigate here too (plans/06-transfers.md).
+                _uiState.update { it.copy(isLoading = false, errorMessage = "Transfers can't be edited yet.") }
+                return@launch
+            }
             val existingSplits = transactionSplitRepository.observeByTransaction(id).first()
             val existingLabels = labelRepository.observeLabelsForTransaction(id).first()
             _uiState.update {
@@ -119,7 +138,7 @@ class TransactionFormViewModel @Inject constructor(
                     isLoading = false,
                     type = transaction.type,
                     accountId = transaction.accountId,
-                    amountInput = minorUnitsToEditableString(transaction.amountMinor),
+                    amountInput = minorUnitsToEditableString(kotlin.math.abs(transaction.amountMinor)),
                     categoryId = transaction.categoryId,
                     payee = transaction.payee.orEmpty(),
                     note = transaction.note.orEmpty(),
@@ -138,8 +157,11 @@ class TransactionFormViewModel @Inject constructor(
         }
     }
 
-    fun onTypeChange(type: TransactionType) = _uiState.update { it.copy(type = type) }
-    fun onAccountChange(id: String) = _uiState.update { it.copy(accountId = id, errorMessage = null) }
+    fun onTypeChange(type: TransactionType) = _uiState.update { it.copy(type = type, errorMessage = null) }
+    fun onAccountChange(id: String) = _uiState.update {
+        it.copy(accountId = id, toAccountId = it.toAccountId.takeUnless { to -> to == id }, errorMessage = null)
+    }
+    fun onToAccountChange(id: String) = _uiState.update { it.copy(toAccountId = id, errorMessage = null) }
     fun onAmountChange(value: String) = _uiState.update { it.copy(amountInput = value, errorMessage = null) }
     fun onCategoryChange(id: String?) = _uiState.update { it.copy(categoryId = id) }
     fun onPayeeChange(value: String) = _uiState.update { it.copy(payee = value) }
@@ -178,6 +200,11 @@ class TransactionFormViewModel @Inject constructor(
     fun save() {
         val state = _uiState.value
         if (state.isSaving) return
+
+        if (state.type == TransactionType.TRANSFER) {
+            saveTransfer(state)
+            return
+        }
 
         val accountId = state.accountId
         if (accountId == null) {
@@ -247,6 +274,39 @@ class TransactionFormViewModel @Inject constructor(
                         onFailure = { error -> _uiState.update { it.copy(isSaving = false, errorMessage = errorMessageFor(error)) } },
                     )
                 },
+                onFailure = { error -> _uiState.update { it.copy(isSaving = false, errorMessage = errorMessageFor(error)) } },
+            )
+        }
+    }
+
+    /** plan.md §22 — a transfer has no category/payee/split/labels, and (for now) no edit
+     * support (the two linked legs have no atomic "update pair" path yet — plans/06-transfers.md
+     * only built create + pair-aware delete), so this only ever creates. */
+    private fun saveTransfer(state: TransactionFormState) {
+        if (state.isEditMode) {
+            _uiState.update { it.copy(errorMessage = "Transfers can't be edited yet.") }
+            return
+        }
+        val fromAccountId = state.accountId
+        val toAccountId = state.toAccountId
+        if (fromAccountId == null || toAccountId == null) {
+            _uiState.update { it.copy(errorMessage = "Please select both accounts.") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true, errorMessage = null) }
+
+            val result = createTransferUseCase(
+                fromAccountId = fromAccountId,
+                toAccountId = toAccountId,
+                amountInput = state.amountInput,
+                note = state.note,
+                date = state.date,
+            )
+
+            result.fold(
+                onSuccess = { _uiState.update { it.copy(isSaving = false, saved = true) } },
                 onFailure = { error -> _uiState.update { it.copy(isSaving = false, errorMessage = errorMessageFor(error)) } },
             )
         }

@@ -43,7 +43,6 @@ import com.example.wallet.feature.reports.ReportsScreen
 import com.example.wallet.feature.transactions.TransactionFormScreen
 import com.example.wallet.feature.transactions.TransactionRoutes
 import com.example.wallet.feature.transactions.TransactionsScreen
-import com.example.wallet.feature.transactions.TransferFormScreen
 
 private val screenTitles = mapOf(
     WalletDestination.Home.route to "Wallet",
@@ -173,16 +172,12 @@ fun WalletNavHost() {
             )
         }
 
-        // Transaction sub-screens: same pattern as the account ones above.
+        // Transaction sub-screens: same pattern as the account ones above. Expense/Income/
+        // Transfer are one merged form (TransactionFormScreen) — no separate transfer route.
         composable(TransactionRoutes.CREATE) {
             TransactionFormScreen(
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
-                onTransfer = {
-                    navController.navigate(TransactionRoutes.TRANSFER_CREATE) {
-                        popUpTo(TransactionRoutes.CREATE) { inclusive = true }
-                    }
-                },
             )
         }
         composable(
@@ -190,13 +185,6 @@ fun WalletNavHost() {
             arguments = listOf(navArgument(TransactionRoutes.TRANSACTION_ID_ARG) { type = NavType.StringType }),
         ) {
             TransactionFormScreen(
-                onBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() },
-                onTransfer = { navController.navigate(TransactionRoutes.TRANSFER_CREATE) },
-            )
-        }
-        composable(TransactionRoutes.TRANSFER_CREATE) {
-            TransferFormScreen(
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
             )

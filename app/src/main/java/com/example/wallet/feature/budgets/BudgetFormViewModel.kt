@@ -8,6 +8,7 @@ import com.example.wallet.core.common.startOfCurrentMonthMillis
 import com.example.wallet.domain.model.Budget
 import com.example.wallet.domain.model.BudgetPeriod
 import com.example.wallet.domain.model.Category
+import com.example.wallet.domain.model.CategoryGroup
 import com.example.wallet.domain.model.CategoryType
 import com.example.wallet.domain.repository.BudgetRepository
 import com.example.wallet.domain.repository.CategoryRepository
@@ -33,6 +34,7 @@ data class BudgetFormState(
     val endDate: Long = defaultEndOfMonth(),
     val amountInput: String = "",
     val currency: String = "BDT",
+    val expenseGroups: List<CategoryGroup> = emptyList(),
     val expenseCategories: List<Category> = emptyList(),
     val selectedCategoryLimits: Map<String, String> = emptyMap(),
     val isSaving: Boolean = false,
@@ -71,9 +73,10 @@ class BudgetFormViewModel @Inject constructor(
         viewModelScope.launch {
             val groups = categoryRepository.observeGroups().first()
             val categories = categoryRepository.observeCategories().first()
-            val expenseGroupIds = groups.filter { it.type == CategoryType.EXPENSE }.map { it.id }.toSet()
+            val expenseGroups = groups.filter { it.type == CategoryType.EXPENSE }
+            val expenseGroupIds = expenseGroups.map { it.id }.toSet()
             val expenseCategories = categories.filter { it.groupId in expenseGroupIds }
-            _uiState.update { it.copy(expenseCategories = expenseCategories) }
+            _uiState.update { it.copy(expenseGroups = expenseGroups, expenseCategories = expenseCategories) }
         }
 
         budgetId?.let(::loadExistingBudget)

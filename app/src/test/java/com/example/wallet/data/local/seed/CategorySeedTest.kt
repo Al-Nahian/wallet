@@ -52,8 +52,8 @@ class CategorySeedTest {
             "Vehicle" to 6,
             "Life & Entertainment" to 11,
             "Communication, PC" to 4,
-            "Financial Expense" to 6,
-            "Income" to 6,
+            "Financial Expense" to 7,
+            "Income" to 7,
             "Others" to 2,
         )
 
