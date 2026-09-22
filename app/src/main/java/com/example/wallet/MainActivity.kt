@@ -19,10 +19,16 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Transparent system bars — the app draws its own top bar background behind
-        // the status bar instead of the OS reserving separate colored space for it.
+        // Transparent system bars — the app draws its own top bar/bottom nav background behind
+        // the status and navigation bars instead of the OS reserving separate colored space (or
+        // its default contrast scrim, which otherwise shows as a stray light strip below our
+        // floating glass nav pill) for them.
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+            ),
+            navigationBarStyle = SystemBarStyle.auto(
                 android.graphics.Color.TRANSPARENT,
                 android.graphics.Color.TRANSPARENT,
             ),
@@ -30,8 +36,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val darkTheme = isSystemInDarkTheme()
             SideEffect {
-                WindowCompat.getInsetsController(window, window.decorView)
-                    .isAppearanceLightStatusBars = !darkTheme
+                val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+                insetsController.isAppearanceLightStatusBars = !darkTheme
+                insetsController.isAppearanceLightNavigationBars = !darkTheme
             }
             WalletAppTheme(darkTheme = darkTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {

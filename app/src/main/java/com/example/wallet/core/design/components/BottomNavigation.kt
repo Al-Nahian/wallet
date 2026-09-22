@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -26,6 +28,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.wallet.core.design.glass.GlassBottomBar
 import com.example.wallet.core.design.glass.GlassInteraction
@@ -51,20 +54,36 @@ fun WalletBottomNavigation(
     modifier: Modifier = Modifier,
 ) {
     val midpoint = items.size / 2
-    GlassBottomBar(modifier = modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            items.take(midpoint).forEach { item ->
-                NavItem(item = item, selected = item.route == selectedRoute, onClick = { onItemSelected(item.route) })
-            }
-            CenterFabItem(onClick = fabOnClick, contentDescription = fabContentDescription)
-            items.drop(midpoint).forEach { item ->
-                NavItem(item = item, selected = item.route == selectedRoute, onClick = { onItemSelected(item.route) })
+    val fabSize = 60.dp
+    Box(
+        modifier = modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        GlassBottomBar(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                items.take(midpoint).forEach { item ->
+                    NavItem(item = item, selected = item.route == selectedRoute, onClick = { onItemSelected(item.route) })
+                }
+                // Reserves the center gap the popped-out FAB floats over, so the side items
+                // stay evenly spaced instead of drifting toward the middle.
+                Spacer(modifier = Modifier.size(fabSize))
+                items.drop(midpoint).forEach { item ->
+                    NavItem(item = item, selected = item.route == selectedRoute, onClick = { onItemSelected(item.route) })
+                }
             }
         }
+        // Popped out above the bar's top edge, per the liquid-glass reference design — not
+        // inline with the other nav items.
+        CenterFabItem(
+            onClick = fabOnClick,
+            contentDescription = fabContentDescription,
+            size = fabSize,
+            modifier = Modifier.offset(y = (-fabSize / 3)),
+        )
     }
 }
 
@@ -91,11 +110,16 @@ private fun NavItem(item: WalletBottomNavItem, selected: Boolean, onClick: () ->
 }
 
 @Composable
-private fun CenterFabItem(onClick: () -> Unit, contentDescription: String) {
+private fun CenterFabItem(
+    onClick: () -> Unit,
+    contentDescription: String,
+    size: Dp,
+    modifier: Modifier = Modifier,
+) {
     val interactionSource = remember { MutableInteractionSource() }
     GlassSurface(
-        modifier = Modifier
-            .size(52.dp)
+        modifier = modifier
+            .size(size)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
