@@ -29,3 +29,12 @@ val DarkTransfer = Color(0xFF64B5F6)
 val DarkWarning = Color(0xFFFFB74D)
 val DarkError = Color(0xFFEF5350)
 val DarkSuccess = Color(0xFF81C784)
+
+/** Parses a category/label hex color string from the DB (e.g. "#F44336") — never a hardcoded
+ * per-category color in a Composable (plan.md §69 rule 8). Falls back to gray for a malformed
+ * string rather than crashing. */
+fun parseHexColor(hex: String): Color = try {
+    Color(android.graphics.Color.parseColor(hex))
+} catch (e: IllegalArgumentException) {
+    Color.Gray
+}

@@ -15,6 +15,9 @@ interface LabelDao {
     @Query("SELECT * FROM labels ORDER BY name")
     fun observeAll(): Flow<List<LabelEntity>>
 
+    @Query("SELECT * FROM labels WHERE id = :id")
+    suspend fun getById(id: String): LabelEntity?
+
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(label: LabelEntity)
 
@@ -33,6 +36,9 @@ interface TransactionLabelDao {
             "WHERE transaction_labels.transactionId = :transactionId",
     )
     fun observeLabelsForTransaction(transactionId: String): Flow<List<LabelEntity>>
+
+    @Query("SELECT * FROM transaction_labels")
+    fun observeAllCrossRefs(): Flow<List<TransactionLabelEntity>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun assign(crossRef: TransactionLabelEntity)

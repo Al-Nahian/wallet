@@ -25,7 +25,11 @@ import com.example.wallet.feature.accounts.AccountDetailScreen
 import com.example.wallet.feature.accounts.AccountFormScreen
 import com.example.wallet.feature.accounts.AccountRoutes
 import com.example.wallet.feature.accounts.AccountsScreen
+import com.example.wallet.feature.categories.CategoriesScreen
+import com.example.wallet.feature.categories.CategoryRoutes
 import com.example.wallet.feature.dashboard.DashboardScreen
+import com.example.wallet.feature.labels.LabelRoutes
+import com.example.wallet.feature.labels.LabelsScreen
 import com.example.wallet.feature.notifications.NotificationBadgeViewModel
 import com.example.wallet.feature.notifications.NotificationCenterScreen
 import com.example.wallet.feature.notifications.NotificationRoutes
@@ -153,7 +157,17 @@ fun WalletNavHost() {
         // Reachable from every top-level screen's shared top bar (plan.md §83), each with its
         // own back-button Scaffold rather than the bottom-nav/FAB chrome.
         composable(ProfileRoutes.PROFILE) {
-            ProfileScreen(onBack = { navController.popBackStack() })
+            ProfileScreen(
+                onBack = { navController.popBackStack() },
+                onManageCategories = { navController.navigate(CategoryRoutes.LIST) },
+                onManageLabels = { navController.navigate(LabelRoutes.LIST) },
+            )
+        }
+        composable(CategoryRoutes.LIST) {
+            CategoriesScreen(onBack = { navController.popBackStack() })
+        }
+        composable(LabelRoutes.LIST) {
+            LabelsScreen(onBack = { navController.popBackStack() })
         }
         composable(NotificationRoutes.NOTIFICATION_CENTER) {
             NotificationCenterScreen(

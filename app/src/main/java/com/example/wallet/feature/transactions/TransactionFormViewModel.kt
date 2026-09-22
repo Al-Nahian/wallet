@@ -6,11 +6,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.wallet.core.common.minorUnitsToEditableString
 import com.example.wallet.core.common.parseMoneyToMinorUnits
 import com.example.wallet.core.design.components.SelectorOption
+import com.example.wallet.domain.model.Label
 import com.example.wallet.domain.model.TransactionType
 import com.example.wallet.domain.repository.AccountRepository
 import com.example.wallet.domain.repository.CategoryRepository
+import com.example.wallet.domain.repository.LabelRepository
 import com.example.wallet.domain.repository.TransactionRepository
 import com.example.wallet.domain.repository.TransactionSplitRepository
+import com.example.wallet.domain.usecase.label.AssignLabelUseCase
 import com.example.wallet.domain.usecase.transaction.CreateTransactionUseCase
 import com.example.wallet.domain.usecase.transaction.SplitInput
 import com.example.wallet.domain.usecase.transaction.SplitTransactionUseCase
@@ -50,6 +53,8 @@ data class TransactionFormState(
     val categoryOptions: List<SelectorOption> = emptyList(),
     val isSplitEnabled: Boolean = false,
     val splitRows: List<SplitRowState> = emptyList(),
+    val labelOptions: List<Label> = emptyList(),
+    val selectedLabelIds: Set<String> = emptySet(),
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
     val saved: Boolean = false,
@@ -62,11 +67,13 @@ class TransactionFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val transactionRepository: TransactionRepository,
     private val transactionSplitRepository: TransactionSplitRepository,
+    private val labelRepository: LabelRepository,
     accountRepository: AccountRepository,
     categoryRepository: CategoryRepository,
     private val createTransactionUseCase: CreateTransactionUseCase,
     private val updateTransactionUseCase: UpdateTransactionUseCase,
     private val splitTransactionUseCase: SplitTransactionUseCase,
+    private val assignLabelUseCase: AssignLabelUseCase,
 ) : ViewModel() {
 
     private val transactionId: String? = savedStateHandle[TRANSACTION_ID_ARG]
@@ -81,11 +88,15 @@ class TransactionFormViewModel @Inject constructor(
             combine(
                 accountRepository.observeActiveAccounts(),
                 categoryRepository.observeCategories(),
-            ) { accounts, categories ->
-                accounts.map { SelectorOption(it.id, it.name) } to
-                    categories.map { SelectorOption(it.id, it.name) }
-            }.collect { (accountOptions, categoryOptions) ->
-                _uiState.update { it.copy(accountOptions = accountOptions, categoryOptions = categoryOptions) }
+                labelRepository.observeLabels(),
+            ) { accounts, categories, labels ->
+                Triple(
+                    accounts.map { SelectorOption(it.id, it.name) },
+                    categories.map { SelectorOption(it.id, it.name) },
+                    labels,
+                )
+            }.collect { (accountOptions, categoryOptions, labels) ->
+                _uiState.update { it.copy(accountOptions = accountOptions, categoryOptions = categoryOptions, labelOptions = labels) }
             }
         }
 
@@ -100,6 +111,7 @@ class TransactionFormViewModel @Inject constructor(
                 return@launch
             }
             val existingSplits = transactionSplitRepository.observeByTransaction(id).first()
+            val existingLabels = labelRepository.observeLabelsForTransaction(id).first()
             _uiState.update {
                 it.copy(
                     isLoading = false,
@@ -118,6 +130,7 @@ class TransactionFormViewModel @Inject constructor(
                             note = split.note.orEmpty(),
                         )
                     },
+                    selectedLabelIds = existingLabels.map { it.id }.toSet(),
                 )
             }
         }
@@ -153,6 +166,11 @@ class TransactionFormViewModel @Inject constructor(
 
     fun onSplitNoteChange(key: String, value: String) = _uiState.update {
         it.copy(splitRows = it.splitRows.map { row -> if (row.key == key) row.copy(note = value) else row })
+    }
+
+    fun onToggleLabel(labelId: String) = _uiState.update {
+        val current = it.selectedLabelIds
+        it.copy(selectedLabelIds = if (labelId in current) current - labelId else current + labelId)
     }
 
     fun save() {
@@ -216,14 +234,15 @@ class TransactionFormViewModel @Inject constructor(
             result.fold(
                 onSuccess = { transaction ->
                     val splits = splitInputs
-                    if (splits == null) {
-                        _uiState.update { it.copy(isSaving = false, saved = true) }
-                    } else {
-                        splitTransactionUseCase(transaction.id, splits).fold(
-                            onSuccess = { _uiState.update { it.copy(isSaving = false, saved = true) } },
-                            onFailure = { error -> _uiState.update { it.copy(isSaving = false, errorMessage = errorMessageFor(error)) } },
-                        )
-                    }
+                    val splitResult = if (splits == null) Result.success(Unit) else splitTransactionUseCase(transaction.id, splits)
+
+                    splitResult.fold(
+                        onSuccess = {
+                            assignLabelUseCase(transaction.id, state.selectedLabelIds)
+                            _uiState.update { it.copy(isSaving = false, saved = true) }
+                        },
+                        onFailure = { error -> _uiState.update { it.copy(isSaving = false, errorMessage = errorMessageFor(error)) } },
+                    )
                 },
                 onFailure = { error -> _uiState.update { it.copy(isSaving = false, errorMessage = errorMessageFor(error)) } },
             )

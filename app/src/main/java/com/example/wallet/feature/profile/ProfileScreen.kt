@@ -31,6 +31,8 @@ import com.example.wallet.core.design.components.SecondaryButton
 @Composable
 fun ProfileScreen(
     onBack: () -> Unit,
+    onManageCategories: () -> Unit,
+    onManageLabels: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
@@ -102,6 +104,17 @@ fun ProfileScreen(
             } else {
                 Text(text = currentUser!!.displayName, style = MaterialTheme.typography.titleLarge)
             }
+
+            SecondaryButton(
+                text = "Manage categories",
+                onClick = onManageCategories,
+                modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+            )
+            SecondaryButton(
+                text = "Manage labels",
+                onClick = onManageLabels,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
         }
     }
 }

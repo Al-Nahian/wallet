@@ -1,6 +1,7 @@
 package com.example.wallet.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -16,6 +17,9 @@ interface CategoryGroupDao {
 
     @Query("SELECT COUNT(*) FROM category_groups")
     suspend fun count(): Int
+
+    @Query("SELECT * FROM category_groups WHERE id = :id")
+    suspend fun getById(id: String): CategoryGroupEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(groups: List<CategoryGroupEntity>)
@@ -40,4 +44,7 @@ interface CategoryDao {
 
     @Update
     suspend fun update(category: CategoryEntity)
+
+    @Delete
+    suspend fun delete(category: CategoryEntity)
 }

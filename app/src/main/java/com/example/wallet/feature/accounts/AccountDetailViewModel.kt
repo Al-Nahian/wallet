@@ -3,10 +3,15 @@ package com.example.wallet.feature.accounts
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.wallet.domain.model.Account
 import com.example.wallet.domain.model.AccountType
+import com.example.wallet.domain.model.Category
+import com.example.wallet.domain.model.Transaction
+import com.example.wallet.domain.model.TransactionSplit
 import com.example.wallet.domain.repository.AccountRepository
 import com.example.wallet.domain.repository.CategoryRepository
 import com.example.wallet.domain.repository.InstitutionRepository
+import com.example.wallet.domain.repository.LabelRepository
 import com.example.wallet.domain.repository.TransactionRepository
 import com.example.wallet.domain.repository.TransactionSplitRepository
 import com.example.wallet.domain.usecase.account.ArchiveAccountUseCase
@@ -38,6 +43,16 @@ data class AccountDetailState(
     val errorMessage: String? = null,
 )
 
+/** Intermediate bundle of the first five combined flows — `combine` only has fixed-arity
+ * overloads up to 5, and labels make a 6th, so it's nested via a plain 2-arg `combine` below. */
+private data class AccountDetailInputs(
+    val account: Account?,
+    val allTransactions: List<Transaction>,
+    val allAccounts: List<Account>,
+    val categories: List<Category>,
+    val splits: List<TransactionSplit>,
+)
+
 private const val ACCOUNT_ID_ARG = "accountId"
 
 @HiltViewModel
@@ -47,6 +62,7 @@ class AccountDetailViewModel @Inject constructor(
     transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
     transactionSplitRepository: TransactionSplitRepository,
+    labelRepository: LabelRepository,
     private val institutionRepository: InstitutionRepository,
     private val calculateBalance: CalculateBalanceUseCase,
     private val archiveAccountUseCase: ArchiveAccountUseCase,
@@ -55,9 +71,9 @@ class AccountDetailViewModel @Inject constructor(
 
     private val accountId: String = checkNotNull(savedStateHandle[ACCOUNT_ID_ARG])
 
-    // Recomputes on this account's own changes *and* on any transaction/split change anywhere —
-    // a new/edited/deleted transaction doesn't touch the accounts table on its own, and a
-    // transfer's linked leg or a split's category name can live on a *different* row entirely.
+    // Recomputes on this account's own changes *and* on any transaction/split/label change
+    // anywhere — a new/edited/deleted transaction doesn't touch the accounts table on its own,
+    // and a transfer's linked leg or a split's category name can live on a *different* row.
     val uiState: StateFlow<AccountDetailState> = combine(
         accountRepository.observeAccount(accountId),
         transactionRepository.observeTransactions(),
@@ -65,13 +81,16 @@ class AccountDetailViewModel @Inject constructor(
         categoryRepository.observeCategories(),
         transactionSplitRepository.observeAllSplits(),
     ) { account, allTransactions, allAccounts, categories, splits ->
+        AccountDetailInputs(account, allTransactions, allAccounts, categories, splits)
+    }.combine(labelRepository.observeAllTransactionLabels()) { inputs, labelsByTransaction ->
+        val account = inputs.account
         if (account == null) {
             AccountDetailState(isLoading = false, errorMessage = "This account no longer exists.")
         } else {
-            val accountsById = allAccounts.associateBy { it.id }
-            val categoriesById = categories.associateBy { it.id }
-            val splitsByTransaction = splits.groupBy { it.transactionId }
-            val transferLegsByTransferId = allTransactions.filter { it.transferId != null }.groupBy { it.transferId }
+            val accountsById = inputs.allAccounts.associateBy { it.id }
+            val categoriesById = inputs.categories.associateBy { it.id }
+            val splitsByTransaction = inputs.splits.groupBy { it.transactionId }
+            val transferLegsByTransferId = inputs.allTransactions.filter { it.transferId != null }.groupBy { it.transferId }
             val institutionName = account.institutionId?.let { institutionRepository.getById(it)?.name }
 
             AccountDetailState(
@@ -84,10 +103,12 @@ class AccountDetailViewModel @Inject constructor(
                     currency = account.currency,
                     balanceMinor = calculateBalance(account),
                 ),
-                transactions = allTransactions
+                transactions = inputs.allTransactions
                     .filter { it.accountId == accountId }
                     .sortedByDescending { it.date }
-                    .map { tx -> tx.toTransactionUi(accountsById, categoriesById, splitsByTransaction, transferLegsByTransferId) },
+                    .map { tx ->
+                        tx.toTransactionUi(accountsById, categoriesById, splitsByTransaction, transferLegsByTransferId, labelsByTransaction)
+                    },
             )
         }
     }.stateIn(

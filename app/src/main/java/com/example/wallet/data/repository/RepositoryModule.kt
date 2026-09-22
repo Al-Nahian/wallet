@@ -3,6 +3,7 @@ package com.example.wallet.data.repository
 import com.example.wallet.domain.repository.AccountRepository
 import com.example.wallet.domain.repository.CategoryRepository
 import com.example.wallet.domain.repository.InstitutionRepository
+import com.example.wallet.domain.repository.LabelRepository
 import com.example.wallet.domain.repository.NotificationRepository
 import com.example.wallet.domain.repository.TransactionRepository
 import com.example.wallet.domain.repository.TransactionSplitRepository
@@ -36,4 +37,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindTransactionSplitRepository(impl: TransactionSplitRepositoryImpl): TransactionSplitRepository
+
+    @Binds
+    abstract fun bindLabelRepository(impl: LabelRepositoryImpl): LabelRepository
 }

@@ -19,6 +19,8 @@ data class TransactionUi(
     /** plan.md §13 — true when this transaction has split rows attached. */
     val isSplit: Boolean = false,
     val splitCategoryNames: List<String> = emptyList(),
+    /** plan.md §16 — names of every label assigned to this transaction. */
+    val labelNames: List<String> = emptyList(),
 ) {
     val title: String
         get() = when {
@@ -28,10 +30,13 @@ data class TransactionUi(
         }
 
     val subtitle: String
-        get() = when {
-            isTransfer -> accountName
-            isSplit -> "Split • " + splitCategoryNames.joinToString(", ")
-            else -> listOfNotNull(categoryName ?: "Uncategorized", accountName).joinToString(" • ")
+        get() {
+            val base = when {
+                isTransfer -> accountName
+                isSplit -> "Split • " + splitCategoryNames.joinToString(", ")
+                else -> listOfNotNull(categoryName ?: "Uncategorized", accountName).joinToString(" • ")
+            }
+            return if (labelNames.isEmpty()) base else "$base • ${labelNames.joinToString(", ")}"
         }
 }
 

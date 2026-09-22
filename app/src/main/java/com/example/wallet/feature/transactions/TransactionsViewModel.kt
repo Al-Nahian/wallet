@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.wallet.core.common.dateGroupLabel
 import com.example.wallet.domain.repository.AccountRepository
 import com.example.wallet.domain.repository.CategoryRepository
+import com.example.wallet.domain.repository.LabelRepository
 import com.example.wallet.domain.repository.TransactionRepository
 import com.example.wallet.domain.repository.TransactionSplitRepository
 import com.example.wallet.domain.usecase.transaction.DeleteTransactionUseCase
@@ -27,6 +28,7 @@ class TransactionsViewModel @Inject constructor(
     accountRepository: AccountRepository,
     categoryRepository: CategoryRepository,
     transactionSplitRepository: TransactionSplitRepository,
+    labelRepository: LabelRepository,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
 ) : ViewModel() {
 
@@ -35,7 +37,8 @@ class TransactionsViewModel @Inject constructor(
         accountRepository.observeAllAccounts(),
         categoryRepository.observeCategories(),
         transactionSplitRepository.observeAllSplits(),
-    ) { transactions, accounts, categories, splits ->
+        labelRepository.observeAllTransactionLabels(),
+    ) { transactions, accounts, categories, splits, labelsByTransaction ->
         val accountsById = accounts.associateBy { it.id }
         val categoriesById = categories.associateBy { it.id }
         val splitsByTransaction = splits.groupBy { it.transactionId }
@@ -48,7 +51,7 @@ class TransactionsViewModel @Inject constructor(
                 TransactionGroupUi(
                     dateLabel = label,
                     transactions = txs.map { tx ->
-                        tx.toTransactionUi(accountsById, categoriesById, splitsByTransaction, transferLegsByTransferId)
+                        tx.toTransactionUi(accountsById, categoriesById, splitsByTransaction, transferLegsByTransferId, labelsByTransaction)
                     },
                 )
             }

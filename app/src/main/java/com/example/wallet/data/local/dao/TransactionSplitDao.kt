@@ -16,6 +16,9 @@ interface TransactionSplitDao {
     @Query("SELECT * FROM transaction_splits")
     fun observeAll(): Flow<List<TransactionSplitEntity>>
 
+    @Query("SELECT EXISTS(SELECT 1 FROM transaction_splits WHERE categoryId = :categoryId)")
+    suspend fun existsByCategory(categoryId: String): Boolean
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(splits: List<TransactionSplitEntity>)
 

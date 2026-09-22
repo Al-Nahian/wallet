@@ -29,6 +29,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE deletedAt IS NULL AND categoryId = :categoryId ORDER BY date DESC")
     fun observeByCategory(categoryId: String): Flow<List<TransactionEntity>>
 
+    @Query("SELECT EXISTS(SELECT 1 FROM transactions WHERE deletedAt IS NULL AND categoryId = :categoryId)")
+    suspend fun existsByCategory(categoryId: String): Boolean
+
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun getById(id: String): TransactionEntity?
 

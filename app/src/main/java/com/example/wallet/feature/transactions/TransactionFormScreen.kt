@@ -1,18 +1,24 @@
 package com.example.wallet.feature.transactions
 
-import android.widget.Toast
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -22,26 +28,31 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.common.minorUnitsToEditableString
 import com.example.wallet.core.common.parseMoneyToMinorUnits
+import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.components.AccountSelector
 import com.example.wallet.core.design.components.AmountInput
 import com.example.wallet.core.design.components.CategorySelector
 import com.example.wallet.core.design.components.DateField
+import com.example.wallet.core.design.components.LabelChip
 import com.example.wallet.core.design.components.PrimaryButton
 import com.example.wallet.core.design.components.SecondaryButton
 import com.example.wallet.core.design.components.SelectorOption
-import com.example.wallet.core.design.WalletTheme
+import com.example.wallet.domain.model.Label
 import com.example.wallet.domain.model.TransactionType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,7 +65,6 @@ fun TransactionFormScreen(
     viewModel: TransactionFormViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
 
     LaunchedEffect(uiState.saved) {
         if (uiState.saved) onSaved()
@@ -145,12 +155,10 @@ fun TransactionFormScreen(
                 )
             }
 
-            SecondaryButton(
-                text = "Add labels (coming soon)",
-                onClick = {
-                    Toast.makeText(context, "Labels arrive in a later phase.", Toast.LENGTH_SHORT).show()
-                },
-                modifier = Modifier.fillMaxWidth(),
+            LabelPickerSection(
+                allLabels = uiState.labelOptions,
+                selectedLabelIds = uiState.selectedLabelIds,
+                onToggleLabel = viewModel::onToggleLabel,
             )
 
             if (!uiState.isEditMode) {
@@ -251,3 +259,62 @@ private fun SplitEditor(
         )
     }
 }
+
+/** plan.md §16: multi-select label picker — selected labels show as removable chips, with a
+ * dialog listing every label as a checkbox row to add/remove from the selection. */
+@Composable
+private fun LabelPickerSection(
+    allLabels: List<Label>,
+    selectedLabelIds: Set<String>,
+    onToggleLabel: (String) -> Unit,
+) {
+    var showPicker by remember { mutableStateOf(false) }
+    val selectedLabels = allLabels.filter { it.id in selectedLabelIds }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(text = "Labels", style = MaterialTheme.typography.labelLarge)
+        if (selectedLabels.isNotEmpty()) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+            ) {
+                selectedLabels.forEach { label ->
+                    LabelChip(name = label.name, color = label.color, onRemove = { onToggleLabel(label.id) })
+                }
+            }
+        }
+        SecondaryButton(text = "Choose labels", onClick = { showPicker = true }, modifier = Modifier.fillMaxWidth())
+    }
+
+    if (showPicker) {
+        AlertDialog(
+            onDismissRequest = { showPicker = false },
+            title = { Text("Labels") },
+            text = {
+                if (allLabels.isEmpty()) {
+                    Text("No labels yet. Create some from Profile > Manage labels.")
+                } else {
+                    Column {
+                        allLabels.forEach { label ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                                    .clickable { onToggleLabel(label.id) },
+                            ) {
+                                Checkbox(checked = label.id in selectedLabelIds, onCheckedChange = { onToggleLabel(label.id) })
+                                Spacer(Modifier.width(8.dp))
+                                LabelChip(name = label.name, color = label.color)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showPicker = false }) { Text("Done") }
+            },
+        )
+    }
+}
+

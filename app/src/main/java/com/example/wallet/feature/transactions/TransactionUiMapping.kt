@@ -2,6 +2,7 @@ package com.example.wallet.feature.transactions
 
 import com.example.wallet.domain.model.Account
 import com.example.wallet.domain.model.Category
+import com.example.wallet.domain.model.Label
 import com.example.wallet.domain.model.Transaction
 import com.example.wallet.domain.model.TransactionSplit
 import com.example.wallet.domain.model.TransactionType
@@ -16,6 +17,7 @@ fun Transaction.toTransactionUi(
     categoriesById: Map<String, Category>,
     splitsByTransaction: Map<String, List<TransactionSplit>>,
     transferLegsByTransferId: Map<String?, List<Transaction>>,
+    labelsByTransaction: Map<String, List<Label>> = emptyMap(),
 ): TransactionUi {
     val isTransfer = type == TransactionType.TRANSFER
     val sibling = if (isTransfer) {
@@ -39,5 +41,6 @@ fun Transaction.toTransactionUi(
         transferAccountName = sibling?.let { accountsById[it.accountId]?.name },
         isSplit = splits.isNotEmpty(),
         splitCategoryNames = splits.mapNotNull { categoriesById[it.categoryId]?.name },
+        labelNames = labelsByTransaction[id].orEmpty().map { it.name },
     )
 }
