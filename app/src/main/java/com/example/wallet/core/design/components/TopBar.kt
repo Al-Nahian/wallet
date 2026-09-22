@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.wallet.core.design.glass.GlassCircleIconButton
-import com.example.wallet.core.design.glass.GlassTopBar
 
 /**
  * Shared top bar for every top-level screen (plan.md §83): a profile icon on the left
@@ -63,8 +62,10 @@ private fun notificationContentDescription(unreadCount: Int): String =
     if (unreadCount > 0) "Notifications ($unreadCount unread)" else "Notifications"
 
 /** Shared top bar for pushed back-button screens (account/budget/category/label forms and
- * detail screens, profile, notification center) — same glass treatment as [WalletTopBar], with
- * the standard back-arrow-left/title layout instead of the top-level profile+bell framing. */
+ * detail screens, profile, notification center) — same transparent, no-plate treatment as
+ * [WalletTopBar] (a full-width glass bar plate here reads as an unwanted outline box, since
+ * unlike the bottom nav/FAB it isn't a floating chrome element), with the standard
+ * back-arrow-left/title layout instead of the top-level profile+bell framing. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GlassScreenTopBar(
@@ -73,17 +74,16 @@ fun GlassScreenTopBar(
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    GlassTopBar(modifier = modifier) {
-        TopAppBar(
-            title = { Text(title) },
-            navigationIcon = navigationIcon,
-            actions = actions,
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent,
-                scrolledContainerColor = Color.Transparent,
-            ),
-        )
-    }
+    TopAppBar(
+        modifier = modifier,
+        title = { Text(title) },
+        navigationIcon = navigationIcon,
+        actions = actions,
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent,
+            scrolledContainerColor = Color.Transparent,
+        ),
+    )
 }
 
 @Composable

@@ -112,17 +112,17 @@ fun GlassSurface(
         }
         // Specular highlight — top edge only, barely visible.
         Box(modifier = Modifier.matchParentSize().background(highlightBrush))
-        // Thin border communicating the material's edge (a touch thicker on glowing tinted cards
-        // so the colored rim reads clearly).
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .border(
-                    width = if (glow && tint != null) GlassTokens.borderWidth * 1.5f else GlassTokens.borderWidth,
-                    brush = borderBrush,
-                    shape = shape,
-                ),
-        )
+        // Thin border — only drawn for glowing tinted (Vivid) cards, where it reads as the
+        // colored glow's rim. Chrome surfaces (bars, sheets, plain rows) skip it: a neutral
+        // 1dp border on a large/edge-to-edge shape reads as an unwanted outline box rather than
+        // a material edge.
+        if (glow && tint != null) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .border(width = GlassTokens.borderWidth * 1.5f, brush = borderBrush, shape = shape),
+            )
+        }
         content()
     }
 }
