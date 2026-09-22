@@ -59,7 +59,16 @@ fun WalletNavHost() {
                 currentRoute = WalletDestination.Home.route,
                 fabOnClick = { navController.navigate(TransactionRoutes.CREATE) },
             ) {
-                DashboardScreen()
+                DashboardScreen(
+                    onTransactionClick = { id -> navController.navigate(TransactionRoutes.edit(id)) },
+                    onSeeAllTransactions = {
+                        navController.navigate(WalletDestination.Transactions.route) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                )
             }
         }
         composable(WalletDestination.Transactions.route) {
