@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,7 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.design.components.GlassScreenTopBar
+import com.example.wallet.core.design.components.GoogleLogoIcon
+import com.example.wallet.core.design.components.MicrosoftLogoIcon
 import com.example.wallet.core.design.components.SecondaryButton
+import com.example.wallet.core.design.components.SocialSignInButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,20 +90,28 @@ fun ProfileScreen(
                     Toast.makeText(context, "Sign-in arrives in a later phase.", Toast.LENGTH_SHORT).show()
                 }
 
-                SecondaryButton(
+                SocialSignInButton(
                     text = "Continue with Google",
                     onClick = comingSoon,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    modifier = Modifier.padding(bottom = 10.dp),
+                    icon = { GoogleLogoIcon() },
                 )
-                SecondaryButton(
+                SocialSignInButton(
                     text = "Continue with Microsoft",
                     onClick = comingSoon,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    modifier = Modifier.padding(bottom = 10.dp),
+                    icon = { MicrosoftLogoIcon() },
                 )
-                SecondaryButton(
+                SocialSignInButton(
                     text = "Continue with Email",
                     onClick = comingSoon,
-                    modifier = Modifier.fillMaxWidth(),
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Filled.Email,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    },
                 )
             } else {
                 Text(text = currentUser!!.displayName, style = MaterialTheme.typography.titleLarge)

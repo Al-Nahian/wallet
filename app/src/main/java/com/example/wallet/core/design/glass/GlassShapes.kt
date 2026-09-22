@@ -9,6 +9,9 @@ object GlassShapes {
     val medium: Shape = RoundedCornerShape(GlassTokens.cornerMedium)
     val large: Shape = RoundedCornerShape(GlassTokens.cornerLarge)
 
+    /** Fully rounded regardless of height — for pill-shaped buttons (e.g. social sign-in rows). */
+    val pill: Shape = RoundedCornerShape(50)
+
     /** Rounds only the top corners — for a bar flush against the *bottom* screen edge (e.g. the
      * bottom nav), where its bottom edge meets the screen and only the top edge reads as a
      * material boundary. */
