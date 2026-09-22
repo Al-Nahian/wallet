@@ -2,23 +2,33 @@ package com.example.wallet.core.design.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.wallet.core.common.formatMoney
 import com.example.wallet.core.design.WalletTheme
+import com.example.wallet.core.design.glass.GlassShapes
+import com.example.wallet.core.design.glass.GlassStyle
+import com.example.wallet.core.design.glass.GlassSurface
 
 /**
- * A single transaction line (plan.md §7/§23). Deliberately takes primitives, not a domain
- * `Transaction`/`TransactionType` — keeps the design system decoupled from the domain layer,
- * consistent with every other component here.
+ * A single transaction line (plan.md §7/§23), rendered as its own small glass card so every list
+ * of transactions reads as a stack of distinct glass tiles rather than a flat list. Deliberately
+ * takes primitives, not a domain `Transaction`/`TransactionType` — keeps the design system
+ * decoupled from the domain layer, consistent with every other component here.
  */
 @Composable
 fun TransactionRow(
@@ -38,25 +48,34 @@ fun TransactionRow(
     }
     val sign = if (isIncome) "+" else "-"
 
-    ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
-        headlineContent = { Text(title) },
-        supportingContent = { Text(subtitle) },
-        trailingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "$sign ${formatMoney(amountMinor, currency)}",
-                    color = amountColor,
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        Icons.Filled.Delete,
-                        contentDescription = "Delete transaction",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth(),
+        style = GlassStyle.Thin,
+        shape = GlassShapes.small,
+        elevation = 2.dp,
+    ) {
+        ListItem(
+            modifier = Modifier.clickable(onClick = onClick),
+            headlineContent = { Text(title, fontSize = 15.sp) },
+            supportingContent = { Text(subtitle, fontSize = 12.sp) },
+            trailingContent = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "$sign ${formatMoney(amountMinor, currency)}",
+                        color = amountColor,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
                     )
+                    IconButton(onClick = onDelete) {
+                        Icon(
+                            Icons.Filled.Delete,
+                            contentDescription = "Delete transaction",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
-            }
-        },
-    )
+            },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        )
+    }
 }

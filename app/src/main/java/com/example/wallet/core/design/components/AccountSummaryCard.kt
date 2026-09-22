@@ -8,9 +8,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,11 +21,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.wallet.core.common.formatMoney
+import com.example.wallet.core.design.glass.GlassStyle
+import com.example.wallet.core.design.glass.GlassSurface
 
-/** A compact, solid-color account tile for the dashboard's two-per-row accounts grid — full
- * opacity (not the translucent tint other dashboard cards use) with white text/icon for a
- * modern, high-contrast look at small size. */
+/** A compact, vividly tinted glass account tile for the dashboard's two-per-row accounts grid —
+ * a colored glow card with a glass icon bubble and trailing chevron, per the liquid-glass
+ * reference design. */
 @Composable
 fun AccountSummaryCard(
     label: String,
@@ -36,31 +38,42 @@ fun AccountSummaryCard(
     backgroundColor: Color,
     modifier: Modifier = Modifier,
 ) {
-    Card(
+    GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor, contentColor = Color.White),
+        style = GlassStyle.Vivid,
+        tint = backgroundColor,
+        glow = true,
+        elevation = 10.dp,
     ) {
-        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(imageVector = icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassIconBubble(icon = icon, tint = backgroundColor, size = 28.dp)
+            Spacer(Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.labelMedium,
+                    fontSize = 11.sp,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = formatMoney(amountMinor, currency),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = formatMoney(amountMinor, currency),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.6f),
+                modifier = Modifier.size(16.dp),
             )
         }
     }

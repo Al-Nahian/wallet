@@ -29,6 +29,16 @@ object GlassTokens {
     val clearAlpha = 0.45f
     val thickAlpha = 0.84f
     val thinAlpha = 0.30f
+    val vividAlpha = 0.90f
+
+    /** How strongly [GlassStyle.Vivid]'s fill blends toward its [GlassSurface] `tint`, vs.
+     * [contextTintAlpha] used by every other style's barely-there accent. */
+    val vividTintBlend = 0.62f
+
+    /** Colored glow cast by a tinted [GlassSurface] (`glow = true`) — an ambient/spot shadow tint
+     * rather than a flat drop shadow, so the card reads as lit from within on a near-black page. */
+    val glowAlpha = 0.55f
+    val glowElevation = 20.dp
 
     /** Fallback alpha used instead of [regularAlpha]/etc. on devices below API 31, where there's
      * no blur to lean on — the material needs to read as "glass" from translucency + border +

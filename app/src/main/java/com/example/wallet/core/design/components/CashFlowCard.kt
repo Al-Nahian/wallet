@@ -11,9 +11,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,32 +27,35 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.wallet.core.common.formatMoney
+import com.example.wallet.core.design.glass.GlassShapes
+import com.example.wallet.core.design.glass.GlassStyle
+import com.example.wallet.core.design.glass.GlassSurface
 import java.util.Locale
 import kotlin.math.abs
 
 private val CashFlowIncomeColor = Color(0xFF16A34A)
 private val CashFlowExpenseColor = Color(0xFFDC2626)
+private val CashFlowIconTint = Color(0xFF64748B)
 
-private data class CashFlowPalette(val background: Color, val text: Color, val mutedText: Color, val track: Color)
+private data class CashFlowPalette(val text: Color, val mutedText: Color, val track: Color)
 
 private val DarkCashFlowPalette = CashFlowPalette(
-    background = Color(0xFF1C1C1E),
     text = Color.White,
     mutedText = Color(0xFFAEAEB2),
     track = Color(0xFF3A3A3C),
 )
 private val LightCashFlowPalette = CashFlowPalette(
-    background = Color(0xFFF2F2F7),
     text = Color(0xFF1C1C1E),
     mutedText = Color(0xFF6D6D72),
     track = Color(0xFFE0E0E5),
 )
 
-/** plan.md §20 — income vs. expense at a glance, styled as an elevated card with a fixed
- * light/dark palette pair (so it reads correctly whichever theme is active, unlike a single
- * hardcoded dark background) rather than the theme-tinted cards elsewhere on the dashboard.
- * [previousNetMinor], when given, renders a "vs past period" delta; omit it to hide that row. */
+/** plan.md §20 — income vs. expense at a glance, styled as a neutral dark glass card (unlike the
+ * vividly tinted account/balance/stat cards) with an icon bubble and a "This Month ⌄" period
+ * label, per the liquid-glass reference design. [previousNetMinor], when given, renders a "vs
+ * past period" delta; omit it to hide that row. */
 @Composable
 fun CashFlowCard(
     periodLabel: String,
@@ -64,30 +71,40 @@ fun CashFlowCard(
         ?.takeIf { it != 0L }
         ?.let { previous -> (netMinor - previous) * 100.0 / abs(previous) }
 
-    Card(
+    GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = palette.background, contentColor = palette.text),
+        style = GlassStyle.Thick,
+        shape = GlassShapes.large,
+        elevation = 8.dp,
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
-            Text(
-                text = "Cash Flow",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = palette.text,
-            )
-            Spacer(Modifier.height(14.dp))
-
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = periodLabel.uppercase(Locale.getDefault()),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = palette.mutedText,
-                )
-                if (changePercent != null) {
-                    Text(text = "vs past period", style = MaterialTheme.typography.labelSmall, color = palette.mutedText)
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    GlassIconBubble(icon = Icons.Filled.SwapHoriz, tint = CashFlowIconTint, size = 32.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = "Cash Flow",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = palette.text,
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = periodLabel, style = MaterialTheme.typography.labelLarge, color = palette.mutedText)
+                    Icon(
+                        imageVector = Icons.Filled.ExpandMore,
+                        contentDescription = null,
+                        tint = palette.mutedText,
+                        modifier = Modifier.size(18.dp),
+                    )
                 }
             }
+            Spacer(Modifier.height(14.dp))
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -95,7 +112,7 @@ fun CashFlowCard(
             ) {
                 Text(
                     text = formatMoney(netMinor, currency),
-                    style = MaterialTheme.typography.headlineSmall,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = palette.text,
                 )
@@ -103,7 +120,7 @@ fun CashFlowCard(
                     val sign = if (changePercent >= 0) "+" else ""
                     Text(
                         text = "$sign${String.format(Locale.getDefault(), "%.0f", changePercent)}%",
-                        style = MaterialTheme.typography.titleMedium,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (changePercent >= 0) CashFlowIncomeColor else CashFlowExpenseColor,
                     )
@@ -147,8 +164,8 @@ private fun CashFlowRow(
 ) {
     Column {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Text(text = label, style = MaterialTheme.typography.bodyMedium, color = textColor)
-            Text(text = formatMoney(amountMinor, currency), style = MaterialTheme.typography.bodyMedium, color = textColor)
+            Text(text = label, fontSize = 13.sp, color = textColor)
+            Text(text = formatMoney(amountMinor, currency), fontSize = 13.sp, color = textColor)
         }
         Spacer(Modifier.height(6.dp))
         Box(

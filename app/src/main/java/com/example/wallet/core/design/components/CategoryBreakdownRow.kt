@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.wallet.core.common.formatMoney
 import com.example.wallet.domain.usecase.dashboard.CategorySpend
 import java.util.Locale
@@ -41,7 +42,7 @@ fun CategoryBreakdownRow(spend: CategorySpend, currency: String, color: Color, m
             }
             Text(
                 text = "${formatMoney(spend.amountMinor, currency)} (${String.format(Locale.getDefault(), "%.0f%%", spend.percentage)})",
-                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }

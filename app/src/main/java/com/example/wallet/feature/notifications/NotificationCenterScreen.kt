@@ -1,10 +1,12 @@
 package com.example.wallet.feature.notifications
 
 import android.text.format.DateUtils
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,6 +33,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.design.components.EmptyState
 import com.example.wallet.core.design.components.GlassScreenTopBar
+import com.example.wallet.core.design.glass.GlassShapes
+import com.example.wallet.core.design.glass.GlassStyle
+import com.example.wallet.core.design.glass.GlassSurface
 import com.example.wallet.domain.model.Notification
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,7 +80,11 @@ fun NotificationCenterScreen(
                         modifier = Modifier.padding(paddingValues),
                     )
                 } else {
-                    LazyColumn(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier.padding(paddingValues).fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         if (state.needsAttention.isNotEmpty()) {
                             item { SectionHeader("Needs your attention") }
                             items(state.needsAttention, key = { "attention-${it.id}" }) { notification ->
@@ -111,34 +120,34 @@ private fun SectionHeader(title: String) {
 
 @Composable
 private fun NotificationRow(notification: Notification, onClick: () -> Unit) {
-    ListItem(
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .background(
-                if (notification.isUnread) {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
-                } else {
-                    MaterialTheme.colorScheme.surface
-                },
-            ),
-        headlineContent = {
-            Text(
-                text = notification.title,
-                fontWeight = if (notification.isUnread) FontWeight.Bold else FontWeight.Normal,
-            )
-        },
-        supportingContent = { Text(notification.body) },
-        trailingContent = {
-            Text(
-                text = DateUtils.getRelativeTimeSpanString(
-                    notification.createdAt,
-                    System.currentTimeMillis(),
-                    DateUtils.MINUTE_IN_MILLIS,
-                ).toString(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        },
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-    )
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth(),
+        style = if (notification.isUnread) GlassStyle.Regular else GlassStyle.Thin,
+        shape = GlassShapes.small,
+        tint = if (notification.isUnread) MaterialTheme.colorScheme.primary else null,
+        elevation = 2.dp,
+    ) {
+        ListItem(
+            modifier = Modifier.clickable(onClick = onClick),
+            headlineContent = {
+                Text(
+                    text = notification.title,
+                    fontWeight = if (notification.isUnread) FontWeight.Bold else FontWeight.Normal,
+                )
+            },
+            supportingContent = { Text(notification.body) },
+            trailingContent = {
+                Text(
+                    text = DateUtils.getRelativeTimeSpanString(
+                        notification.createdAt,
+                        System.currentTimeMillis(),
+                        DateUtils.MINUTE_IN_MILLIS,
+                    ).toString(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        )
+    }
 }

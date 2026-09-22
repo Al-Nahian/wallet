@@ -15,10 +15,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -122,6 +126,7 @@ fun DashboardScreen(
                         currency = state.currency,
                         containerColor = TotalBalanceColor,
                         contentColor = Color.White,
+                        icon = Icons.Filled.AccountBalance,
                     )
                 }
                 item {
@@ -140,6 +145,7 @@ fun DashboardScreen(
                         currency = state.currency,
                         containerColor = SavingsColor,
                         contentColor = Color.White,
+                        icon = Icons.Filled.Savings,
                     )
                 }
                 item {
@@ -150,6 +156,7 @@ fun DashboardScreen(
                             modifier = Modifier.weight(1f),
                             containerColor = SavingsRateColor,
                             contentColor = Color.White,
+                            icon = Icons.Filled.Percent,
                         )
                         StatCard(
                             label = "Avg. Daily Spend",
@@ -157,6 +164,7 @@ fun DashboardScreen(
                             modifier = Modifier.weight(1f),
                             containerColor = AvgDailySpendColor,
                             contentColor = Color.White,
+                            icon = Icons.AutoMirrored.Filled.TrendingUp,
                         )
                     }
                 }

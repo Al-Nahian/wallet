@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,12 +19,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.wallet.core.common.formatMoney
+import com.example.wallet.core.design.glass.GlassStyle
+import com.example.wallet.core.design.glass.GlassSurface
 import java.util.Locale
 
 /** plan.md §7/§17 — a single budget's spent/remaining/usage at a glance, in the format §17
  * specifies ("Budget: X / Spent: Y / Remaining: Z / Usage: N%"), colored by status (healthy,
- * near limit, exceeded) as a solid full-opacity card matching the app's established card style. */
+ * near limit, exceeded) as a vividly tinted glow glass card matching the dashboard's other
+ * headline cards. */
 @Composable
 fun BudgetProgress(
     name: String,
@@ -43,22 +45,24 @@ fun BudgetProgress(
         else -> Color(0xFF16A34A)
     }
 
-    Card(
+    GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = statusColor, contentColor = Color.White),
+        style = GlassStyle.Vivid,
+        tint = statusColor,
+        glow = true,
+        elevation = 10.dp,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = name,
-                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
                 )
                 Text(
                     text = "${String.format(Locale.getDefault(), "%.1f", usagePercent)}%",
-                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
                 )
@@ -83,7 +87,7 @@ fun BudgetProgress(
             Text(
                 text = "Budget: ${formatMoney(amountMinor, currency)}  ·  Spent: ${formatMoney(spentMinor, currency)}  ·  " +
                     "Remaining: ${formatMoney(remainingMinor, currency)}",
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = 11.sp,
                 color = Color.White.copy(alpha = 0.9f),
             )
         }

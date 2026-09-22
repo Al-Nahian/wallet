@@ -3,6 +3,7 @@ package com.example.wallet.feature.transactions
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -62,7 +63,11 @@ fun TransactionsScreen(
                 )
             } else {
                 Box(modifier = modifier.fillMaxSize()) {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
                         item {
                             // Structural placeholder per plan.md §23 — real search/filter logic
                             // slots in here once Phase 6/7 add the fields it needs to filter on.

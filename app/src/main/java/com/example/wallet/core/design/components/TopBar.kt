@@ -9,7 +9,6 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -18,16 +17,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.wallet.core.design.glass.GlassCircleIconButton
 import com.example.wallet.core.design.glass.GlassTopBar
 
 /**
- * Shared top bar for every top-level screen (plan.md §83): a profile icon on the
- * left (account/login entry point) and a notification bell on the right (in-app
- * notification tray), framing the screen title.
+ * Shared top bar for every top-level screen (plan.md §83): a profile icon on the left
+ * (account/login entry point) and a notification bell on the right (in-app notification tray),
+ * framing the screen title. Both [onProfileClick] and [onNotificationsClick] default to no-ops so
+ * screens can adopt this bar before their destinations exist.
  *
- * Both [onProfileClick] and [onNotificationsClick] default to no-ops so screens
- * can adopt this bar before their destinations exist (Phase 4 wires the real
- * Account and Notification Center screens behind these icons).
+ * Per the liquid-glass reference design, the bar itself carries no visible plate — only the
+ * profile and notification controls are individually wrapped in glass circle bubbles, floating
+ * directly on the page background.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,26 +39,28 @@ fun WalletTopBar(
     onProfileClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
 ) {
-    GlassTopBar(modifier = modifier) {
-        CenterAlignedTopAppBar(
-            title = { Text(title) },
-            navigationIcon = {
-                IconButton(onClick = onProfileClick) {
-                    Icon(imageVector = Icons.Filled.AccountCircle, contentDescription = "Profile")
-                }
-            },
-            actions = {
-                IconButton(onClick = onNotificationsClick) {
-                    NotificationBellIcon(unreadCount = unreadNotificationCount)
-                }
-            },
-            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = Color.Transparent,
-                scrolledContainerColor = Color.Transparent,
-            ),
-        )
-    }
+    CenterAlignedTopAppBar(
+        modifier = modifier,
+        title = { Text(title) },
+        navigationIcon = {
+            GlassCircleIconButton(onClick = onProfileClick, contentDescription = "Profile") {
+                Icon(imageVector = Icons.Filled.AccountCircle, contentDescription = null)
+            }
+        },
+        actions = {
+            GlassCircleIconButton(onClick = onNotificationsClick, contentDescription = notificationContentDescription(unreadNotificationCount)) {
+                NotificationBellIcon(unreadCount = unreadNotificationCount)
+            }
+        },
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = Color.Transparent,
+            scrolledContainerColor = Color.Transparent,
+        ),
+    )
 }
+
+private fun notificationContentDescription(unreadCount: Int): String =
+    if (unreadCount > 0) "Notifications ($unreadCount unread)" else "Notifications"
 
 /** Shared top bar for pushed back-button screens (account/budget/category/label forms and
  * detail screens, profile, notification center) — same glass treatment as [WalletTopBar], with
@@ -87,7 +90,7 @@ fun GlassScreenTopBar(
 private fun NotificationBellIcon(unreadCount: Int) {
     val bellIcon: ImageVector = Icons.Filled.Notifications
     if (unreadCount <= 0) {
-        Icon(imageVector = bellIcon, contentDescription = "Notifications")
+        Icon(imageVector = bellIcon, contentDescription = null)
         return
     }
     BadgedBox(
@@ -97,6 +100,6 @@ private fun NotificationBellIcon(unreadCount: Int) {
             }
         },
     ) {
-        Icon(imageVector = bellIcon, contentDescription = "Notifications ($unreadCount unread)")
+        Icon(imageVector = bellIcon, contentDescription = null)
     }
 }

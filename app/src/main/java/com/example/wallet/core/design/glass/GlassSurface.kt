@@ -49,6 +49,10 @@ fun GlassSurface(
     style: GlassStyle = GlassStyle.Regular,
     shape: Shape = GlassShapes.medium,
     tint: Color? = null,
+    /** When true and [tint] is set, casts a colored ambient/spot shadow instead of a flat black
+     * one, so the surface reads as lit from within against a near-black page. Reserved for
+     * headline [GlassStyle.Vivid] cards — chrome surfaces (bars, sheets) never set this. */
+    glow: Boolean = false,
     interaction: GlassInteraction = GlassInteraction.None,
     interactionSource: MutableInteractionSource? = null,
     enabled: Boolean = true,
@@ -58,7 +62,7 @@ fun GlassSurface(
     val motion = LocalGlassMotionPreferences.current
     val fillColor = GlassColors.fill(style, tint, motion)
     val highlightBrush = GlassColors.highlightBrush()
-    val borderBrush = GlassColors.borderBrush()
+    val borderBrush = GlassColors.borderBrush(tint = if (glow) tint else null)
 
     val isPressed by (interactionSource?.collectIsPressedAsState() ?: remember { mutableStateOf(false) })
     val reactsToPress = interaction == GlassInteraction.Pressable && enabled
@@ -77,7 +81,19 @@ fun GlassSurface(
                 scaleY = scale
                 compositingStrategy = CompositingStrategy.Offscreen
             }
-            .shadow(elevation = if (enabled) elevation else 0.dp, shape = shape, clip = false)
+            .let { base ->
+                if (glow && tint != null) {
+                    base.shadow(
+                        elevation = if (enabled) elevation else 0.dp,
+                        shape = shape,
+                        clip = false,
+                        ambientColor = tint.copy(alpha = GlassTokens.glowAlpha),
+                        spotColor = tint.copy(alpha = GlassTokens.glowAlpha),
+                    )
+                } else {
+                    base.shadow(elevation = if (enabled) elevation else 0.dp, shape = shape, clip = false)
+                }
+            }
             .clip(shape),
     ) {
         // Translucent material fill.
@@ -91,11 +107,16 @@ fun GlassSurface(
         }
         // Specular highlight — top edge only, barely visible.
         Box(modifier = Modifier.matchParentSize().background(highlightBrush))
-        // Thin border communicating the material's edge.
+        // Thin border communicating the material's edge (a touch thicker on glowing tinted cards
+        // so the colored rim reads clearly).
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .border(width = GlassTokens.borderWidth, brush = borderBrush, shape = shape),
+                .border(
+                    width = if (glow && tint != null) GlassTokens.borderWidth * 1.5f else GlassTokens.borderWidth,
+                    brush = borderBrush,
+                    shape = shape,
+                ),
         )
         content()
     }

@@ -15,12 +15,15 @@ import androidx.compose.ui.graphics.lerp
  */
 object GlassColors {
 
-    /** The material's translucent fill: base surface color blended with a low-alpha contextual
-     * [tint] (plan §13 — "base glass + contextual accent", never a saturated rainbow fill). */
+    /** The material's translucent fill: base surface color blended with [tint] (plan §13 — "base
+     * glass + contextual accent"). Every style except [GlassStyle.Vivid] uses a barely-there
+     * accent blend; [GlassStyle.Vivid] blends much further toward the tint so headline cards read
+     * as saturated color while still compositing over the page (never a flat opaque rainbow fill). */
     @Composable
     fun fill(style: GlassStyle, tint: Color?, motion: GlassMotionPreferences = LocalGlassMotionPreferences.current): Color {
         val base = MaterialTheme.colorScheme.surface
-        val blended = tint?.let { lerp(base, it, GlassTokens.contextTintAlpha) } ?: base
+        val blendStrength = if (style == GlassStyle.Vivid) GlassTokens.vividTintBlend else GlassTokens.contextTintAlpha
+        val blended = tint?.let { lerp(base, it, blendStrength) } ?: base
         return blended.copy(alpha = resolveAlpha(style, motion))
     }
 
@@ -33,6 +36,7 @@ object GlassColors {
             GlassStyle.Clear -> GlassTokens.clearAlpha
             GlassStyle.Thick -> GlassTokens.thickAlpha
             GlassStyle.Thin -> GlassTokens.thinAlpha
+            GlassStyle.Vivid -> GlassTokens.vividAlpha
         }
         val needsBoost = motion.reduceTransparency || !GlassCapabilities.supportsAdvancedBlur()
         return if (needsBoost) (baseAlpha + GlassTokens.fallbackAlphaBoost).coerceAtMost(0.96f) else baseAlpha
@@ -56,10 +60,21 @@ object GlassColors {
 
     /** Thin border brush (plan §12) — dark-mode borders lean toward a light edge, light-mode
      * borders lean toward a soft dark edge, so the material reads correctly in both modes
-     * (plan §30, "the background should influence the perceived material in both modes"). */
+     * (plan §30, "the background should influence the perceived material in both modes").
+     * When [tint] is given (a [GlassStyle.Vivid] card), the edge leans toward a brighter version
+     * of the tint instead of plain white/black, so the border reads as a colored glow rim. */
     @Composable
-    fun borderBrush(): Brush {
+    fun borderBrush(tint: Color? = null): Brush {
         val isDark = isSystemInDarkTheme()
+        if (tint != null) {
+            val bright = lerp(tint, Color.White, 0.45f)
+            return Brush.verticalGradient(
+                listOf(
+                    bright.copy(alpha = GlassTokens.vividTintBlend + 0.1f),
+                    tint.copy(alpha = GlassTokens.vividTintBlend * 0.5f),
+                ),
+            )
+        }
         val edgeColor = if (isDark) Color.White else Color.Black
         return Brush.verticalGradient(
             listOf(

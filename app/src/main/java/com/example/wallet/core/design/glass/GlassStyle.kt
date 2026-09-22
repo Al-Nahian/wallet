@@ -16,4 +16,9 @@ enum class GlassStyle {
 
     /** Regular glass with interaction response (press scale/tint). */
     Interactive,
+
+    /** Saturated, strongly tinted glass for headline content cards (account/balance/stat tiles) —
+     * the material still reads as glass via highlight/border/glow, but the [tint] color dominates
+     * the fill rather than being a barely-there accent. Always pair with a [tint]. */
+    Vivid,
 }

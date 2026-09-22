@@ -1,15 +1,36 @@
 package com.example.wallet.core.design.components
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.wallet.core.design.glass.GlassBottomBar
+import com.example.wallet.core.design.glass.GlassInteraction
+import com.example.wallet.core.design.glass.GlassStyle
+import com.example.wallet.core.design.glass.GlassSurface
 
 data class WalletBottomNavItem(
     val route: String,
@@ -17,23 +38,83 @@ data class WalletBottomNavItem(
     val icon: ImageVector,
 )
 
+/** Floating glass pill nav bar with the primary Add action embedded as a glowing center button
+ * between the second and third destinations, per the liquid-glass reference design — not a
+ * separate `Scaffold` FAB floating above the bar. */
 @Composable
 fun WalletBottomNavigation(
     items: List<WalletBottomNavItem>,
     selectedRoute: String,
     onItemSelected: (String) -> Unit,
+    fabOnClick: () -> Unit,
+    fabContentDescription: String,
     modifier: Modifier = Modifier,
 ) {
-    GlassBottomBar(modifier = modifier) {
-        NavigationBar(containerColor = Color.Transparent, tonalElevation = 0.dp) {
-            items.forEach { item ->
-                NavigationBarItem(
-                    selected = item.route == selectedRoute,
-                    onClick = { onItemSelected(item.route) },
-                    icon = { Icon(imageVector = item.icon, contentDescription = item.label) },
-                    label = { Text(item.label) },
-                )
+    val midpoint = items.size / 2
+    GlassBottomBar(modifier = modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            items.take(midpoint).forEach { item ->
+                NavItem(item = item, selected = item.route == selectedRoute, onClick = { onItemSelected(item.route) })
             }
+            CenterFabItem(onClick = fabOnClick, contentDescription = fabContentDescription)
+            items.drop(midpoint).forEach { item ->
+                NavItem(item = item, selected = item.route == selectedRoute, onClick = { onItemSelected(item.route) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun NavItem(item: WalletBottomNavItem, selected: Boolean, onClick: () -> Unit) {
+    val tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .semantics {
+                role = Role.Tab
+                contentDescription = item.label
+            }
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+    ) {
+        Icon(imageVector = item.icon, contentDescription = null, tint = tint)
+        Text(text = item.label, style = MaterialTheme.typography.labelSmall, color = tint)
+    }
+}
+
+@Composable
+private fun CenterFabItem(onClick: () -> Unit, contentDescription: String) {
+    val interactionSource = remember { MutableInteractionSource() }
+    GlassSurface(
+        modifier = Modifier
+            .size(52.dp)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            )
+            .semantics {
+                role = Role.Button
+                this.contentDescription = contentDescription
+            },
+        style = GlassStyle.Vivid,
+        shape = CircleShape,
+        tint = MaterialTheme.colorScheme.primary,
+        glow = true,
+        interaction = GlassInteraction.Pressable,
+        interactionSource = interactionSource,
+        elevation = 12.dp,
+    ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Icon(imageVector = Icons.Filled.Add, contentDescription = null, tint = Color.White)
         }
     }
 }

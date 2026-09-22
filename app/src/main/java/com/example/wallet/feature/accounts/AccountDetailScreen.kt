@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -120,7 +121,11 @@ fun AccountDetailScreen(
                             modifier = Modifier.weight(1f),
                         )
                     } else {
-                        LazyColumn(modifier = Modifier.weight(1f)) {
+                        LazyColumn(
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
                             items(uiState.transactions, key = { it.id }) { transaction ->
                                 TransactionRow(
                                     title = transaction.title,

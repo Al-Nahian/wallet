@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,7 +19,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.common.formatMoney
@@ -29,6 +29,8 @@ import com.example.wallet.core.design.components.BalanceCard
 import com.example.wallet.core.design.components.CategoryBreakdownRow
 import com.example.wallet.core.design.components.DateRangeSelector
 import com.example.wallet.core.design.components.StatCard
+import com.example.wallet.core.design.glass.GlassStyle
+import com.example.wallet.core.design.glass.GlassSurface
 import com.example.wallet.domain.usecase.reports.AccountReport
 import com.example.wallet.domain.usecase.reports.CategoryTrend
 import java.util.Locale
@@ -182,25 +184,23 @@ private fun EmptyRowText(text: String) {
 
 @Composable
 private fun AccountReportCard(report: AccountReport) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-    ) {
+    GlassSurface(modifier = Modifier.fillMaxWidth(), style = GlassStyle.Thick, elevation = 6.dp) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = report.accountName, style = MaterialTheme.typography.labelLarge)
             Text(
                 text = formatMoney(report.currentBalanceMinor, report.currency),
-                style = MaterialTheme.typography.titleLarge,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
             )
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 Text(
                     text = "In ${formatMoney(report.inflowMinor, report.currency)}",
-                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 13.sp,
                     color = IncomeColor,
                 )
                 Text(
                     text = "Out ${formatMoney(report.outflowMinor, report.currency)}",
-                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 13.sp,
                     color = ExpenseColor,
                 )
             }
@@ -210,7 +210,7 @@ private fun AccountReportCard(report: AccountReport) {
 
 @Composable
 private fun CategoryTrendCard(trend: CategoryTrend, currency: String) {
-    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+    GlassSurface(modifier = Modifier.fillMaxWidth(), style = GlassStyle.Thick, elevation = 6.dp) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = trend.categoryName, style = MaterialTheme.typography.labelLarge)
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
@@ -227,6 +227,6 @@ private fun CategoryTrendCard(trend: CategoryTrend, currency: String) {
 private fun TrendStat(label: String, amountMinor: Long, currency: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(text = formatMoney(amountMinor, currency), style = MaterialTheme.typography.bodyMedium)
+        Text(text = formatMoney(amountMinor, currency), fontSize = 13.sp)
     }
 }
