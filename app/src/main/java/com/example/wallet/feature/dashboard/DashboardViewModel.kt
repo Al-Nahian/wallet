@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.wallet.core.common.currentDayOfMonth
 import com.example.wallet.core.common.startOfCurrentMonthMillis
+import com.example.wallet.domain.model.AccountType
 import com.example.wallet.domain.repository.AccountRepository
 import com.example.wallet.domain.repository.CategoryRepository
 import com.example.wallet.domain.repository.TransactionRepository
 import com.example.wallet.domain.repository.TransactionSplitRepository
+import com.example.wallet.domain.usecase.account.CalculateBalanceUseCase
 import com.example.wallet.domain.usecase.dashboard.CategorySpend
 import com.example.wallet.domain.usecase.dashboard.GetAverageDailySpendUseCase
 import com.example.wallet.domain.usecase.dashboard.GetCategorySpendUseCase
@@ -25,6 +27,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
+data class AccountBalanceUi(
+    val id: String,
+    val name: String,
+    val type: AccountType,
+    val balanceMinor: Long,
+    val currency: String,
+)
+
 sealed interface DashboardUiState {
     data object Loading : DashboardUiState
     data class Loaded(
@@ -35,6 +45,7 @@ sealed interface DashboardUiState {
         val savingsMinor: Long,
         val savingsRatePercent: Double,
         val averageDailySpendMinor: Long,
+        val accountBalances: List<AccountBalanceUi>,
         val categorySpend: List<CategorySpend>,
         val recentTransactions: List<TransactionUi>,
     ) : DashboardUiState
@@ -49,6 +60,7 @@ class DashboardViewModel @Inject constructor(
     categoryRepository: CategoryRepository,
     transactionSplitRepository: TransactionSplitRepository,
     private val getTotalBalance: GetTotalBalanceUseCase,
+    private val calculateBalance: CalculateBalanceUseCase,
     private val getMonthlyIncome: GetMonthlyIncomeUseCase,
     private val getMonthlyExpenses: GetMonthlyExpensesUseCase,
     private val getSavings: GetSavingsUseCase,
@@ -70,6 +82,15 @@ class DashboardViewModel @Inject constructor(
         val now = System.currentTimeMillis()
 
         val totalBalance = getTotalBalance(accounts)
+        val accountBalances = accounts.map { account ->
+            AccountBalanceUi(
+                id = account.id,
+                name = account.name,
+                type = account.type,
+                balanceMinor = calculateBalance(account),
+                currency = account.currency,
+            )
+        }
         val monthlyIncome = getMonthlyIncome(monthStart, now)
         val monthlyExpense = getMonthlyExpenses(monthStart, now)
         val savings = getSavings(monthlyIncome, monthlyExpense)
@@ -96,6 +117,7 @@ class DashboardViewModel @Inject constructor(
             savingsMinor = savings,
             savingsRatePercent = savingsRate,
             averageDailySpendMinor = averageDailySpend,
+            accountBalances = accountBalances,
             categorySpend = categorySpend,
             recentTransactions = recentTransactions,
         )
