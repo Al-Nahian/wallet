@@ -33,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.common.formatMoney
 import com.example.wallet.core.design.components.AccountSummaryCard
 import com.example.wallet.core.design.components.BalanceCard
+import com.example.wallet.core.design.components.BudgetProgress
 import com.example.wallet.core.design.components.CashFlowCard
 import com.example.wallet.core.design.components.CategoryBreakdownRow
 import com.example.wallet.core.design.components.EmptyState
@@ -61,6 +62,7 @@ private val AvgDailySpendColor = Color(0xFFEA580C)
 fun DashboardScreen(
     onTransactionClick: (String) -> Unit,
     onSeeAllTransactions: () -> Unit,
+    onManageBudgets: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -157,13 +159,38 @@ fun DashboardScreen(
                 }
 
                 item { SectionHeader("Monthly Budget") }
-                item {
-                    EmptyState(
-                        title = "No budgets yet",
-                        subtitle = "Set up a budget to see how you're tracking here.",
-                        icon = Icons.Filled.PieChart,
-                        modifier = Modifier.height(160.dp),
-                    )
+                if (state.activeBudgets.isEmpty()) {
+                    item {
+                        EmptyState(
+                            title = "No budgets yet",
+                            subtitle = "Set up a budget to see how you're tracking here.",
+                            icon = Icons.Filled.PieChart,
+                            actionLabel = "Set up a budget",
+                            onAction = onManageBudgets,
+                            modifier = Modifier.height(200.dp),
+                        )
+                    }
+                } else {
+                    items(state.activeBudgets, key = { it.budget.id }) { summary ->
+                        BudgetProgress(
+                            name = summary.budget.name,
+                            amountMinor = summary.usage.amountMinor,
+                            spentMinor = summary.usage.spentMinor,
+                            remainingMinor = summary.usage.remainingMinor,
+                            usagePercent = summary.usage.usagePercent,
+                            currency = summary.budget.currency,
+                            modifier = Modifier.clickable(onClick = onManageBudgets),
+                        )
+                    }
+                    item {
+                        Text(
+                            text = "Manage budgets",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().clickable(onClick = onManageBudgets).padding(8.dp),
+                        )
+                    }
                 }
 
                 item { SectionHeader("Spending by Category") }

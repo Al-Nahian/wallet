@@ -1,6 +1,7 @@
 package com.example.wallet.data.repository
 
 import com.example.wallet.domain.repository.AccountRepository
+import com.example.wallet.domain.repository.BudgetRepository
 import com.example.wallet.domain.repository.CategoryRepository
 import com.example.wallet.domain.repository.InstitutionRepository
 import com.example.wallet.domain.repository.LabelRepository
@@ -40,4 +41,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindLabelRepository(impl: LabelRepositoryImpl): LabelRepository
+
+    @Binds
+    abstract fun bindBudgetRepository(impl: BudgetRepositoryImpl): BudgetRepository
 }

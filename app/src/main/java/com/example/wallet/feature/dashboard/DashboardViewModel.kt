@@ -7,10 +7,12 @@ import com.example.wallet.core.common.monthRange
 import com.example.wallet.core.common.startOfCurrentMonthMillis
 import com.example.wallet.domain.model.AccountType
 import com.example.wallet.domain.repository.AccountRepository
+import com.example.wallet.domain.repository.BudgetRepository
 import com.example.wallet.domain.repository.CategoryRepository
 import com.example.wallet.domain.repository.TransactionRepository
 import com.example.wallet.domain.repository.TransactionSplitRepository
 import com.example.wallet.domain.usecase.account.CalculateBalanceUseCase
+import com.example.wallet.domain.usecase.budget.CalculateBudgetUsageUseCase
 import com.example.wallet.domain.usecase.dashboard.CategorySpend
 import com.example.wallet.domain.usecase.dashboard.GetAverageDailySpendUseCase
 import com.example.wallet.domain.usecase.dashboard.GetCategorySpendUseCase
@@ -19,6 +21,7 @@ import com.example.wallet.domain.usecase.dashboard.GetMonthlyIncomeUseCase
 import com.example.wallet.domain.usecase.dashboard.GetSavingsRateUseCase
 import com.example.wallet.domain.usecase.dashboard.GetSavingsUseCase
 import com.example.wallet.domain.usecase.dashboard.GetTotalBalanceUseCase
+import com.example.wallet.feature.budgets.BudgetSummary
 import com.example.wallet.feature.transactions.TransactionUi
 import com.example.wallet.feature.transactions.toTransactionUi
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,6 +29,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 
 data class AccountBalanceUi(
@@ -50,6 +54,7 @@ sealed interface DashboardUiState {
         val accountBalances: List<AccountBalanceUi>,
         val categorySpend: List<CategorySpend>,
         val recentTransactions: List<TransactionUi>,
+        val activeBudgets: List<BudgetSummary>,
     ) : DashboardUiState
 }
 
@@ -61,6 +66,7 @@ class DashboardViewModel @Inject constructor(
     transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
     transactionSplitRepository: TransactionSplitRepository,
+    private val budgetRepository: BudgetRepository,
     private val getTotalBalance: GetTotalBalanceUseCase,
     private val calculateBalance: CalculateBalanceUseCase,
     private val getMonthlyIncome: GetMonthlyIncomeUseCase,
@@ -69,17 +75,19 @@ class DashboardViewModel @Inject constructor(
     private val getSavingsRate: GetSavingsRateUseCase,
     private val getAverageDailySpend: GetAverageDailySpendUseCase,
     private val getCategorySpend: GetCategorySpendUseCase,
+    private val calculateBudgetUsage: CalculateBudgetUsageUseCase,
 ) : ViewModel() {
 
-    // Recomputes on any account/transaction/category/split change — a dashboard is a summary of
-    // everything else in the app, so it needs to react to all four (plan.md §20's "no manual
-    // refresh" requirement).
+    // Recomputes on any account/transaction/category/split/budget change — a dashboard is a
+    // summary of everything else in the app, so it needs to react to all five (plan.md §20's
+    // "no manual refresh" requirement).
     val uiState: StateFlow<DashboardUiState> = combine(
         accountRepository.observeActiveAccounts(),
         transactionRepository.observeTransactions(),
         categoryRepository.observeCategories(),
         transactionSplitRepository.observeAllSplits(),
-    ) { accounts, transactions, categories, splits ->
+        budgetRepository.observeBudgets(),
+    ) { accounts, transactions, categories, splits, budgets ->
         val monthStart = startOfCurrentMonthMillis()
         val now = System.currentTimeMillis()
 
@@ -115,6 +123,13 @@ class DashboardViewModel @Inject constructor(
             .take(RECENT_TRANSACTIONS_LIMIT)
             .map { tx -> tx.toTransactionUi(accountsById, categoriesById, splitsByTransaction, transferLegsByTransferId) }
 
+        val activeBudgets = budgets
+            .filter { now in it.startDate..it.endDate }
+            .map { budget ->
+                val categoryIds = budgetRepository.observeBudgetCategories(budget.id).first().map { it.categoryId }.toSet()
+                BudgetSummary(budget, calculateBudgetUsage(budget, categoryIds, transactions, splits))
+            }
+
         DashboardUiState.Loaded(
             totalBalanceMinor = totalBalance,
             currency = accounts.firstOrNull()?.currency ?: "BDT",
@@ -127,6 +142,7 @@ class DashboardViewModel @Inject constructor(
             accountBalances = accountBalances,
             categorySpend = categorySpend,
             recentTransactions = recentTransactions,
+            activeBudgets = activeBudgets,
         )
     }.stateIn(
         scope = viewModelScope,

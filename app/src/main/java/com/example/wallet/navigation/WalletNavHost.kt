@@ -25,6 +25,10 @@ import com.example.wallet.feature.accounts.AccountDetailScreen
 import com.example.wallet.feature.accounts.AccountFormScreen
 import com.example.wallet.feature.accounts.AccountRoutes
 import com.example.wallet.feature.accounts.AccountsScreen
+import com.example.wallet.feature.budgets.BudgetDetailScreen
+import com.example.wallet.feature.budgets.BudgetFormScreen
+import com.example.wallet.feature.budgets.BudgetRoutes
+import com.example.wallet.feature.budgets.BudgetsScreen
 import com.example.wallet.feature.categories.CategoriesScreen
 import com.example.wallet.feature.categories.CategoryRoutes
 import com.example.wallet.feature.dashboard.DashboardScreen
@@ -68,6 +72,7 @@ fun WalletNavHost() {
                             restoreState = true
                         }
                     },
+                    onManageBudgets = { navController.navigate(BudgetRoutes.LIST) },
                 )
             }
         }
@@ -129,6 +134,40 @@ fun WalletNavHost() {
             arguments = listOf(navArgument(AccountRoutes.ACCOUNT_ID_ARG) { type = NavType.StringType }),
         ) {
             AccountFormScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+            )
+        }
+
+        // Budget sub-screens: reached from Dashboard's Monthly Budget section (or a deep link
+        // from a budget-threshold notification), same pattern as the account ones above.
+        composable(BudgetRoutes.LIST) {
+            BudgetsScreen(
+                onBack = { navController.popBackStack() },
+                onAddBudget = { navController.navigate(BudgetRoutes.CREATE) },
+                onBudgetClick = { id -> navController.navigate(BudgetRoutes.detail(id)) },
+            )
+        }
+        composable(BudgetRoutes.CREATE) {
+            BudgetFormScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+            )
+        }
+        composable(
+            route = BudgetRoutes.DETAIL_PATTERN,
+            arguments = listOf(navArgument(BudgetRoutes.BUDGET_ID_ARG) { type = NavType.StringType }),
+        ) {
+            BudgetDetailScreen(
+                onBack = { navController.popBackStack() },
+                onEdit = { id -> navController.navigate(BudgetRoutes.edit(id)) },
+            )
+        }
+        composable(
+            route = BudgetRoutes.EDIT_PATTERN,
+            arguments = listOf(navArgument(BudgetRoutes.BUDGET_ID_ARG) { type = NavType.StringType }),
+        ) {
+            BudgetFormScreen(
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
             )

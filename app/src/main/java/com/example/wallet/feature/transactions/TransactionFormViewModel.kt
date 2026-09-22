@@ -13,6 +13,7 @@ import com.example.wallet.domain.repository.CategoryRepository
 import com.example.wallet.domain.repository.LabelRepository
 import com.example.wallet.domain.repository.TransactionRepository
 import com.example.wallet.domain.repository.TransactionSplitRepository
+import com.example.wallet.domain.usecase.budget.CheckBudgetAlertsUseCase
 import com.example.wallet.domain.usecase.label.AssignLabelUseCase
 import com.example.wallet.domain.usecase.transaction.CreateTransactionUseCase
 import com.example.wallet.domain.usecase.transaction.SplitInput
@@ -74,6 +75,7 @@ class TransactionFormViewModel @Inject constructor(
     private val updateTransactionUseCase: UpdateTransactionUseCase,
     private val splitTransactionUseCase: SplitTransactionUseCase,
     private val assignLabelUseCase: AssignLabelUseCase,
+    private val checkBudgetAlertsUseCase: CheckBudgetAlertsUseCase,
 ) : ViewModel() {
 
     private val transactionId: String? = savedStateHandle[TRANSACTION_ID_ARG]
@@ -239,6 +241,7 @@ class TransactionFormViewModel @Inject constructor(
                     splitResult.fold(
                         onSuccess = {
                             assignLabelUseCase(transaction.id, state.selectedLabelIds)
+                            if (transaction.type == TransactionType.EXPENSE) checkBudgetAlertsUseCase()
                             _uiState.update { it.copy(isSaving = false, saved = true) }
                         },
                         onFailure = { error -> _uiState.update { it.copy(isSaving = false, errorMessage = errorMessageFor(error)) } },
