@@ -89,6 +89,7 @@ fun WalletBottomNavigation(
             onClick = fabOnClick,
             contentDescription = fabContentDescription,
             size = fabSize,
+            backdrop = backdrop,
             modifier = Modifier.offset(y = (-fabSize / 6)),
         )
     }
@@ -116,11 +117,14 @@ private fun NavItem(item: WalletBottomNavItem, selected: Boolean, onClick: () ->
     }
 }
 
+/** Blurs the content behind it like the bar does — the top of the button pops out past the bar,
+ * so without it page text reads straight through that sliver. */
 @Composable
 private fun CenterFabItem(
     onClick: () -> Unit,
     contentDescription: String,
     size: Dp,
+    backdrop: GlassBackdrop?,
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -139,6 +143,7 @@ private fun CenterFabItem(
         style = GlassStyle.Vivid,
         shape = CircleShape,
         tint = MaterialTheme.colorScheme.primary,
+        backdrop = backdrop,
         glow = true,
         interaction = GlassInteraction.Pressable,
         interactionSource = interactionSource,

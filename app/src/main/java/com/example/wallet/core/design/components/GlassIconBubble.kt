@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -17,7 +18,12 @@ import com.example.wallet.core.design.glass.GlassSurface
 
 /** A small circular glass badge for a card's leading icon — every headline dashboard/report card
  * (account tile, balance card, stat card, cash flow card) frames its icon this way instead of a
- * bare [Icon], matching the liquid-glass reference's "glossy bubble" icon treatment. */
+ * bare [Icon], matching the liquid-glass reference's "glossy bubble" icon treatment.
+ *
+ * The bubble is a deepened version of the card's own [tint] rather than a theme-derived glass
+ * blend: the theme's surface is near-white in light mode, which left a white bubble behind a
+ * white [iconTint]. Deriving from the tint keeps the well dark — and the glyph legible — in
+ * both themes. */
 @Composable
 fun GlassIconBubble(
     icon: ImageVector,
@@ -26,11 +32,12 @@ fun GlassIconBubble(
     size: Dp = 32.dp,
     iconTint: Color = Color.White,
 ) {
+    val bubbleFill = lerp(tint ?: Color.Black, Color.Black, 0.45f).copy(alpha = 0.85f)
     GlassSurface(
         modifier = modifier.size(size),
         style = GlassStyle.Thick,
         shape = CircleShape,
-        tint = tint,
+        fill = bubbleFill,
         elevation = 2.dp,
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
