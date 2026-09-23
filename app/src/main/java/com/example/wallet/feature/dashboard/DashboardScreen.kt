@@ -17,13 +17,18 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,11 +37,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.wallet.core.common.dateGroupLabel
 import com.example.wallet.core.common.formatMoney
+import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.components.AccountSummaryCard
 import com.example.wallet.core.design.components.BalanceCard
 import com.example.wallet.core.design.components.BudgetProgress
@@ -46,7 +55,13 @@ import com.example.wallet.core.design.components.EmptyState
 import com.example.wallet.core.design.components.StatCard
 import com.example.wallet.core.design.components.TransactionRow
 import com.example.wallet.core.design.components.WalletBottomNavSpace
+import com.example.wallet.core.design.glass.GlassShapes
+import com.example.wallet.core.design.glass.GlassStyle
+import com.example.wallet.core.design.glass.GlassSurface
+import com.example.wallet.domain.model.TransactionType
 import com.example.wallet.feature.accounts.icon
+import com.example.wallet.feature.recurring.RecurringTransactionUi
+import com.example.wallet.feature.recurring.label
 import java.util.Locale
 
 /** A fixed rotation of accent colors for the accounts row and category breakdown — a UI variety
@@ -74,6 +89,7 @@ fun DashboardScreen(
     onTransactionClick: (String) -> Unit,
     onSeeAllTransactions: () -> Unit,
     onManageBudgets: () -> Unit,
+    onManageRecurring: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -274,13 +290,30 @@ fun DashboardScreen(
                 }
 
                 item { SectionHeader("Upcoming Recurring Payments") }
-                item {
-                    EmptyState(
-                        title = "Nothing scheduled",
-                        subtitle = "Recurring payments will show up here once you set them up.",
-                        icon = Icons.Filled.CalendarMonth,
-                        modifier = Modifier.height(160.dp),
-                    )
+                if (state.upcomingRecurring.isEmpty()) {
+                    item {
+                        EmptyState(
+                            title = "Nothing scheduled",
+                            subtitle = "Add a bill, subscription or regular income so it doesn't need to be entered by hand every time.",
+                            icon = Icons.Filled.CalendarMonth,
+                            actionLabel = "Add recurring payment",
+                            onAction = onManageRecurring,
+                            modifier = Modifier.height(200.dp),
+                        )
+                    }
+                } else {
+                    items(state.upcomingRecurring, key = { it.id }) { item ->
+                        UpcomingRecurringRow(item = item, onClick = onManageRecurring)
+                    }
+                    item {
+                        Text(
+                            text = "Manage recurring payments",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().clickable(onClick = onManageRecurring).padding(8.dp),
+                        )
+                    }
                 }
 
                 item { SectionHeader("Goals") }
@@ -300,5 +333,42 @@ fun DashboardScreen(
 @Composable
 private fun SectionHeader(title: String) {
     Text(text = title, style = MaterialTheme.typography.titleMedium)
+}
+
+@Composable
+private fun UpcomingRecurringRow(item: RecurringTransactionUi, onClick: () -> Unit) {
+    val amountColor = if (item.type == TransactionType.INCOME) WalletTheme.extendedColors.income else WalletTheme.extendedColors.expense
+    val sign = if (item.type == TransactionType.INCOME) "+" else "-"
+    val title = item.payee ?: item.categoryName ?: "Recurring payment"
+
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        style = GlassStyle.Thin,
+        shape = GlassShapes.small,
+        elevation = 0.dp,
+    ) {
+        ListItem(
+            leadingContent = {
+                Icon(
+                    imageVector = if (item.autoPost) Icons.Filled.Autorenew else Icons.Filled.NotificationsActive,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            headlineContent = { Text(title, fontSize = 15.sp) },
+            supportingContent = {
+                Text("${item.frequency.label()} · Next: ${dateGroupLabel(item.nextDate)}", fontSize = 12.sp)
+            },
+            trailingContent = {
+                Text(
+                    text = "$sign ${formatMoney(item.amountMinor, item.currency)}",
+                    color = amountColor,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        )
+    }
 }
 

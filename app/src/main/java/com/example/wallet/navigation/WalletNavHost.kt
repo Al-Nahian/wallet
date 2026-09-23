@@ -40,6 +40,9 @@ import com.example.wallet.feature.notifications.NotificationCenterScreen
 import com.example.wallet.feature.notifications.NotificationRoutes
 import com.example.wallet.feature.profile.ProfileRoutes
 import com.example.wallet.feature.profile.ProfileScreen
+import com.example.wallet.feature.recurring.RecurringRoutes
+import com.example.wallet.feature.recurring.RecurringTransactionFormScreen
+import com.example.wallet.feature.recurring.RecurringTransactionsScreen
 import com.example.wallet.feature.reports.ReportsScreen
 import com.example.wallet.feature.transactions.TransactionFormScreen
 import com.example.wallet.feature.transactions.TransactionRoutes
@@ -73,6 +76,7 @@ fun WalletNavHost() {
                         }
                     },
                     onManageBudgets = { navController.navigate(BudgetRoutes.LIST) },
+                    onManageRecurring = { navController.navigate(RecurringRoutes.LIST) },
                 )
             }
         }
@@ -168,6 +172,31 @@ fun WalletNavHost() {
             arguments = listOf(navArgument(BudgetRoutes.BUDGET_ID_ARG) { type = NavType.StringType }),
         ) {
             BudgetFormScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+            )
+        }
+
+        // Recurring sub-screens: reached from Dashboard's "Upcoming Recurring Payments" section
+        // (or a RECURRING_DUE notification's deep link), same pattern as the budget ones above.
+        composable(RecurringRoutes.LIST) {
+            RecurringTransactionsScreen(
+                onBack = { navController.popBackStack() },
+                onAdd = { navController.navigate(RecurringRoutes.CREATE) },
+                onEdit = { id -> navController.navigate(RecurringRoutes.edit(id)) },
+            )
+        }
+        composable(RecurringRoutes.CREATE) {
+            RecurringTransactionFormScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+            )
+        }
+        composable(
+            route = RecurringRoutes.EDIT_PATTERN,
+            arguments = listOf(navArgument(RecurringRoutes.RECURRING_ID_ARG) { type = NavType.StringType }),
+        ) {
+            RecurringTransactionFormScreen(
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
             )

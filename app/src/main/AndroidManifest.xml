@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Only used to show a system notification while the app is backgrounded (plan.md §86);
          the Notification Center itself works without it. Not requested at runtime yet — §59
@@ -20,6 +20,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- WalletApplication supplies its own WorkManager Configuration (Hilt-aware worker
+             factory, for RecurringTransactionWorker) via Configuration.Provider, so the default
+             auto-initializer — which would otherwise build workers without Hilt injection — is
+             removed here, per WorkManager's documented on-demand-initialization pattern. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
     </application>
 
 </manifest>

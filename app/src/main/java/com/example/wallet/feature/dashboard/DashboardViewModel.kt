@@ -9,6 +9,7 @@ import com.example.wallet.domain.model.AccountType
 import com.example.wallet.domain.repository.AccountRepository
 import com.example.wallet.domain.repository.BudgetRepository
 import com.example.wallet.domain.repository.CategoryRepository
+import com.example.wallet.domain.repository.RecurringTransactionRepository
 import com.example.wallet.domain.repository.TransactionRepository
 import com.example.wallet.domain.repository.TransactionSplitRepository
 import com.example.wallet.domain.usecase.account.CalculateBalanceUseCase
@@ -22,6 +23,7 @@ import com.example.wallet.domain.usecase.dashboard.GetSavingsRateUseCase
 import com.example.wallet.domain.usecase.dashboard.GetSavingsUseCase
 import com.example.wallet.domain.usecase.dashboard.GetTotalBalanceUseCase
 import com.example.wallet.feature.budgets.BudgetSummary
+import com.example.wallet.feature.recurring.RecurringTransactionUi
 import com.example.wallet.feature.transactions.TransactionUi
 import com.example.wallet.feature.transactions.toTransactionUi
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -55,10 +57,22 @@ sealed interface DashboardUiState {
         val categorySpend: List<CategorySpend>,
         val recentTransactions: List<TransactionUi>,
         val activeBudgets: List<BudgetSummary>,
+        val upcomingRecurring: List<RecurringTransactionUi>,
     ) : DashboardUiState
 }
 
 private const val RECENT_TRANSACTIONS_LIMIT = 5
+private const val UPCOMING_RECURRING_LIMIT = 3
+
+/** Kotlin's `combine` only has typed overloads up to 5 flows — this holds the first 5 so a 6th
+ * (recurring rules) can be folded in via a second, 2-arg `combine` below. */
+private data class DashboardBaseData(
+    val accounts: List<com.example.wallet.domain.model.Account>,
+    val transactions: List<com.example.wallet.domain.model.Transaction>,
+    val categories: List<com.example.wallet.domain.model.Category>,
+    val splits: List<com.example.wallet.domain.model.TransactionSplit>,
+    val budgets: List<com.example.wallet.domain.model.Budget>,
+)
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
@@ -67,6 +81,7 @@ class DashboardViewModel @Inject constructor(
     categoryRepository: CategoryRepository,
     transactionSplitRepository: TransactionSplitRepository,
     private val budgetRepository: BudgetRepository,
+    recurringTransactionRepository: RecurringTransactionRepository,
     private val getTotalBalance: GetTotalBalanceUseCase,
     private val calculateBalance: CalculateBalanceUseCase,
     private val getMonthlyIncome: GetMonthlyIncomeUseCase,
@@ -78,16 +93,23 @@ class DashboardViewModel @Inject constructor(
     private val calculateBudgetUsage: CalculateBudgetUsageUseCase,
 ) : ViewModel() {
 
-    // Recomputes on any account/transaction/category/split/budget change — a dashboard is a
-    // summary of everything else in the app, so it needs to react to all five (plan.md §20's
-    // "no manual refresh" requirement).
-    val uiState: StateFlow<DashboardUiState> = combine(
+    // Recomputes on any account/transaction/category/split/budget/recurring-rule change — a
+    // dashboard is a summary of everything else in the app, so it needs to react to all six
+    // (plan.md §20's "no manual refresh" requirement).
+    private val baseData = combine(
         accountRepository.observeActiveAccounts(),
         transactionRepository.observeTransactions(),
         categoryRepository.observeCategories(),
         transactionSplitRepository.observeAllSplits(),
         budgetRepository.observeBudgets(),
     ) { accounts, transactions, categories, splits, budgets ->
+        DashboardBaseData(accounts, transactions, categories, splits, budgets)
+    }
+
+    val uiState: StateFlow<DashboardUiState> = combine(
+        baseData,
+        recurringTransactionRepository.observeActive(),
+    ) { (accounts, transactions, categories, splits, budgets), recurringRules ->
         val monthStart = startOfCurrentMonthMillis()
         val now = System.currentTimeMillis()
 
@@ -130,6 +152,24 @@ class DashboardViewModel @Inject constructor(
                 BudgetSummary(budget, calculateBudgetUsage(budget, categoryIds, transactions, splits))
             }
 
+        val upcomingRecurring = recurringRules
+            .sortedBy { it.nextDate }
+            .take(UPCOMING_RECURRING_LIMIT)
+            .map { rule ->
+                RecurringTransactionUi(
+                    id = rule.id,
+                    accountName = accountsById[rule.accountId]?.name ?: "Unknown account",
+                    categoryName = rule.categoryId?.let { categoriesById[it]?.name },
+                    amountMinor = rule.amountMinor,
+                    currency = rule.currency,
+                    type = rule.type,
+                    frequency = rule.frequency,
+                    nextDate = rule.nextDate,
+                    payee = rule.payee,
+                    autoPost = rule.autoPost,
+                )
+            }
+
         DashboardUiState.Loaded(
             totalBalanceMinor = totalBalance,
             currency = accounts.firstOrNull()?.currency ?: "BDT",
@@ -143,6 +183,7 @@ class DashboardViewModel @Inject constructor(
             categorySpend = categorySpend,
             recentTransactions = recentTransactions,
             activeBudgets = activeBudgets,
+            upcomingRecurring = upcomingRecurring,
         )
     }.stateIn(
         scope = viewModelScope,
