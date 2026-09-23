@@ -20,8 +20,6 @@ import androidx.navigation.navArgument
 import com.example.wallet.core.design.components.WalletBottomNavigation
 import com.example.wallet.core.design.components.WalletScaffold
 import com.example.wallet.core.design.components.WalletTopBar
-import com.example.wallet.core.design.glass.glassBackdropSource
-import com.example.wallet.core.design.glass.rememberGlassBackdrop
 import com.example.wallet.feature.accounts.AccountDetailScreen
 import com.example.wallet.feature.accounts.AccountFormScreen
 import com.example.wallet.feature.accounts.AccountRoutes
@@ -288,7 +286,6 @@ private fun TopLevelScaffold(
 ) {
     val badgeViewModel: NotificationBadgeViewModel = hiltViewModel()
     val unreadCount by badgeViewModel.unreadCount.collectAsStateWithLifecycle()
-    val backdrop = rememberGlassBackdrop()
 
     WalletScaffold(
         topBar = {
@@ -305,16 +302,17 @@ private fun TopLevelScaffold(
         // so nothing would show through its glass. Screens add WalletBottomNavSpace to their own
         // bottom content padding so their last item still scrolls clear of it.
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            // Recorded so the nav bar can draw it back blurred behind itself. The opaque
-            // background is part of the recording on purpose: the blurred copy has to fully
-            // cover the sharp original underneath it, or both would show at once.
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .glassBackdropSource(backdrop, MaterialTheme.colorScheme.surface),
-            ) {
-                content()
-            }
+            // wallet_app_stability_performance_plan.md §17/§18/§40 — the bottom nav is an
+            // INTERACTIVE-tier surface (subtle shader/highlight/press-scale only); real backdrop
+            // blur is FULL-tier, reserved for sheets/dialogs/popups. This used to record the
+            // *entire* screen's content into an offscreen layer on every single draw pass (every
+            // scroll frame, every navigation transition frame) just so the nav bar could blur a
+            // sliver of it — continuous full-scene capture + a real Gaussian blur, on every
+            // top-level screen, all the time. Dropping it (backdrop = null below) falls back to
+            // the nav bar's already-designed no-blur path — the same one every pre-API-31 device
+            // already uses — trading a few pixels of blur under the pill for no longer paying a
+            // whole-screen recording cost on every frame.
+            content()
             WalletBottomNavigation(
                 items = walletBottomNavItems,
                 selectedRoute = currentRoute,
@@ -334,7 +332,6 @@ private fun TopLevelScaffold(
                     "Add transaction"
                 },
                 modifier = Modifier.align(Alignment.BottomCenter),
-                backdrop = backdrop,
             )
         }
     }
