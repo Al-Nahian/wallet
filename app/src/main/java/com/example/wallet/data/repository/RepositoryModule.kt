@@ -1,6 +1,7 @@
 package com.example.wallet.data.repository
 
 import com.example.wallet.domain.repository.AccountRepository
+import com.example.wallet.domain.repository.AutomationCandidateRepository
 import com.example.wallet.domain.repository.BudgetRepository
 import com.example.wallet.domain.repository.CategoryRepository
 import com.example.wallet.domain.repository.InstitutionRepository
@@ -50,4 +51,9 @@ abstract class RepositoryModule {
     abstract fun bindRecurringTransactionRepository(
         impl: RecurringTransactionRepositoryImpl,
     ): RecurringTransactionRepository
+
+    @Binds
+    abstract fun bindAutomationCandidateRepository(
+        impl: AutomationCandidateRepositoryImpl,
+    ): AutomationCandidateRepository
 }

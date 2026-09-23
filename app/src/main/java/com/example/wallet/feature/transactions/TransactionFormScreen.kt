@@ -68,9 +68,13 @@ fun TransactionFormScreen(
     viewModel: TransactionFormViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.saved) {
         if (uiState.saved) onSaved()
+    }
+    LaunchedEffect(uiState.deleted) {
+        if (uiState.deleted) onBack()
     }
 
     Scaffold(
@@ -81,6 +85,16 @@ fun TransactionFormScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    // The "undo" affordance a TRANSACTION_CAPTURED automation notification
+                    // deep-links to (plans/14-sms-notification-automation.md) — as usable for any
+                    // manually-entered transaction as an automated one.
+                    if (uiState.isEditMode) {
+                        IconButton(onClick = { showDeleteConfirm = true }, enabled = !uiState.isDeleting) {
+                            Icon(Icons.Filled.Delete, contentDescription = "Delete transaction")
+                        }
                     }
                 },
             )
@@ -202,6 +216,23 @@ fun TransactionFormScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete transaction?") },
+            text = {
+                GlassWindowBlur()
+                Text("This removes it from your ledger. You can't undo this from here.")
+            },
+            confirmButton = {
+                TextButton(onClick = { showDeleteConfirm = false; viewModel.delete() }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 

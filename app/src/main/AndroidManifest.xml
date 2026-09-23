@@ -5,6 +5,10 @@
          says request contextually, and there's no automation feature to justify prompting yet. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- plan.md §30/§59 — declared here but only ever requested at runtime from the Automation
+         Settings screen, when the user explicitly opts into SMS capture; never on first launch. -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+
     <application
         android:name=".WalletApplication"
         android:allowBackup="true"
@@ -20,6 +24,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- plan.md §30/§59 — registered unconditionally, but inert until the user grants
+             RECEIVE_SMS at runtime from Automation Settings; `SmsReceiver` itself also checks the
+             capture-enabled setting before doing anything with a message it receives. -->
+        <receiver
+            android:name=".core.automation.SmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
 
         <!-- WalletApplication supplies its own WorkManager Configuration (Hilt-aware worker
              factory, for RecurringTransactionWorker) via Configuration.Provider, so the default

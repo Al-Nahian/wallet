@@ -20,6 +20,14 @@ data class Transaction(
      * `GenerateDueRecurringTransactionsUseCase` from a `RecurringTransaction` rule; null for
      * every manually-entered transaction. */
     val recurringTransactionId: String? = null,
+    /** plan.md §74/§87 (plans/14-sms-notification-automation.md) — MANUAL unless this row was
+     * auto-added by the SMS/notification capture pipeline. */
+    val source: TransactionSource = TransactionSource.MANUAL,
+    /** The parser's extracted reference (e.g. a bKash TrxID) when [source] isn't MANUAL, or a
+     * fallback hash of sender+body+timestamp when the message had no explicit reference — the
+     * dedup key `ProcessIncomingSmsUseCase` checks before ever creating a second transaction for
+     * the same real-world event (plan.md §33). Null for manual entries. */
+    val sourceReference: String? = null,
 )
 
 data class TransactionSplit(

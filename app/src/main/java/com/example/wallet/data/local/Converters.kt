@@ -2,10 +2,13 @@ package com.example.wallet.data.local
 
 import androidx.room.TypeConverter
 import com.example.wallet.domain.model.AccountType
+import com.example.wallet.domain.model.AutomationCandidateStatus
 import com.example.wallet.domain.model.BudgetPeriod
 import com.example.wallet.domain.model.CategoryType
 import com.example.wallet.domain.model.NotificationType
+import com.example.wallet.domain.model.ParseConfidence
 import com.example.wallet.domain.model.RecurringFrequency
+import com.example.wallet.domain.model.TransactionSource
 import com.example.wallet.domain.model.TransactionType
 
 /** Enum <-> String converters so entities can use typed enums instead of raw strings. */
@@ -45,4 +48,23 @@ class Converters {
 
     @TypeConverter
     fun toNotificationType(value: String): NotificationType = NotificationType.valueOf(value)
+
+    @TypeConverter
+    fun fromTransactionSource(value: TransactionSource): String = value.name
+
+    @TypeConverter
+    fun toTransactionSource(value: String): TransactionSource = TransactionSource.valueOf(value)
+
+    @TypeConverter
+    fun fromParseConfidence(value: ParseConfidence): String = value.name
+
+    @TypeConverter
+    fun toParseConfidence(value: String): ParseConfidence = ParseConfidence.valueOf(value)
+
+    @TypeConverter
+    fun fromAutomationCandidateStatus(value: AutomationCandidateStatus): String = value.name
+
+    @TypeConverter
+    fun toAutomationCandidateStatus(value: String): AutomationCandidateStatus =
+        AutomationCandidateStatus.valueOf(value)
 }

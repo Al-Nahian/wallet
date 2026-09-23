@@ -3,6 +3,7 @@ package com.example.wallet.core.database
 import android.content.Context
 import androidx.room.Room
 import com.example.wallet.data.local.dao.AccountDao
+import com.example.wallet.data.local.dao.AutomationCandidateDao
 import com.example.wallet.data.local.dao.BudgetCategoryDao
 import com.example.wallet.data.local.dao.BudgetDao
 import com.example.wallet.data.local.dao.CategoryDao
@@ -33,7 +34,7 @@ object DatabaseModule {
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "wallet.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .build()
 
     @Provides
@@ -84,4 +85,7 @@ object DatabaseModule {
 
     @Provides
     fun provideUserDao(db: AppDatabase): UserDao = db.userDao()
+
+    @Provides
+    fun provideAutomationCandidateDao(db: AppDatabase): AutomationCandidateDao = db.automationCandidateDao()
 }

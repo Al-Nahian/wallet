@@ -24,6 +24,9 @@ class FakeTransactionRepository : TransactionRepository {
 
     override suspend fun getTransaction(id: String): Transaction? = transactions.value[id]
 
+    override suspend fun findBySourceReference(sourceReference: String): Transaction? =
+        transactions.value.values.firstOrNull { it.sourceReference == sourceReference }
+
     override suspend fun create(transaction: Transaction) {
         transactions.value = transactions.value + (transaction.id to transaction)
     }

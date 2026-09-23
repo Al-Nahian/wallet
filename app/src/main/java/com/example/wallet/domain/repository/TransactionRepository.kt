@@ -10,6 +10,10 @@ interface TransactionRepository {
     fun observeByAccount(accountId: String): Flow<List<Transaction>>
     fun observeByDateRange(startInclusive: Long, endInclusive: Long): Flow<List<Transaction>>
     suspend fun getTransaction(id: String): Transaction?
+
+    /** plans/14-sms-notification-automation.md — the dedup check before the capture pipeline
+     * ever creates a second transaction for the same real-world SMS/notification event. */
+    suspend fun findBySourceReference(sourceReference: String): Transaction?
     suspend fun create(transaction: Transaction)
 
     /** plans/12-import-export.md — commits an entire CSV import as one atomic batch. */

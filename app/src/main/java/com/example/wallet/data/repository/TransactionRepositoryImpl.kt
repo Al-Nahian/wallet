@@ -32,6 +32,9 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun getTransaction(id: String): Transaction? = transactionDao.getById(id)?.toDomain()
 
+    override suspend fun findBySourceReference(sourceReference: String): Transaction? =
+        transactionDao.findBySourceReference(sourceReference)?.toDomain()
+
     override suspend fun create(transaction: Transaction) {
         appDatabase.withTransaction { transactionDao.insert(transaction.toEntity()) }
     }

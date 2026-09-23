@@ -3,6 +3,7 @@ package com.example.wallet.domain.usecase.transaction
 import com.example.wallet.core.common.newId
 import com.example.wallet.core.common.parseMoneyToMinorUnits
 import com.example.wallet.domain.model.Transaction
+import com.example.wallet.domain.model.TransactionSource
 import com.example.wallet.domain.model.TransactionType
 import com.example.wallet.domain.repository.AccountRepository
 import com.example.wallet.domain.repository.TransactionRepository
@@ -25,6 +26,8 @@ class CreateTransactionUseCase @Inject constructor(
         payee: String?,
         note: String?,
         date: Long,
+        source: TransactionSource = TransactionSource.MANUAL,
+        sourceReference: String? = null,
     ): Result<Transaction> {
         val account = accountRepository.getAccount(accountId)
             ?: return Result.failure(TransactionValidationException(TransactionError.AccountNotFound))
@@ -50,6 +53,8 @@ class CreateTransactionUseCase @Inject constructor(
             updatedAt = now,
             isRecurring = false,
             deletedAt = null,
+            source = source,
+            sourceReference = sourceReference,
         )
 
         transactionRepository.create(transaction)

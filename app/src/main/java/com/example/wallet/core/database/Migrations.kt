@@ -64,3 +64,38 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         )
     }
 }
+
+/**
+ * v4 -> v5 (Phase 14, plans/14-sms-notification-automation.md): adds `transactions.source`
+ * (default `'MANUAL'`, so every pre-existing row stays correctly tagged as manually entered) and
+ * `transactions.sourceReference` (nullable — the SMS/notification capture pipeline's dedup key),
+ * plus the new `automation_candidates` table backing the Review Queue.
+ */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE `transactions` ADD COLUMN `source` TEXT NOT NULL DEFAULT 'MANUAL'",
+        )
+        db.execSQL("ALTER TABLE `transactions` ADD COLUMN `sourceReference` TEXT")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_transactions_sourceReference` " +
+                "ON `transactions` (`sourceReference`)",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `automation_candidates` (" +
+                "`id` TEXT NOT NULL, `sourceType` TEXT NOT NULL, `type` TEXT NOT NULL, " +
+                "`amountMinor` INTEGER NOT NULL, `currency` TEXT NOT NULL, `accountId` TEXT, " +
+                "`toAccountId` TEXT, `categoryId` TEXT, `payee` TEXT, `note` TEXT, " +
+                "`date` INTEGER NOT NULL, `confidence` TEXT NOT NULL, `sourceReference` TEXT, " +
+                "`status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_automation_candidates_status` " +
+                "ON `automation_candidates` (`status`)",
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_automation_candidates_sourceReference` " +
+                "ON `automation_candidates` (`sourceReference`)",
+        )
+    }
+}

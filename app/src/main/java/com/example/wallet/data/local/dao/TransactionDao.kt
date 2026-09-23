@@ -35,6 +35,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun getById(id: String): TransactionEntity?
 
+    @Query("SELECT * FROM transactions WHERE sourceReference = :sourceReference LIMIT 1")
+    suspend fun findBySourceReference(sourceReference: String): TransactionEntity?
+
     @Query("SELECT * FROM transactions WHERE transferId = :transferId AND deletedAt IS NULL")
     suspend fun getByTransferId(transferId: String): List<TransactionEntity>
 

@@ -54,3 +54,25 @@ enum class NotificationType {
     SYNC_CONFLICT,
     SYSTEM,
 }
+
+/** plan.md §74 — where a transaction row came from. Every manual-entry code path defaults this
+ * to MANUAL; Phase 14's automation pipeline is the only producer of SMS/NOTIFICATION rows. */
+enum class TransactionSource {
+    MANUAL,
+    SMS,
+    NOTIFICATION,
+}
+
+/** plan.md §75/§87 — the two-tier auto-capture policy's routing signal: HIGH clears the bar to
+ * auto-add directly to the ledger, LOW is held in the Review Queue for the user to confirm. */
+enum class ParseConfidence {
+    HIGH,
+    LOW,
+}
+
+/** plan.md §34 — a Review Queue candidate's lifecycle. */
+enum class AutomationCandidateStatus {
+    PENDING,
+    ACCEPTED,
+    IGNORED,
+}

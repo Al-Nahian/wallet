@@ -19,6 +19,7 @@ import com.example.wallet.domain.usecase.budget.CheckBudgetAlertsUseCase
 import com.example.wallet.domain.usecase.label.AssignLabelUseCase
 import com.example.wallet.domain.usecase.transaction.CreateTransactionUseCase
 import com.example.wallet.domain.usecase.transaction.CreateTransferUseCase
+import com.example.wallet.domain.usecase.transaction.DeleteTransactionUseCase
 import com.example.wallet.domain.usecase.transaction.SplitInput
 import com.example.wallet.domain.usecase.transaction.SplitTransactionUseCase
 import com.example.wallet.domain.usecase.transaction.TransactionValidationException
@@ -72,6 +73,8 @@ data class TransactionFormState(
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
     val saved: Boolean = false,
+    val isDeleting: Boolean = false,
+    val deleted: Boolean = false,
 )
 
 private const val TRANSACTION_ID_ARG = "transactionId"
@@ -90,6 +93,7 @@ class TransactionFormViewModel @Inject constructor(
     private val splitTransactionUseCase: SplitTransactionUseCase,
     private val assignLabelUseCase: AssignLabelUseCase,
     private val checkBudgetAlertsUseCase: CheckBudgetAlertsUseCase,
+    private val deleteTransactionUseCase: DeleteTransactionUseCase,
 ) : ViewModel() {
 
     private val transactionId: String? = savedStateHandle[TRANSACTION_ID_ARG]
@@ -308,6 +312,21 @@ class TransactionFormViewModel @Inject constructor(
             result.fold(
                 onSuccess = { _uiState.update { it.copy(isSaving = false, saved = true) } },
                 onFailure = { error -> _uiState.update { it.copy(isSaving = false, errorMessage = errorMessageFor(error)) } },
+            )
+        }
+    }
+
+    /** The "undo" affordance a `TRANSACTION_CAPTURED` automation notification deep-links to
+     * (plans/14-sms-notification-automation.md's acceptance criteria) — soft-deletes exactly
+     * like the swipe-to-delete action on the Transactions list, just reachable from here too. */
+    fun delete() {
+        val id = transactionId ?: return
+        if (_uiState.value.isDeleting) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isDeleting = true, errorMessage = null) }
+            deleteTransactionUseCase(id).fold(
+                onSuccess = { _uiState.update { it.copy(isDeleting = false, deleted = true) } },
+                onFailure = { error -> _uiState.update { it.copy(isDeleting = false, errorMessage = errorMessageFor(error)) } },
             )
         }
     }

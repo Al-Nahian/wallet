@@ -3,6 +3,7 @@ package com.example.wallet.domain.usecase.transaction
 import com.example.wallet.core.common.newId
 import com.example.wallet.core.common.parseMoneyToMinorUnits
 import com.example.wallet.domain.model.Transaction
+import com.example.wallet.domain.model.TransactionSource
 import com.example.wallet.domain.model.TransactionType
 import com.example.wallet.domain.repository.AccountRepository
 import com.example.wallet.domain.repository.TransactionRepository
@@ -27,7 +28,9 @@ class CreateTransferUseCase @Inject constructor(
         amountInput: String,
         note: String?,
         date: Long,
-    ): Result<Unit> {
+        source: TransactionSource = TransactionSource.MANUAL,
+        sourceReference: String? = null,
+    ): Result<Transaction> {
         if (fromAccountId == toAccountId) {
             return Result.failure(TransactionValidationException(TransactionError.SameAccountTransfer))
         }
@@ -66,6 +69,8 @@ class CreateTransferUseCase @Inject constructor(
             isRecurring = false,
             deletedAt = null,
             transferId = transferId,
+            source = source,
+            sourceReference = sourceReference,
         )
         val incoming = outgoing.copy(
             id = newId(),
@@ -75,6 +80,6 @@ class CreateTransferUseCase @Inject constructor(
         )
 
         transactionRepository.createTransferPair(outgoing, incoming)
-        return Result.success(Unit)
+        return Result.success(outgoing)
     }
 }

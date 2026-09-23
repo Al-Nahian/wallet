@@ -38,6 +38,7 @@ fun ProfileScreen(
     onManageCategories: () -> Unit,
     onManageLabels: () -> Unit,
     onImportExport: () -> Unit,
+    onAutomationSettings: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
@@ -131,6 +132,11 @@ fun ProfileScreen(
             SecondaryButton(
                 text = "Import / export data",
                 onClick = onImportExport,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
+            SecondaryButton(
+                text = "Automation",
+                onClick = onAutomationSettings,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
         }

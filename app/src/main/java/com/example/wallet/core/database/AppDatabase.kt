@@ -5,6 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.wallet.data.local.Converters
 import com.example.wallet.data.local.dao.AccountDao
+import com.example.wallet.data.local.dao.AutomationCandidateDao
 import com.example.wallet.data.local.dao.BudgetCategoryDao
 import com.example.wallet.data.local.dao.BudgetDao
 import com.example.wallet.data.local.dao.CategoryDao
@@ -21,6 +22,7 @@ import com.example.wallet.data.local.dao.TransactionLabelDao
 import com.example.wallet.data.local.dao.TransactionSplitDao
 import com.example.wallet.data.local.dao.UserDao
 import com.example.wallet.data.local.entity.AccountEntity
+import com.example.wallet.data.local.entity.AutomationCandidateEntity
 import com.example.wallet.data.local.entity.BudgetCategoryEntity
 import com.example.wallet.data.local.entity.BudgetEntity
 import com.example.wallet.data.local.entity.CategoryEntity
@@ -39,16 +41,18 @@ import com.example.wallet.data.local.entity.TransactionSplitEntity
 import com.example.wallet.data.local.entity.UserEntity
 
 /**
- * v4 (plan.md §11-§19, §84, §86). `notifications` and `users` arrived in migration v1 -> v2
+ * v5 (plan.md §11-§19, §84, §86, §87). `notifications` and `users` arrived in migration v1 -> v2
  * (Phase 4); `transactions.transferId` arrived in migration v2 -> v3 (Phase 6, §22);
  * `recurring_transactions.autoPost` and `transactions.recurringTransactionId` arrived in
- * migration v3 -> v4 (Phase 11, plans/11-recurring-goals.md) — see Migrations.kt.
+ * migration v3 -> v4 (Phase 11, plans/11-recurring-goals.md); `transactions.source`/
+ * `transactions.sourceReference` and `automation_candidates` arrived in migration v4 -> v5
+ * (Phase 14, plans/14-sms-notification-automation.md) — see Migrations.kt.
  * `exportSchema = true` remains on: every future change goes through a real migration (see
  * androidTest/.../AppDatabaseMigrationTest.kt for the harness).
  *
  * Still deliberately absent: `sync_operations` (Phase 17) and every §12/§74 "future field" not
- * yet needed by a built phase (source, confidence, version, ...) — each arrives via its own
- * migration when the phase that needs it is built, per §69 rule 11.
+ * yet needed by a built phase (version, ...) — each arrives via its own migration when the phase
+ * that needs it is built, per §69 rule 11.
  */
 @Database(
     entities = [
@@ -69,8 +73,9 @@ import com.example.wallet.data.local.entity.UserEntity
         MerchantAliasEntity::class,
         NotificationEntity::class,
         UserEntity::class,
+        AutomationCandidateEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -91,4 +96,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun merchantDao(): MerchantDao
     abstract fun notificationDao(): NotificationDao
     abstract fun userDao(): UserDao
+    abstract fun automationCandidateDao(): AutomationCandidateDao
 }

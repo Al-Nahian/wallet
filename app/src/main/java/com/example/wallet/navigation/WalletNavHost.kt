@@ -26,6 +26,9 @@ import com.example.wallet.feature.accounts.AccountDetailScreen
 import com.example.wallet.feature.accounts.AccountFormScreen
 import com.example.wallet.feature.accounts.AccountRoutes
 import com.example.wallet.feature.accounts.AccountsScreen
+import com.example.wallet.feature.automation.AutomationRoutes
+import com.example.wallet.feature.automation.AutomationSettingsScreen
+import com.example.wallet.feature.automation.ReviewQueueScreen
 import com.example.wallet.feature.budgets.BudgetDetailScreen
 import com.example.wallet.feature.budgets.BudgetFormScreen
 import com.example.wallet.feature.budgets.BudgetRoutes
@@ -231,7 +234,17 @@ fun WalletNavHost() {
                 onManageCategories = { navController.navigate(CategoryRoutes.LIST) },
                 onManageLabels = { navController.navigate(LabelRoutes.LIST) },
                 onImportExport = { navController.navigate(ImportExportRoutes.ENTRY) },
+                onAutomationSettings = { navController.navigate(AutomationRoutes.SETTINGS) },
             )
+        }
+        composable(AutomationRoutes.SETTINGS) {
+            AutomationSettingsScreen(
+                onBack = { navController.popBackStack() },
+                onOpenReviewQueue = { navController.navigate(AutomationRoutes.REVIEW_QUEUE) },
+            )
+        }
+        composable(AutomationRoutes.REVIEW_QUEUE) {
+            ReviewQueueScreen(onBack = { navController.popBackStack() })
         }
         composable(ImportExportRoutes.ENTRY) {
             ImportExportScreen(
