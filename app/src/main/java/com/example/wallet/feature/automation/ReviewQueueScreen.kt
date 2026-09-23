@@ -1,8 +1,8 @@
 package com.example.wallet.feature.automation
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,7 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Card
+import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,10 +28,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.common.formatMoney
 import com.example.wallet.core.design.components.AccountSelector
 import com.example.wallet.core.design.components.CategoryPickerField
+import com.example.wallet.core.design.components.EmptyState
 import com.example.wallet.core.design.components.GlassScreenTopBar
 import com.example.wallet.core.design.components.PrimaryButton
 import com.example.wallet.core.design.components.SecondaryButton
+import com.example.wallet.core.design.components.SelectorOption
+import com.example.wallet.core.design.glass.GlassShapes
+import com.example.wallet.core.design.glass.GlassStyle
+import com.example.wallet.core.design.glass.GlassSurface
 import com.example.wallet.domain.model.AutomationCandidate
+import com.example.wallet.domain.model.Category
+import com.example.wallet.domain.model.CategoryGroup
 import com.example.wallet.domain.model.ParseConfidence
 import com.example.wallet.domain.model.TransactionType
 
@@ -58,16 +65,12 @@ fun ReviewQueueScreen(
         },
     ) { paddingValues ->
         if (uiState.candidates.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(paddingValues).padding(24.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "Nothing needs review right now.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            EmptyState(
+                title = "Nothing needs review",
+                subtitle = "Detected transactions that need your confirmation will show up here.",
+                icon = Icons.Filled.TaskAlt,
+                modifier = Modifier.padding(paddingValues).fillMaxSize(),
+            )
             return@Scaffold
         }
 
@@ -77,11 +80,11 @@ fun ReviewQueueScreen(
                     text = uiState.errorMessage.orEmpty(),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
             LazyColumn(
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(uiState.candidates, key = { it.id }) { candidate ->
@@ -108,9 +111,9 @@ fun ReviewQueueScreen(
 @Composable
 private fun CandidateCard(
     candidate: AutomationCandidate,
-    accountOptions: List<com.example.wallet.core.design.components.SelectorOption>,
-    categoryGroups: List<com.example.wallet.domain.model.CategoryGroup>,
-    categories: List<com.example.wallet.domain.model.Category>,
+    accountOptions: List<SelectorOption>,
+    categoryGroups: List<CategoryGroup>,
+    categories: List<Category>,
     selectedAccountId: String?,
     selectedToAccountId: String?,
     selectedCategoryId: String?,
@@ -123,10 +126,22 @@ private fun CandidateCard(
     val isTransfer = candidate.type == TransactionType.TRANSFER
     val canAccept = selectedAccountId != null && (!isTransfer || selectedToAccountId != null)
 
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text(text = formatMoney(candidate.amountMinor, candidate.currency), style = MaterialTheme.typography.titleMedium)
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth(),
+        style = GlassStyle.Regular,
+        shape = GlassShapes.medium,
+        elevation = 0.dp,
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = formatMoney(candidate.amountMinor, candidate.currency),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
                 if (candidate.confidence == ParseConfidence.HIGH) {
                     Text(
                         text = "High confidence",
@@ -165,7 +180,10 @@ private fun CandidateCard(
                 )
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+            ) {
                 SecondaryButton(text = "Ignore", onClick = onIgnore, modifier = Modifier.weight(1f))
                 PrimaryButton(text = "Accept", onClick = onAccept, enabled = canAccept, modifier = Modifier.weight(1f))
             }
