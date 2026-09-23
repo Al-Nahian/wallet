@@ -126,6 +126,9 @@ fun DashboardScreen(
                 }
 
                 item {
+                    // frosted = true: a test of the nav bar's lighter, more translucent tint on a
+                    // headline card — this card stays in the normal scroll flow (nothing passes
+                    // behind it), so it's the tint alone, not the bar's backdrop blur.
                     BalanceCard(
                         label = "Total Balance",
                         amountMinor = state.totalBalanceMinor,
@@ -133,6 +136,7 @@ fun DashboardScreen(
                         containerColor = TotalBalanceColor,
                         contentColor = Color.White,
                         icon = Icons.Filled.AccountBalance,
+                        frosted = true,
                     )
                 }
                 item {
