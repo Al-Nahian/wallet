@@ -19,6 +19,7 @@ emulator.log
 # never pushed to the public remote.
 /plan.md
 /liquid_glass_implementation_plan.md
+/wallet_app_stability_performance_plan.md
 /plans/
 /.claude/
 

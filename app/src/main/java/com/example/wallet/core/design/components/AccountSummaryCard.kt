@@ -47,6 +47,7 @@ fun AccountSummaryCard(
         fill = backgroundColor.copy(alpha = GlassTokens.frostedFillAlpha),
         glow = false,
         elevation = 0.dp,
+        lightweight = true,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp).fillMaxWidth(),

@@ -147,6 +147,7 @@ private fun RecurringTransactionRow(item: RecurringTransactionUi, onClick: () ->
         style = GlassStyle.Thin,
         shape = GlassShapes.small,
         elevation = 0.dp,
+        lightweight = true,
     ) {
         ListItem(
             modifier = Modifier.clickable(onClick = onClick),

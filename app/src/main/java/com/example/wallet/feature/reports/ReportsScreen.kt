@@ -189,6 +189,7 @@ private fun AccountReportCard(report: AccountReport) {
         style = GlassStyle.Thick,
         fill = fill.copy(alpha = 0.85f),
         elevation = 0.dp,
+        lightweight = true,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = report.accountName, style = MaterialTheme.typography.labelLarge)
@@ -221,6 +222,7 @@ private fun CategoryTrendCard(trend: CategoryTrend, currency: String) {
         style = GlassStyle.Thick,
         fill = fill.copy(alpha = 0.85f),
         elevation = 0.dp,
+        lightweight = true,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = trend.categoryName, style = MaterialTheme.typography.labelLarge)

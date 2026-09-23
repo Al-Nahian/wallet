@@ -56,6 +56,9 @@ fun TransactionRow(
         // ring hugging the card edge rather than a soft lift — on a white/light background that
         // reads as an unwanted outline. The fill-color contrast alone defines the card edge.
         elevation = 0.dp,
+        // wallet_app_stability_performance_plan.md §17-20 — this row lives in the transaction
+        // list's LazyColumn, the app's single most performance-sensitive scroll surface.
+        lightweight = true,
     ) {
         ListItem(
             modifier = Modifier.clickable(onClick = onClick),

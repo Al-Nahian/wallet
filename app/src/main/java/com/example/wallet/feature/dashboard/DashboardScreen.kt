@@ -346,6 +346,7 @@ private fun UpcomingRecurringRow(item: RecurringTransactionUi, onClick: () -> Un
         style = GlassStyle.Thin,
         shape = GlassShapes.small,
         elevation = 0.dp,
+        lightweight = true,
     ) {
         ListItem(
             leadingContent = {

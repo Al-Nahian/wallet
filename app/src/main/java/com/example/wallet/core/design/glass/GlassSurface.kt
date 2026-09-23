@@ -61,6 +61,15 @@ fun GlassSurface(
     interactionSource: MutableInteractionSource? = null,
     enabled: Boolean = true,
     elevation: Dp = GlassTokens.shadowElevation,
+    /** wallet_app_stability_performance_plan.md §17-20's STATIC tier: skips the Offscreen
+     * compositing layer this surface would otherwise always allocate, the dominant per-frame GPU
+     * cost when many instances are visible at once — a scrolling list of rows being exactly that
+     * case. Trades a very slightly less "grouped" translucency blend (imperceptible for a plain
+     * fill + a faint top highlight, the only two layers a non-[glow] surface draws) for a real
+     * scroll-performance win. Leave `false` (the default) for chrome, dialogs, and cards shown a
+     * handful at a time, where the cost is negligible; set `true` for any [GlassSurface] used as
+     * a row inside a scrolling `LazyColumn`/`LazyRow`. */
+    lightweight: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val motion = LocalGlassMotionPreferences.current
@@ -98,10 +107,16 @@ fun GlassSurface(
                     base.shadow(elevation = if (enabled) elevation else 0.dp, shape = shape, clip = false)
                 }
             }
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                compositingStrategy = CompositingStrategy.Offscreen
+            .let { base ->
+                when {
+                    !lightweight -> base.graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        compositingStrategy = CompositingStrategy.Offscreen
+                    }
+                    reactsToPress -> base.graphicsLayer { scaleX = scale; scaleY = scale }
+                    else -> base
+                }
             }
             .clip(shape)
             .glassBackdrop(backdrop),

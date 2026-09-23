@@ -131,6 +131,7 @@ private fun CandidateCard(
         style = GlassStyle.Regular,
         shape = GlassShapes.medium,
         elevation = 0.dp,
+        lightweight = true,
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(

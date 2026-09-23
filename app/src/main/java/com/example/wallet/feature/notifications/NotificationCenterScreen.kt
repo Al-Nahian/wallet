@@ -126,6 +126,7 @@ private fun NotificationRow(notification: Notification, onClick: () -> Unit) {
         shape = GlassShapes.small,
         tint = if (notification.isUnread) MaterialTheme.colorScheme.primary else null,
         elevation = 0.dp,
+        lightweight = true,
     ) {
         ListItem(
             modifier = Modifier.clickable(onClick = onClick),

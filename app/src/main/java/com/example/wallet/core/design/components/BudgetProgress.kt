@@ -53,6 +53,7 @@ fun BudgetProgress(
         fill = statusColor.copy(alpha = GlassTokens.frostedFillAlpha),
         glow = false,
         elevation = 0.dp,
+        lightweight = true,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
