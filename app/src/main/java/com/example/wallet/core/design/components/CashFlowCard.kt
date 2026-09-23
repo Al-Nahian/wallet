@@ -39,6 +39,14 @@ private val CashFlowIncomeColor = Color(0xFF16A34A)
 private val CashFlowExpenseColor = Color(0xFFDC2626)
 private val CashFlowIconTint = Color(0xFF64748B)
 
+/** An explicit neutral fill rather than [GlassStyle.Thick]'s theme-surface-derived one: in light
+ * mode, `colorScheme.surface` sits only a hair off `colorScheme.background` (unlike dark mode,
+ * where the surface is meaningfully lighter than the near-black page), so the computed fill was
+ * nearly indistinguishable from the page behind it — this card looked like plain white space
+ * instead of a card. Same fix GlassBottomBar uses for the same reason. */
+private val LightCashFlowFill = Color(0xFFEDEDF2)
+private val DarkCashFlowFill = Color(0xFF1C1C1E)
+
 private data class CashFlowPalette(val text: Color, val mutedText: Color, val track: Color)
 
 private val DarkCashFlowPalette = CashFlowPalette(
@@ -65,7 +73,8 @@ fun CashFlowCard(
     modifier: Modifier = Modifier,
     previousNetMinor: Long? = null,
 ) {
-    val palette = if (isSystemInDarkTheme()) DarkCashFlowPalette else LightCashFlowPalette
+    val isDark = isSystemInDarkTheme()
+    val palette = if (isDark) DarkCashFlowPalette else LightCashFlowPalette
     val netMinor = incomeMinor - expenseMinor
     val changePercent = previousNetMinor
         ?.takeIf { it != 0L }
@@ -75,6 +84,7 @@ fun CashFlowCard(
         modifier = modifier.fillMaxWidth(),
         style = GlassStyle.Thick,
         shape = GlassShapes.large,
+        fill = (if (isDark) DarkCashFlowFill else LightCashFlowFill).copy(alpha = 0.85f),
         elevation = 0.dp,
     ) {
         Column(modifier = Modifier.padding(18.dp)) {

@@ -25,15 +25,13 @@ import com.example.wallet.core.common.formatMoney
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
 
-/** A full-width, vividly tinted glass balance card (Total Balance, Savings, Income, Expense…) —
- * [containerColor] doubles as the glass tint/glow color and [icon]'s bubble color.
+/** A full-width, frosted glass balance card (Total Balance, Savings, Income, Expense…) —
+ * [containerColor] doubles as the glass tint and [icon]'s bubble color.
  *
- * [frosted] swaps the usual ~0.90-alpha Vivid fill for a lighter 0.55 one — the same tint the
- * nav bar uses over its backdrop blur, minus the blur itself: this card sits in the normal
- * scroll flow with nothing passing behind it, so there's nothing to blur, just a softer, more
- * translucent version of the same color. It also drops the glow shadow: same reasoning as the
- * bar's own shadow removal — a colored shadow cast under a fill this translucent shows straight
- * through as a light band along the bottom edge instead of a lift. */
+ * The fill is a lighter 0.55-alpha tint rather than solid color — the same softer, more
+ * translucent look the nav bar's frosted glass uses. No shadow: a colored shadow cast under a
+ * fill this translucent shows straight through as a light band along the bottom edge instead of
+ * a lift (the same bug the nav bar's own shadow removal fixed). */
 @Composable
 fun BalanceCard(
     label: String,
@@ -43,15 +41,14 @@ fun BalanceCard(
     containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     contentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     icon: ImageVector = Icons.Filled.AccountBalanceWallet,
-    frosted: Boolean = false,
 ) {
     GlassSurface(
         modifier = modifier.fillMaxWidth(),
         style = GlassStyle.Vivid,
         tint = containerColor,
-        fill = if (frosted) containerColor.copy(alpha = 0.55f) else null,
-        glow = !frosted,
-        elevation = if (frosted) 0.dp else 10.dp,
+        fill = containerColor.copy(alpha = 0.55f),
+        glow = false,
+        elevation = 0.dp,
     ) {
         Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),

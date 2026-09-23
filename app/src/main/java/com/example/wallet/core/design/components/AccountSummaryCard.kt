@@ -26,9 +26,10 @@ import com.example.wallet.core.common.formatMoney
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
 
-/** A compact, vividly tinted glass account tile for the dashboard's two-per-row accounts grid —
- * a colored glow card with a glass icon bubble and trailing chevron, per the liquid-glass
- * reference design. */
+/** A compact, frosted tinted glass account tile for the dashboard's two-per-row accounts grid —
+ * a glass icon bubble and trailing chevron over a lighter, translucent tint, per the
+ * liquid-glass reference design. See [BalanceCard] for why the fill runs at 0.55 alpha with no
+ * shadow rather than the old solid-glow treatment. */
 @Composable
 fun AccountSummaryCard(
     label: String,
@@ -42,8 +43,9 @@ fun AccountSummaryCard(
         modifier = modifier.fillMaxWidth(),
         style = GlassStyle.Vivid,
         tint = backgroundColor,
-        glow = true,
-        elevation = 10.dp,
+        fill = backgroundColor.copy(alpha = 0.55f),
+        glow = false,
+        elevation = 0.dp,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp).fillMaxWidth(),

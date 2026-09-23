@@ -27,8 +27,8 @@ import java.util.Locale
 
 /** plan.md §7/§17 — a single budget's spent/remaining/usage at a glance, in the format §17
  * specifies ("Budget: X / Spent: Y / Remaining: Z / Usage: N%"), colored by status (healthy,
- * near limit, exceeded) as a vividly tinted glow glass card matching the dashboard's other
- * headline cards. */
+ * near limit, exceeded) as a frosted tinted glass card matching the dashboard's other headline
+ * cards (see [BalanceCard] for the 0.55-alpha-fill/no-shadow reasoning). */
 @Composable
 fun BudgetProgress(
     name: String,
@@ -49,8 +49,9 @@ fun BudgetProgress(
         modifier = modifier.fillMaxWidth(),
         style = GlassStyle.Vivid,
         tint = statusColor,
-        glow = true,
-        elevation = 10.dp,
+        fill = statusColor.copy(alpha = 0.55f),
+        glow = false,
+        elevation = 0.dp,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {

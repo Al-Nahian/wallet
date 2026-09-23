@@ -27,8 +27,8 @@ import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
 
 /** A small labeled stat, e.g. "Savings Rate" / "12.5%" — unlike [BalanceCard], the value is a
- * pre-formatted string rather than always a currency amount. Same vivid tinted glass treatment
- * as [AccountSummaryCard], with an icon bubble and trailing chevron. */
+ * pre-formatted string rather than always a currency amount. Same frosted tinted glass treatment
+ * as [AccountSummaryCard] and [BalanceCard], with an icon bubble and trailing chevron. */
 @Composable
 fun StatCard(
     label: String,
@@ -42,8 +42,9 @@ fun StatCard(
         modifier = modifier.fillMaxWidth(),
         style = GlassStyle.Vivid,
         tint = containerColor,
-        glow = true,
-        elevation = 10.dp,
+        fill = containerColor.copy(alpha = 0.55f),
+        glow = false,
+        elevation = 0.dp,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp).fillMaxWidth(),

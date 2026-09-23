@@ -1,5 +1,6 @@
 package com.example.wallet.feature.reports
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,6 +46,12 @@ private val ReportsAccentPalette = listOf(
     Color(0xFF42B5E8), Color(0xFF9C6ADE), Color(0xFFFF9F1C), Color(0xFF26A69A),
     Color(0xFFEC407A), Color(0xFF7CB342),
 )
+
+/** Same explicit neutral fill CashFlowCard uses, and for the same reason: in light mode
+ * [GlassStyle.Thick]'s theme-surface-derived fill sits too close to the page background to read
+ * as a card at all. */
+private val LightNeutralCardFill = Color(0xFFEDEDF2)
+private val DarkNeutralCardFill = Color(0xFF1C1C1E)
 
 /** Solid, full-opacity card colors — mirrors the dashboard's palette so the two screens feel
  * like one cohesive app rather than each inventing its own tinting. */
@@ -176,7 +183,13 @@ private fun EmptyRowText(text: String) {
 
 @Composable
 private fun AccountReportCard(report: AccountReport) {
-    GlassSurface(modifier = Modifier.fillMaxWidth(), style = GlassStyle.Thick, elevation = 0.dp) {
+    val fill = if (isSystemInDarkTheme()) DarkNeutralCardFill else LightNeutralCardFill
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth(),
+        style = GlassStyle.Thick,
+        fill = fill.copy(alpha = 0.85f),
+        elevation = 0.dp,
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = report.accountName, style = MaterialTheme.typography.labelLarge)
             Text(
@@ -202,7 +215,13 @@ private fun AccountReportCard(report: AccountReport) {
 
 @Composable
 private fun CategoryTrendCard(trend: CategoryTrend, currency: String) {
-    GlassSurface(modifier = Modifier.fillMaxWidth(), style = GlassStyle.Thick, elevation = 0.dp) {
+    val fill = if (isSystemInDarkTheme()) DarkNeutralCardFill else LightNeutralCardFill
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth(),
+        style = GlassStyle.Thick,
+        fill = fill.copy(alpha = 0.85f),
+        elevation = 0.dp,
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = trend.categoryName, style = MaterialTheme.typography.labelLarge)
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
