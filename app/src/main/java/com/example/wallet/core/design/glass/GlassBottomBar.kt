@@ -13,7 +13,13 @@ import androidx.compose.ui.unit.dp
  * more opaque fill, since there the translucency alone has to carry the effect. */
 private val LightBarColor = Color(0xFFEFEFF3)
 private val DarkBarColor = Color(0xFF1A1A1E)
-private const val BlurredBarOpacity = 0.72f
+
+/** Kept low over the blur: the tint is there to soften and unify what shows through, not to hide
+ * it. Too much and the frosted look flattens into a plain white/grey panel. */
+private const val BlurredBarOpacity = 0.40f
+
+/** Without blur to diffuse the content there's nothing to soften it, so the tint has to carry
+ * legibility on its own and runs much heavier. */
 private const val FlatBarOpacity = 0.92f
 
 /**

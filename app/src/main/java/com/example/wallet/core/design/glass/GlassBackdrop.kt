@@ -65,7 +65,7 @@ fun Modifier.glassBackdropSource(backdrop: GlassBackdrop, background: Color): Mo
  *
  * Apply *after* the surface's own `clip(shape)` so the blur takes the surface's shape.
  */
-fun Modifier.glassBackdrop(backdrop: GlassBackdrop?, radius: Dp = 28.dp): Modifier {
+fun Modifier.glassBackdrop(backdrop: GlassBackdrop?, radius: Dp = 14.dp): Modifier {
     if (backdrop == null || !GlassCapabilities.supportsAdvancedBlur()) return this
     return composed {
         val blurLayer = rememberGraphicsLayer()
