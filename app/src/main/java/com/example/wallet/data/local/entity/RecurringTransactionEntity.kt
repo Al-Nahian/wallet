@@ -39,4 +39,6 @@ data class RecurringTransactionEntity(
     val payee: String? = null,
     val note: String? = null,
     val isActive: Boolean = true,
+    /** Added in MIGRATION_3_4 — see [com.example.wallet.domain.model.RecurringTransaction.autoPost]. */
+    val autoPost: Boolean = true,
 )

@@ -36,6 +36,7 @@ import com.example.wallet.domain.model.TransactionType
         Index("payee"),
         Index("type"),
         Index("transferId"),
+        Index("recurringTransactionId"),
     ],
 )
 data class TransactionEntity(
@@ -53,4 +54,7 @@ data class TransactionEntity(
     val isRecurring: Boolean = false,
     val deletedAt: Long? = null,
     val transferId: String? = null,
+    /** plans/11-recurring-goals.md, added in MIGRATION_3_4 — the rule that auto-posted this row,
+     * if any. No FK: the rule may later be deleted while its already-posted history stays. */
+    val recurringTransactionId: String? = null,
 )

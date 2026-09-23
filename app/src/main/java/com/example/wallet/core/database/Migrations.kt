@@ -44,3 +44,23 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         )
     }
 }
+
+/**
+ * v3 -> v4 (Phase 11, plans/11-recurring-goals.md): adds the two columns the recurring-transaction
+ * engine needs on top of the table that already existed since v3 —
+ * `recurring_transactions.autoPost` (default true, so every rule written before this migration
+ * keeps behaving as an auto-posting rule rather than silently switching to reminder-only) and
+ * `transactions.recurringTransactionId` (nullable — every pre-existing row was entered manually).
+ */
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE `recurring_transactions` ADD COLUMN `autoPost` INTEGER NOT NULL DEFAULT 1",
+        )
+        db.execSQL("ALTER TABLE `transactions` ADD COLUMN `recurringTransactionId` TEXT")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_transactions_recurringTransactionId` " +
+                "ON `transactions` (`recurringTransactionId`)",
+        )
+    }
+}

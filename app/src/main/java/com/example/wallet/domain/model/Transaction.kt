@@ -16,6 +16,10 @@ data class Transaction(
     val deletedAt: Long?,
     /** plan.md §22 — links the two legs of a transfer (Phase 6). Null for every other type. */
     val transferId: String? = null,
+    /** plans/11-recurring-goals.md — set when this row was auto-posted by
+     * `GenerateDueRecurringTransactionsUseCase` from a `RecurringTransaction` rule; null for
+     * every manually-entered transaction. */
+    val recurringTransactionId: String? = null,
 )
 
 data class TransactionSplit(

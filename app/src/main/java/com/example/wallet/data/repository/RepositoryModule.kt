@@ -6,6 +6,7 @@ import com.example.wallet.domain.repository.CategoryRepository
 import com.example.wallet.domain.repository.InstitutionRepository
 import com.example.wallet.domain.repository.LabelRepository
 import com.example.wallet.domain.repository.NotificationRepository
+import com.example.wallet.domain.repository.RecurringTransactionRepository
 import com.example.wallet.domain.repository.TransactionRepository
 import com.example.wallet.domain.repository.TransactionSplitRepository
 import com.example.wallet.domain.repository.UserRepository
@@ -44,4 +45,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindBudgetRepository(impl: BudgetRepositoryImpl): BudgetRepository
+
+    @Binds
+    abstract fun bindRecurringTransactionRepository(
+        impl: RecurringTransactionRepositoryImpl,
+    ): RecurringTransactionRepository
 }
