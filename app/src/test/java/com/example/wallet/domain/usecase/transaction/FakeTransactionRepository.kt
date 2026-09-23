@@ -28,6 +28,10 @@ class FakeTransactionRepository : TransactionRepository {
         transactions.value = transactions.value + (transaction.id to transaction)
     }
 
+    override suspend fun createBatch(transactions: List<Transaction>) {
+        this.transactions.value = this.transactions.value + transactions.associateBy { it.id }
+    }
+
     override suspend fun update(transaction: Transaction) {
         transactions.value = transactions.value + (transaction.id to transaction)
     }

@@ -33,6 +33,9 @@ import com.example.wallet.feature.budgets.BudgetsScreen
 import com.example.wallet.feature.categories.CategoriesScreen
 import com.example.wallet.feature.categories.CategoryRoutes
 import com.example.wallet.feature.dashboard.DashboardScreen
+import com.example.wallet.feature.importexport.ImportExportRoutes
+import com.example.wallet.feature.importexport.ImportExportScreen
+import com.example.wallet.feature.importexport.ImportWizardScreen
 import com.example.wallet.feature.labels.LabelRoutes
 import com.example.wallet.feature.labels.LabelsScreen
 import com.example.wallet.feature.notifications.NotificationBadgeViewModel
@@ -227,6 +230,24 @@ fun WalletNavHost() {
                 onBack = { navController.popBackStack() },
                 onManageCategories = { navController.navigate(CategoryRoutes.LIST) },
                 onManageLabels = { navController.navigate(LabelRoutes.LIST) },
+                onImportExport = { navController.navigate(ImportExportRoutes.ENTRY) },
+            )
+        }
+        composable(ImportExportRoutes.ENTRY) {
+            ImportExportScreen(
+                onBack = { navController.popBackStack() },
+                onFilePickedForImport = { uri ->
+                    navController.navigate(ImportExportRoutes.wizard(uri.toString()))
+                },
+            )
+        }
+        composable(
+            route = ImportExportRoutes.WIZARD_PATTERN,
+            arguments = listOf(navArgument(ImportExportRoutes.URI_ARG) { type = NavType.StringType }),
+        ) {
+            ImportWizardScreen(
+                onBack = { navController.popBackStack() },
+                onImported = { navController.popBackStack(ImportExportRoutes.ENTRY, inclusive = false) },
             )
         }
         composable(CategoryRoutes.LIST) {

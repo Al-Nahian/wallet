@@ -36,6 +36,10 @@ class TransactionRepositoryImpl @Inject constructor(
         appDatabase.withTransaction { transactionDao.insert(transaction.toEntity()) }
     }
 
+    override suspend fun createBatch(transactions: List<Transaction>) {
+        appDatabase.withTransaction { transactionDao.insertAll(transactions.map { it.toEntity() }) }
+    }
+
     override suspend fun update(transaction: Transaction) {
         appDatabase.withTransaction { transactionDao.update(transaction.toEntity()) }
     }

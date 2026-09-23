@@ -37,6 +37,7 @@ fun ProfileScreen(
     onBack: () -> Unit,
     onManageCategories: () -> Unit,
     onManageLabels: () -> Unit,
+    onImportExport: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
@@ -125,6 +126,11 @@ fun ProfileScreen(
             SecondaryButton(
                 text = "Manage labels",
                 onClick = onManageLabels,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
+            SecondaryButton(
+                text = "Import / export data",
+                onClick = onImportExport,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
         }

@@ -11,6 +11,9 @@ interface TransactionRepository {
     fun observeByDateRange(startInclusive: Long, endInclusive: Long): Flow<List<Transaction>>
     suspend fun getTransaction(id: String): Transaction?
     suspend fun create(transaction: Transaction)
+
+    /** plans/12-import-export.md — commits an entire CSV import as one atomic batch. */
+    suspend fun createBatch(transactions: List<Transaction>)
     suspend fun update(transaction: Transaction)
     suspend fun delete(id: String)
 
