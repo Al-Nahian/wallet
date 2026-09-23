@@ -205,101 +205,108 @@ private fun MainPage(
     Column(
         modifier = Modifier
             .padding(paddingValues)
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-            .imePadding()
             .fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        TransactionTypeSegmented(
-            selected = uiState.type,
-            isEditMode = uiState.isEditMode,
-            onSelected = viewModel::onTypeChange,
-            incomeColor = income,
-            expenseColor = expense,
-            transferColor = transfer,
-        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            TransactionTypeSegmented(
+                selected = uiState.type,
+                isEditMode = uiState.isEditMode,
+                onSelected = viewModel::onTypeChange,
+                incomeColor = income,
+                expenseColor = expense,
+                transferColor = transfer,
+            )
 
-        AmountGlassCard(
-            amountInput = uiState.amountInput,
-            tint = amountTint,
-            onOpenDetails = onOpenDetails,
-        )
+            AmountGlassCard(
+                amountInput = uiState.amountInput,
+                tint = amountTint,
+                onOpenDetails = onOpenDetails,
+            )
 
-        AmountKeypad(onKeyPress = viewModel::onAmountKeypadKey)
-
-        if (uiState.type == TransactionType.TRANSFER) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                GlassAccountPickerCard(
-                    label = "From Account",
-                    icon = Icons.Filled.AccountBalance,
-                    tint = transfer,
-                    options = uiState.accountOptions,
-                    selectedId = uiState.accountId,
-                    onSelected = viewModel::onAccountChange,
-                    modifier = Modifier.weight(1f),
-                )
-                GlassAccountPickerCard(
-                    label = "To Account",
-                    icon = Icons.Filled.AccountBalance,
-                    tint = accent,
-                    options = uiState.accountOptions.filter { it.id != uiState.accountId },
-                    selectedId = uiState.toAccountId,
-                    onSelected = viewModel::onToAccountChange,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                GlassAccountPickerCard(
-                    label = "Account",
-                    icon = Icons.Filled.AccountBalance,
-                    tint = transfer,
-                    options = uiState.accountOptions,
-                    selectedId = uiState.accountId,
-                    onSelected = viewModel::onAccountChange,
-                    modifier = Modifier.weight(1f),
-                )
-                if (!uiState.isSplitEnabled) {
-                    GlassCategoryPickerCard(
-                        tint = accent,
-                        groups = uiState.categoryGroups,
-                        categories = uiState.categories,
-                        selectedCategoryId = uiState.categoryId,
-                        onSelected = viewModel::onCategoryChange,
+            if (uiState.type == TransactionType.TRANSFER) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    GlassAccountPickerCard(
+                        label = "From Account",
+                        icon = Icons.Filled.AccountBalance,
+                        tint = transfer,
+                        options = uiState.accountOptions,
+                        selectedId = uiState.accountId,
+                        onSelected = viewModel::onAccountChange,
                         modifier = Modifier.weight(1f),
+                    )
+                    GlassAccountPickerCard(
+                        label = "To Account",
+                        icon = Icons.Filled.AccountBalance,
+                        tint = accent,
+                        options = uiState.accountOptions.filter { it.id != uiState.accountId },
+                        selectedId = uiState.toAccountId,
+                        onSelected = viewModel::onToAccountChange,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    GlassAccountPickerCard(
+                        label = "Account",
+                        icon = Icons.Filled.AccountBalance,
+                        tint = transfer,
+                        options = uiState.accountOptions,
+                        selectedId = uiState.accountId,
+                        onSelected = viewModel::onAccountChange,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (!uiState.isSplitEnabled) {
+                        GlassCategoryPickerCard(
+                            tint = accent,
+                            groups = uiState.categoryGroups,
+                            categories = uiState.categories,
+                            selectedCategoryId = uiState.categoryId,
+                            onSelected = viewModel::onCategoryChange,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+
+                SecondaryButton(
+                    text = if (uiState.isSplitEnabled) "Remove split" else "Split this transaction",
+                    onClick = { viewModel.onToggleSplit(!uiState.isSplitEnabled) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                if (uiState.isSplitEnabled) {
+                    SplitEditor(
+                        rows = uiState.splitRows,
+                        categoryGroups = uiState.categoryGroups,
+                        categories = uiState.categories,
+                        targetAmountInput = uiState.amountInput,
+                        onAddRow = viewModel::addSplitRow,
+                        onRemoveRow = viewModel::removeSplitRow,
+                        onCategoryChange = viewModel::onSplitCategoryChange,
+                        onAmountChange = viewModel::onSplitAmountChange,
+                        onNoteChange = viewModel::onSplitNoteChange,
                     )
                 }
             }
 
-            SecondaryButton(
-                text = if (uiState.isSplitEnabled) "Remove split" else "Split this transaction",
-                onClick = { viewModel.onToggleSplit(!uiState.isSplitEnabled) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            if (uiState.isSplitEnabled) {
-                SplitEditor(
-                    rows = uiState.splitRows,
-                    categoryGroups = uiState.categoryGroups,
-                    categories = uiState.categories,
-                    targetAmountInput = uiState.amountInput,
-                    onAddRow = viewModel::addSplitRow,
-                    onRemoveRow = viewModel::removeSplitRow,
-                    onCategoryChange = viewModel::onSplitCategoryChange,
-                    onAmountChange = viewModel::onSplitAmountChange,
-                    onNoteChange = viewModel::onSplitNoteChange,
+            if (uiState.errorMessage != null) {
+                Text(
+                    text = uiState.errorMessage.orEmpty(),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
         }
 
-        if (uiState.errorMessage != null) {
-            Text(
-                text = uiState.errorMessage.orEmpty(),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
+        AmountKeypad(
+            onKeyPress = viewModel::onAmountKeypadKey,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).imePadding(),
+        )
     }
 }
 
