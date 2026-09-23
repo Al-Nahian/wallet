@@ -32,16 +32,13 @@ import androidx.compose.ui.unit.dp
  * Rendering pipeline (plan §7): shadow → clip → translucent material fill → specular highlight →
  * thin border → content.
  *
- * **Honest scope note**: true "backdrop" blur — blurring the live app content sitting behind this
- * surface in z-order, the way iOS Liquid Glass does — needs either capturing the layer behind
- * this one every frame (an advanced Compose 1.7 `GraphicsLayer`-record technique, expensive and
- * easy to get misaligned/janky across every screen) or an OS-level compositor hook Android
- * doesn't expose for in-content overlays (window-level `blurBehindRadius`, used by [GlassSheet]
- * for dialogs, only blurs what's behind an entire *window*, not a view within one). This surface
- * deliberately does not attempt that: it composes translucency + contextual tint + specular
- * highlight + thin border + soft shadow, which is the achievable, stable subset of the material
- * (plan §29's fallback rule already assumes blur may be unavailable). [GlassSheet] is where real
- * platform blur-behind is used, because dialogs get their own window.
+ * True "backdrop" blur — blurring the live content sitting behind the surface in z-order, the way
+ * iOS Liquid Glass does — is available by passing a [backdrop] (see [GlassBackdrop]), which costs
+ * a per-frame `GraphicsLayer` recording of the content being blurred; the bottom nav bar opts in,
+ * most surfaces don't need to. Without it the surface composes translucency + contextual tint +
+ * specular highlight + thin border + soft shadow, which reads as glass on its own (plan §29's
+ * fallback rule already assumes blur may be unavailable, as it is below API 31). [GlassSheet]
+ * uses real platform window blur-behind instead, because dialogs get their own window.
  */
 @Composable
 fun GlassSurface(
@@ -53,6 +50,9 @@ fun GlassSurface(
      * transparent) color. For the rare surface that needs a specific solid color at a specific
      * opacity rather than the computed glass blend — see [GlassBottomBar]. */
     fill: Color? = null,
+    /** Content recorded behind this surface, drawn back blurred underneath its fill — a real
+     * backdrop blur (API 31+). See [GlassBackdrop]. */
+    backdrop: GlassBackdrop? = null,
     /** When true and [tint] is set, casts a colored ambient/spot shadow instead of a flat black
      * one, so the surface reads as lit from within against a near-black page. Reserved for
      * headline [GlassStyle.Vivid] cards — chrome surfaces (bars, sheets) never set this. */
@@ -103,7 +103,8 @@ fun GlassSurface(
                 scaleY = scale
                 compositingStrategy = CompositingStrategy.Offscreen
             }
-            .clip(shape),
+            .clip(shape)
+            .glassBackdrop(backdrop),
     ) {
         // Translucent material fill.
         Box(modifier = Modifier.matchParentSize().background(fillColor))

@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.wallet.core.design.glass.GlassBackdrop
 import com.example.wallet.core.design.glass.GlassBottomBar
 import com.example.wallet.core.design.glass.GlassInteraction
 import com.example.wallet.core.design.glass.GlassStyle
@@ -57,6 +58,7 @@ fun WalletBottomNavigation(
     fabOnClick: () -> Unit,
     fabContentDescription: String,
     modifier: Modifier = Modifier,
+    backdrop: GlassBackdrop? = null,
 ) {
     val midpoint = items.size / 2
     val fabSize = 60.dp
@@ -64,7 +66,7 @@ fun WalletBottomNavigation(
         modifier = modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
         contentAlignment = Alignment.TopCenter,
     ) {
-        GlassBottomBar(modifier = Modifier.fillMaxWidth()) {
+        GlassBottomBar(modifier = Modifier.fillMaxWidth(), backdrop = backdrop) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,

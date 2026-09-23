@@ -3,6 +3,7 @@ package com.example.wallet.navigation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.getValue
@@ -19,6 +20,8 @@ import androidx.navigation.navArgument
 import com.example.wallet.core.design.components.WalletBottomNavigation
 import com.example.wallet.core.design.components.WalletScaffold
 import com.example.wallet.core.design.components.WalletTopBar
+import com.example.wallet.core.design.glass.glassBackdropSource
+import com.example.wallet.core.design.glass.rememberGlassBackdrop
 import com.example.wallet.feature.accounts.AccountDetailScreen
 import com.example.wallet.feature.accounts.AccountFormScreen
 import com.example.wallet.feature.accounts.AccountRoutes
@@ -222,6 +225,7 @@ private fun TopLevelScaffold(
 ) {
     val badgeViewModel: NotificationBadgeViewModel = hiltViewModel()
     val unreadCount by badgeViewModel.unreadCount.collectAsStateWithLifecycle()
+    val backdrop = rememberGlassBackdrop()
 
     WalletScaffold(
         topBar = {
@@ -238,7 +242,16 @@ private fun TopLevelScaffold(
         // so nothing would show through its glass. Screens add WalletBottomNavSpace to their own
         // bottom content padding so their last item still scrolls clear of it.
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            content()
+            // Recorded so the nav bar can draw it back blurred behind itself. The opaque
+            // background is part of the recording on purpose: the blurred copy has to fully
+            // cover the sharp original underneath it, or both would show at once.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .glassBackdropSource(backdrop, MaterialTheme.colorScheme.surface),
+            ) {
+                content()
+            }
             WalletBottomNavigation(
                 items = walletBottomNavItems,
                 selectedRoute = currentRoute,
@@ -258,6 +271,7 @@ private fun TopLevelScaffold(
                     "Add transaction"
                 },
                 modifier = Modifier.align(Alignment.BottomCenter),
+                backdrop = backdrop,
             )
         }
     }
