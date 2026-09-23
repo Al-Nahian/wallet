@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
+import com.example.wallet.core.design.glass.GlassTokens
 
 /** A small labeled stat, e.g. "Savings Rate" / "12.5%" — unlike [BalanceCard], the value is a
  * pre-formatted string rather than always a currency amount. Same frosted tinted glass treatment
@@ -42,7 +43,7 @@ fun StatCard(
         modifier = modifier.fillMaxWidth(),
         style = GlassStyle.Vivid,
         tint = containerColor,
-        fill = containerColor.copy(alpha = 0.55f),
+        fill = containerColor.copy(alpha = GlassTokens.frostedFillAlpha),
         glow = false,
         elevation = 0.dp,
     ) {
@@ -56,7 +57,7 @@ fun StatCard(
                 Text(
                     text = label,
                     fontSize = 11.sp,
-                    color = contentColor.copy(alpha = 0.85f),
+                    color = contentColor.copy(alpha = 0.95f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -73,7 +74,7 @@ fun StatCard(
             Icon(
                 imageVector = Icons.Filled.ChevronRight,
                 contentDescription = null,
-                tint = contentColor.copy(alpha = 0.6f),
+                tint = contentColor.copy(alpha = 0.75f),
                 modifier = Modifier.size(16.dp),
             )
         }

@@ -57,13 +57,17 @@ private val DashboardAccentPalette = listOf(
     Color(0xFFEC407A), Color(0xFF7CB342),
 )
 
-/** Solid, full-opacity card colors for the dashboard's headline metrics — fixed (not
- * theme-tinted) so each card reads clearly against either a light or dark page background,
- * mirroring the accounts grid's already-approved solid-tile look. */
-private val TotalBalanceColor = Color(0xFF5B4FE0)
-private val SavingsColor = Color(0xFF16A34A)
-private val SavingsRateColor = Color(0xFF0D9488)
-private val AvgDailySpendColor = Color(0xFFEA580C)
+/** Fixed (not theme-tinted) card colors for the dashboard's headline metrics, so each card reads
+ * clearly against either a light or dark page background — brighter/more saturated than a plain
+ * Material tone, since these sit behind [GlassTokens.frostedFillAlpha] translucency and need to
+ * still read as vivid rather than washed out. */
+private val TotalBalanceColor = Color(0xFF6C5CE7)
+private val SavingsColor = Color(0xFF22C55E)
+private val SavingsRateColor = Color(0xFF14B8A6)
+
+/** A distinct red rather than the previous muted orange — spend should read as attention-getting,
+ * not blend in with the neutral palette. */
+private val AvgDailySpendColor = Color(0xFFEF4444)
 
 @Composable
 fun DashboardScreen(

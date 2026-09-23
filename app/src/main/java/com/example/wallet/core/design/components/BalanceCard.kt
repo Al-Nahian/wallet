@@ -24,14 +24,17 @@ import androidx.compose.ui.unit.sp
 import com.example.wallet.core.common.formatMoney
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
+import com.example.wallet.core.design.glass.GlassTokens
 
 /** A full-width, frosted glass balance card (Total Balance, Savings, Income, Expense…) —
  * [containerColor] doubles as the glass tint and [icon]'s bubble color.
  *
- * The fill is a lighter 0.55-alpha tint rather than solid color — the same softer, more
- * translucent look the nav bar's frosted glass uses. No shadow: a colored shadow cast under a
- * fill this translucent shows straight through as a light band along the bottom edge instead of
- * a lift (the same bug the nav bar's own shadow removal fixed). */
+ * The fill is a [GlassTokens.frostedFillAlpha]-alpha tint rather than solid color — translucent enough to
+ * read as glass, but saturated enough that the color stays vivid and [contentColor] text stays
+ * legible against it (a lower alpha washed the color out to a dull pastel in light mode, which
+ * also dragged white text's contrast down with it). No shadow: a colored shadow cast under a
+ * translucent fill shows straight through as a light band along the bottom edge instead of a
+ * lift (the same bug the nav bar's own shadow removal fixed). */
 @Composable
 fun BalanceCard(
     label: String,
@@ -46,7 +49,7 @@ fun BalanceCard(
         modifier = modifier.fillMaxWidth(),
         style = GlassStyle.Vivid,
         tint = containerColor,
-        fill = containerColor.copy(alpha = 0.55f),
+        fill = containerColor.copy(alpha = GlassTokens.frostedFillAlpha),
         glow = false,
         elevation = 0.dp,
     ) {
@@ -60,7 +63,7 @@ fun BalanceCard(
                 Text(
                     text = label,
                     fontSize = 13.sp,
-                    color = contentColor.copy(alpha = 0.85f),
+                    color = contentColor.copy(alpha = 0.95f),
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
@@ -73,7 +76,7 @@ fun BalanceCard(
             Icon(
                 imageVector = Icons.Filled.ChevronRight,
                 contentDescription = null,
-                tint = contentColor.copy(alpha = 0.6f),
+                tint = contentColor.copy(alpha = 0.75f),
             )
         }
     }

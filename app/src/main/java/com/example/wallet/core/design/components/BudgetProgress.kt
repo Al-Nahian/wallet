@@ -23,12 +23,13 @@ import androidx.compose.ui.unit.sp
 import com.example.wallet.core.common.formatMoney
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
+import com.example.wallet.core.design.glass.GlassTokens
 import java.util.Locale
 
 /** plan.md §7/§17 — a single budget's spent/remaining/usage at a glance, in the format §17
  * specifies ("Budget: X / Spent: Y / Remaining: Z / Usage: N%"), colored by status (healthy,
  * near limit, exceeded) as a frosted tinted glass card matching the dashboard's other headline
- * cards (see [BalanceCard] for the 0.55-alpha-fill/no-shadow reasoning). */
+ * cards (see [BalanceCard] for the frosted-fill/no-shadow reasoning). */
 @Composable
 fun BudgetProgress(
     name: String,
@@ -49,7 +50,7 @@ fun BudgetProgress(
         modifier = modifier.fillMaxWidth(),
         style = GlassStyle.Vivid,
         tint = statusColor,
-        fill = statusColor.copy(alpha = 0.55f),
+        fill = statusColor.copy(alpha = GlassTokens.frostedFillAlpha),
         glow = false,
         elevation = 0.dp,
     ) {
@@ -89,7 +90,7 @@ fun BudgetProgress(
                 text = "Budget: ${formatMoney(amountMinor, currency)}  ·  Spent: ${formatMoney(spentMinor, currency)}  ·  " +
                     "Remaining: ${formatMoney(remainingMinor, currency)}",
                 fontSize = 11.sp,
-                color = Color.White.copy(alpha = 0.9f),
+                color = Color.White.copy(alpha = 0.95f),
             )
         }
     }

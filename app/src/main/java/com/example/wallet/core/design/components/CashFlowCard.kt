@@ -35,8 +35,8 @@ import com.example.wallet.core.design.glass.GlassSurface
 import java.util.Locale
 import kotlin.math.abs
 
-private val CashFlowIncomeColor = Color(0xFF16A34A)
-private val CashFlowExpenseColor = Color(0xFFDC2626)
+private val CashFlowIncomeColor = Color(0xFF22C55E)
+private val CashFlowExpenseColor = Color(0xFFEF4444)
 private val CashFlowIconTint = Color(0xFF64748B)
 
 /** An explicit neutral fill rather than [GlassStyle.Thick]'s theme-surface-derived one: in light

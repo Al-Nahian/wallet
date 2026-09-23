@@ -25,11 +25,12 @@ import androidx.compose.ui.unit.sp
 import com.example.wallet.core.common.formatMoney
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
+import com.example.wallet.core.design.glass.GlassTokens
 
 /** A compact, frosted tinted glass account tile for the dashboard's two-per-row accounts grid —
  * a glass icon bubble and trailing chevron over a lighter, translucent tint, per the
- * liquid-glass reference design. See [BalanceCard] for why the fill runs at 0.55 alpha with no
- * shadow rather than the old solid-glow treatment. */
+ * liquid-glass reference design. See [BalanceCard] for why the fill runs at
+ * [GlassTokens.frostedFillAlpha] with no shadow rather than the old solid-glow treatment. */
 @Composable
 fun AccountSummaryCard(
     label: String,
@@ -43,7 +44,7 @@ fun AccountSummaryCard(
         modifier = modifier.fillMaxWidth(),
         style = GlassStyle.Vivid,
         tint = backgroundColor,
-        fill = backgroundColor.copy(alpha = 0.55f),
+        fill = backgroundColor.copy(alpha = GlassTokens.frostedFillAlpha),
         glow = false,
         elevation = 0.dp,
     ) {
@@ -57,7 +58,7 @@ fun AccountSummaryCard(
                 Text(
                     text = label,
                     fontSize = 11.sp,
-                    color = Color.White,
+                    color = Color.White.copy(alpha = 0.95f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -74,7 +75,7 @@ fun AccountSummaryCard(
             Icon(
                 imageVector = Icons.Filled.ChevronRight,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.6f),
+                tint = Color.White.copy(alpha = 0.75f),
                 modifier = Modifier.size(16.dp),
             )
         }

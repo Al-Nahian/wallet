@@ -53,12 +53,12 @@ private val ReportsAccentPalette = listOf(
 private val LightNeutralCardFill = Color(0xFFEDEDF2)
 private val DarkNeutralCardFill = Color(0xFF1C1C1E)
 
-/** Solid, full-opacity card colors — mirrors the dashboard's palette so the two screens feel
- * like one cohesive app rather than each inventing its own tinting. */
-private val IncomeColor = Color(0xFF16A34A)
-private val ExpenseColor = Color(0xFFDC2626)
-private val SavingsColor = Color(0xFF16A34A)
-private val SavingsRateColor = Color(0xFF0D9488)
+/** Mirrors the dashboard's brighter palette so the two screens feel like one cohesive app rather
+ * than each inventing its own tinting. */
+private val IncomeColor = Color(0xFF22C55E)
+private val ExpenseColor = Color(0xFFEF4444)
+private val SavingsColor = Color(0xFF22C55E)
+private val SavingsRateColor = Color(0xFF14B8A6)
 
 @Composable
 fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = hiltViewModel()) {

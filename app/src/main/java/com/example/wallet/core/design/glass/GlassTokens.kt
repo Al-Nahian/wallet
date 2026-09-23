@@ -31,6 +31,12 @@ object GlassTokens {
     val thinAlpha = 0.30f
     val vividAlpha = 0.90f
 
+    /** Fill alpha for a "frosted" headline card (account/balance/stat/budget tiles) — translucent
+     * enough to read as glass, but high enough that the tint stays visibly saturated and any
+     * white text drawn over it keeps enough contrast. Lower (e.g. the ~0.55 this replaced) washes
+     * the color to a dull pastel in light mode, which drags text legibility down with it. */
+    val frostedFillAlpha = 0.75f
+
     /** How strongly [GlassStyle.Vivid]'s fill blends toward its [GlassSurface] `tint`, vs.
      * [contextTintAlpha] used by every other style's barely-there accent. */
     val vividTintBlend = 0.62f
