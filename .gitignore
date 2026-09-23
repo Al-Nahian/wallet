@@ -14,3 +14,10 @@ app/debug/
 *.aab
 screen.png
 emulator.log
+
+# Planning docs and agent-session artifacts kept locally for reference,
+# never pushed to the public remote.
+/plan.md
+/liquid_glass_implementation_plan.md
+/plans/
+/.claude/
