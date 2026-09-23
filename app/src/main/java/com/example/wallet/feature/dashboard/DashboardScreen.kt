@@ -45,6 +45,7 @@ import com.example.wallet.core.design.components.CategoryBreakdownRow
 import com.example.wallet.core.design.components.EmptyState
 import com.example.wallet.core.design.components.StatCard
 import com.example.wallet.core.design.components.TransactionRow
+import com.example.wallet.core.design.components.WalletBottomNavSpace
 import com.example.wallet.feature.accounts.icon
 import java.util.Locale
 
@@ -85,7 +86,12 @@ fun DashboardScreen(
         is DashboardUiState.Loaded -> {
             LazyColumn(
                 modifier = modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp,
+                    bottom = 16.dp + WalletBottomNavSpace,
+                ),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 item { SectionHeader("Accounts") }

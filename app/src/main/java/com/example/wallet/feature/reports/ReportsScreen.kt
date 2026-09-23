@@ -3,10 +3,8 @@ package com.example.wallet.feature.reports
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Percent
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,9 +30,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.common.formatMoney
 import com.example.wallet.core.design.components.BalanceCard
+import com.example.wallet.core.design.components.CashFlowCard
 import com.example.wallet.core.design.components.CategoryBreakdownRow
 import com.example.wallet.core.design.components.DateRangeSelector
 import com.example.wallet.core.design.components.StatCard
+import com.example.wallet.core.design.components.WalletBottomNavSpace
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
 import com.example.wallet.domain.usecase.reports.AccountReport
@@ -47,7 +50,6 @@ private val ReportsAccentPalette = listOf(
  * like one cohesive app rather than each inventing its own tinting. */
 private val IncomeColor = Color(0xFF16A34A)
 private val ExpenseColor = Color(0xFFDC2626)
-private val NetCashFlowColor = Color(0xFF5B4FE0)
 private val SavingsColor = Color(0xFF16A34A)
 private val SavingsRateColor = Color(0xFF0D9488)
 
@@ -65,7 +67,12 @@ fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = h
         is ReportsUiState.Loaded -> {
             LazyColumn(
                 modifier = modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp,
+                    bottom = 16.dp + WalletBottomNavSpace,
+                ),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 item {
@@ -76,52 +83,27 @@ fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = h
                     )
                 }
 
-                item { SectionHeader("Cash Flow") }
                 item {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
-                    ) {
-                        BalanceCard(
-                            label = "Income",
-                            amountMinor = state.totalIncomeMinor,
-                            currency = state.currency,
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
-                            containerColor = IncomeColor,
-                            contentColor = Color.White,
-                        )
-                        BalanceCard(
-                            label = "Expense",
-                            amountMinor = state.totalExpenseMinor,
-                            currency = state.currency,
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
-                            containerColor = ExpenseColor,
-                            contentColor = Color.White,
-                        )
-                    }
+                    // Same CashFlowCard the Home dashboard uses, for the selected report period
+                    // instead of "this month" — keeps the two screens visually consistent. No
+                    // section header above it: the card carries its own "Cash Flow" title.
+                    CashFlowCard(
+                        periodLabel = state.selectedPreset.label,
+                        incomeMinor = state.totalIncomeMinor,
+                        expenseMinor = state.totalExpenseMinor,
+                        currency = state.currency,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
                 item {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
-                    ) {
-                        BalanceCard(
-                            label = "Net Cash Flow",
-                            amountMinor = state.cashFlowMinor,
-                            currency = state.currency,
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
-                            containerColor = NetCashFlowColor,
-                            contentColor = Color.White,
-                        )
-                        BalanceCard(
-                            label = "Savings",
-                            amountMinor = state.savingsMinor,
-                            currency = state.currency,
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
-                            containerColor = SavingsColor,
-                            contentColor = Color.White,
-                        )
-                    }
+                    BalanceCard(
+                        label = "Savings",
+                        amountMinor = state.savingsMinor,
+                        currency = state.currency,
+                        containerColor = SavingsColor,
+                        contentColor = Color.White,
+                        icon = Icons.Filled.Savings,
+                    )
                 }
                 item {
                     StatCard(
@@ -130,6 +112,7 @@ fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = h
                         modifier = Modifier.fillMaxWidth(),
                         containerColor = SavingsRateColor,
                         contentColor = Color.White,
+                        icon = Icons.Filled.Percent,
                     )
                 }
 

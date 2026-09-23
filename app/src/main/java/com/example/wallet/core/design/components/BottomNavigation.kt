@@ -41,6 +41,11 @@ data class WalletBottomNavItem(
     val icon: ImageVector,
 )
 
+/** Vertical space the floating nav pill occupies. Scrollable screens add this to their bottom
+ * content padding so their last item can scroll clear of the bar — the bar overlays content
+ * (rather than reserving opaque layout space) so content stays visible through its glass. */
+val WalletBottomNavSpace = 100.dp
+
 /** Floating glass pill nav bar with the primary Add action embedded as a glowing center button
  * between the second and third destinations, per the liquid-glass reference design — not a
  * separate `Scaffold` FAB floating above the bar. */

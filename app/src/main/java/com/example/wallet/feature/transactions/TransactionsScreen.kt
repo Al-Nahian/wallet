@@ -32,6 +32,7 @@ import com.example.wallet.core.design.components.ConfirmationDialog
 import com.example.wallet.core.design.components.EmptyState
 import com.example.wallet.core.design.components.TransactionGroupHeader
 import com.example.wallet.core.design.components.TransactionRow
+import com.example.wallet.core.design.components.WalletBottomNavSpace
 
 @Composable
 fun TransactionsScreen(
@@ -65,7 +66,12 @@ fun TransactionsScreen(
                 Box(modifier = modifier.fillMaxSize()) {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        contentPadding = PaddingValues(
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 8.dp,
+                            bottom = 8.dp + WalletBottomNavSpace,
+                        ),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         item {

@@ -49,6 +49,10 @@ fun GlassSurface(
     style: GlassStyle = GlassStyle.Regular,
     shape: Shape = GlassShapes.medium,
     tint: Color? = null,
+    /** Replaces the [style]/[tint]-derived material fill with this exact (usually partly
+     * transparent) color. For the rare surface that needs a specific solid color at a specific
+     * opacity rather than the computed glass blend — see [GlassBottomBar]. */
+    fill: Color? = null,
     /** When true and [tint] is set, casts a colored ambient/spot shadow instead of a flat black
      * one, so the surface reads as lit from within against a near-black page. Reserved for
      * headline [GlassStyle.Vivid] cards — chrome surfaces (bars, sheets) never set this. */
@@ -60,7 +64,7 @@ fun GlassSurface(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val motion = LocalGlassMotionPreferences.current
-    val fillColor = GlassColors.fill(style, tint, motion)
+    val fillColor = fill ?: GlassColors.fill(style, tint, motion)
     val highlightBrush = GlassColors.highlightBrush()
     val borderBrush = GlassColors.borderBrush(tint = if (glow) tint else null)
 

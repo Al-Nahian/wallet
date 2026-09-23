@@ -1,8 +1,10 @@
 package com.example.wallet.navigation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -230,7 +232,13 @@ private fun TopLevelScaffold(
                 onNotificationsClick = { navController.navigate(NotificationRoutes.NOTIFICATION_CENTER) },
             )
         },
-        bottomBar = {
+    ) { paddingValues ->
+        // The nav bar overlays the content rather than sitting in the Scaffold's bottomBar slot:
+        // a reserved slot would leave an opaque page-background strip behind the floating pill,
+        // so nothing would show through its glass. Screens add WalletBottomNavSpace to their own
+        // bottom content padding so their last item still scrolls clear of it.
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            content()
             WalletBottomNavigation(
                 items = walletBottomNavItems,
                 selectedRoute = currentRoute,
@@ -249,11 +257,8 @@ private fun TopLevelScaffold(
                 } else {
                     "Add transaction"
                 },
+                modifier = Modifier.align(Alignment.BottomCenter),
             )
-        },
-    ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
-            content()
         }
     }
 }
