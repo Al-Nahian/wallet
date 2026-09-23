@@ -21,3 +21,6 @@ emulator.log
 /liquid_glass_implementation_plan.md
 /plans/
 /.claude/
+
+# Personal financial data used to test CSV import — never pushed to the remote.
+*.csv

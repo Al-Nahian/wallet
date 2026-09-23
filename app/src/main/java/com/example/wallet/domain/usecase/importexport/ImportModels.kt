@@ -5,10 +5,12 @@ import com.example.wallet.domain.model.TransactionType
 /** plans/12-import-export.md — the fixed set of fields a CSV column can be mapped to. */
 enum class ImportColumn(val label: String) {
     DATE("Date"),
+    TIME("Time"),
     AMOUNT("Amount"),
     TYPE("Type"),
     ACCOUNT("Account"),
     CATEGORY("Category"),
+    LABEL("Label"),
     PAYEE("Payee"),
     NOTE("Note"),
     CURRENCY("Currency"),
@@ -27,6 +29,7 @@ data class ParsedImportRow(
     val type: TransactionType?,
     val accountName: String?,
     val categoryName: String?,
+    val labelName: String?,
     val payee: String?,
     val note: String?,
     val currency: String?,

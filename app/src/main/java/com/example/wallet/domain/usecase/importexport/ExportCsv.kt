@@ -20,15 +20,20 @@ import java.util.Locale
  */
 object ExportCsv {
     private val DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    private val TIME_FORMAT = SimpleDateFormat("h:mm a", Locale.US)
 
     private fun formatDate(millis: Long): String = DATE_FORMAT.format(millis)
+    private fun formatTime(millis: Long): String = TIME_FORMAT.format(millis)
 
     fun transactionsToCsv(
         transactions: List<Transaction>,
         accountNameById: Map<String, String>,
         categoryNameById: Map<String, String>,
+        labelNamesByTransactionId: Map<String, List<Label>> = emptyMap(),
     ): String {
-        val header = listOf("date", "amount", "type", "account", "category", "payee", "note", "currency")
+        val header = listOf(
+            "date", "amount", "type", "account", "category", "label", "payee", "note", "currency", "time",
+        )
         val rows = transactions.map { tx ->
             listOf(
                 formatDate(tx.date),
@@ -36,9 +41,11 @@ object ExportCsv {
                 tx.type.name,
                 accountNameById[tx.accountId].orEmpty(),
                 tx.categoryId?.let { categoryNameById[it] }.orEmpty(),
+                labelNamesByTransactionId[tx.id].orEmpty().joinToString(", ") { it.name },
                 tx.payee.orEmpty(),
                 tx.note.orEmpty(),
                 tx.currency,
+                formatTime(tx.date),
             )
         }
         return Csv.write(listOf(header) + rows)

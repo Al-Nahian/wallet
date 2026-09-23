@@ -66,10 +66,12 @@ class ImportExportViewModel @Inject constructor(
             val transactions = transactionRepository.observeTransactions().first()
             val accounts = accountRepository.observeAllAccounts().first()
             val categories = categoryRepository.observeCategories().first()
+            val labelsByTransactionId = labelRepository.observeAllTransactionLabels().first()
             ExportCsv.transactionsToCsv(
                 transactions = transactions,
                 accountNameById = accounts.associate { it.id to it.name },
                 categoryNameById = categories.associate { it.id to it.name },
+                labelNamesByTransactionId = labelsByTransactionId,
             )
         }
         ExportEntityType.ACCOUNTS -> {

@@ -171,7 +171,7 @@ private fun PreviewRow(row: ParsedImportRow, onToggle: () -> Unit) {
         Column(modifier = Modifier.padding(start = 4.dp)) {
             Text(
                 text = "${row.accountName ?: "?"} · ${row.type?.name ?: "?"} · " +
-                    (row.payee?.takeIf { it.isNotBlank() } ?: "(no payee)"),
+                    (row.categoryName ?: row.labelName ?: row.payee ?: "(uncategorized)"),
                 style = MaterialTheme.typography.bodyLarge,
             )
             if (row.errors.isNotEmpty()) {

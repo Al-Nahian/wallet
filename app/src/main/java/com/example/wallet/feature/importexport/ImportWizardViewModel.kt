@@ -8,9 +8,12 @@ import androidx.lifecycle.viewModelScope
 import com.example.wallet.core.common.Csv
 import com.example.wallet.domain.model.Account
 import com.example.wallet.domain.model.Category
+import com.example.wallet.domain.model.CategoryGroup
+import com.example.wallet.domain.model.Label
 import com.example.wallet.domain.model.Transaction
 import com.example.wallet.domain.repository.AccountRepository
 import com.example.wallet.domain.repository.CategoryRepository
+import com.example.wallet.domain.repository.LabelRepository
 import com.example.wallet.domain.repository.TransactionRepository
 import com.example.wallet.domain.usecase.importexport.ImportColumn
 import com.example.wallet.domain.usecase.importexport.ImportTransactionsUseCase
@@ -29,7 +32,7 @@ import kotlinx.coroutines.withContext
 
 enum class WizardStep { LOADING, MAPPING, PREVIEW, ERROR }
 
-private val REQUIRED_COLUMNS = listOf(ImportColumn.DATE, ImportColumn.AMOUNT, ImportColumn.TYPE, ImportColumn.ACCOUNT)
+private val REQUIRED_COLUMNS = listOf(ImportColumn.DATE, ImportColumn.AMOUNT, ImportColumn.ACCOUNT)
 
 data class ImportWizardUiState(
     val step: WizardStep = WizardStep.LOADING,
@@ -49,6 +52,7 @@ class ImportWizardViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val transactionRepository: TransactionRepository,
+    private val labelRepository: LabelRepository,
     private val mapCsvRowsUseCase: MapCsvRowsUseCase,
     private val importTransactionsUseCase: ImportTransactionsUseCase,
 ) : ViewModel() {
@@ -59,6 +63,8 @@ class ImportWizardViewModel @Inject constructor(
     private var bodyRows: List<List<String>> = emptyList()
     private var existingAccounts: List<Account> = emptyList()
     private var existingCategories: List<Category> = emptyList()
+    private var existingCategoryGroups: List<CategoryGroup> = emptyList()
+    private var existingLabels: List<Label> = emptyList()
     private var existingTransactions: List<Transaction> = emptyList()
 
     init {
@@ -92,6 +98,8 @@ class ImportWizardViewModel @Inject constructor(
             bodyRows = parsed.drop(1)
             existingAccounts = accountRepository.observeAllAccounts().first()
             existingCategories = categoryRepository.observeCategories().first()
+            existingCategoryGroups = categoryRepository.observeGroups().first()
+            existingLabels = labelRepository.observeLabels().first()
             existingTransactions = transactionRepository.observeTransactions().first()
 
             val headers = parsed.first()
@@ -121,7 +129,8 @@ class ImportWizardViewModel @Inject constructor(
         val rows = mapCsvRowsUseCase(
             bodyRows = bodyRows,
             mapping = state.mapping,
-            existingCategoryNames = existingCategories.map { it.name }.toSet(),
+            existingCategories = existingCategories,
+            existingCategoryGroups = existingCategoryGroups,
             existingTransactions = existingTransactions,
             accountNameById = accountNameById,
             defaultCurrency = existingAccounts.firstOrNull()?.currency ?: "BDT",
@@ -142,7 +151,7 @@ class ImportWizardViewModel @Inject constructor(
         if (state.isCommitting) return
         viewModelScope.launch {
             _uiState.value = state.copy(isCommitting = true)
-            val count = importTransactionsUseCase(state.rows, existingAccounts, existingCategories)
+            val count = importTransactionsUseCase(state.rows, existingAccounts, existingCategories, existingLabels)
             _uiState.value = _uiState.value.copy(isCommitting = false, committed = true, importedCount = count)
         }
     }

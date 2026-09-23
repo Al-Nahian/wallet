@@ -13,7 +13,10 @@ class ExportCsvTest {
     fun `transactions export produces a header matching the import column order`() {
         val csv = ExportCsv.transactionsToCsv(emptyList(), emptyMap(), emptyMap())
         val header = Csv.parse(csv).first()
-        assertEquals(listOf("date", "amount", "type", "account", "category", "payee", "note", "currency"), header)
+        assertEquals(
+            listOf("date", "amount", "type", "account", "category", "label", "payee", "note", "currency", "time"),
+            header,
+        )
     }
 
     @Test
@@ -37,6 +40,7 @@ class ExportCsvTest {
             listOf(tx),
             mapOf("acc1" to "Checking"),
             mapOf("cat1" to "Snacks"),
+            mapOf("t1" to listOf(Label(id = "l1", name = "Coffee", color = "#000000", createdAt = 0L))),
         )
         val rows = Csv.parse(csv)
         val dataRow = rows[1]
@@ -44,9 +48,10 @@ class ExportCsvTest {
         assertEquals("EXPENSE", dataRow[2])
         assertEquals("Checking", dataRow[3])
         assertEquals("Snacks", dataRow[4])
-        assertEquals("Corner Store", dataRow[5])
-        assertEquals("Snacks, drinks", dataRow[6])
-        assertEquals("BDT", dataRow[7])
+        assertEquals("Coffee", dataRow[5])
+        assertEquals("Corner Store", dataRow[6])
+        assertEquals("Snacks, drinks", dataRow[7])
+        assertEquals("BDT", dataRow[8])
     }
 
     @Test
