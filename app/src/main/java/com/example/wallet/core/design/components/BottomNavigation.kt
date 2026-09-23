@@ -82,7 +82,7 @@ fun WalletBottomNavigation(
             onClick = fabOnClick,
             contentDescription = fabContentDescription,
             size = fabSize,
-            modifier = Modifier.offset(y = (-fabSize / 3)),
+            modifier = Modifier.offset(y = (-fabSize / 6)),
         )
     }
 }

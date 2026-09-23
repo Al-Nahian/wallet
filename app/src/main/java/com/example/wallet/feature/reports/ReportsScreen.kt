@@ -3,10 +3,13 @@ package com.example.wallet.feature.reports
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -75,12 +78,15 @@ fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = h
 
                 item { SectionHeader("Cash Flow") }
                 item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                    ) {
                         BalanceCard(
                             label = "Income",
                             amountMinor = state.totalIncomeMinor,
                             currency = state.currency,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
                             containerColor = IncomeColor,
                             contentColor = Color.White,
                         )
@@ -88,19 +94,22 @@ fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = h
                             label = "Expense",
                             amountMinor = state.totalExpenseMinor,
                             currency = state.currency,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
                             containerColor = ExpenseColor,
                             contentColor = Color.White,
                         )
                     }
                 }
                 item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                    ) {
                         BalanceCard(
                             label = "Net Cash Flow",
                             amountMinor = state.cashFlowMinor,
                             currency = state.currency,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
                             containerColor = NetCashFlowColor,
                             contentColor = Color.White,
                         )
@@ -108,7 +117,7 @@ fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = h
                             label = "Savings",
                             amountMinor = state.savingsMinor,
                             currency = state.currency,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
                             containerColor = SavingsColor,
                             contentColor = Color.White,
                         )
