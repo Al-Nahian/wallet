@@ -87,24 +87,33 @@ fun GlassSurface(
     )
     val pressTintBoost = if (reactsToPress && isPressed) GlassTokens.selectedTintAlpha else 0f
 
+    val effectiveElevation = if (enabled) elevation else 0.dp
+
     Box(
         // Shadow must be the outermost modifier: it draws unclipped, extending past the box's
         // layout bounds. If it sat inside the graphicsLayer's Offscreen-composited buffer below
         // (sized to the layout bounds, for the translucent-layer blending that buffer exists
         // for), its soft blur would get hard-cut into a visible rectangle — the bug this order
-        // avoids.
+        // avoids. Skipped entirely at zero elevation (every plain list row: [lightweight]
+        // surfaces all pass `elevation = 0.dp`) rather than calling `shadow(elevation = 0.dp)`
+        // and trusting it to be a no-op — `Modifier.shadow` is itself backed by a graphicsLayer,
+        // and chaining it straight into `clip(shape)` with no compositing boundary between them
+        // left a faint rectangular seam along the bottom edge on a pure-black background, most
+        // visible on exactly these zero-elevation rows.
         modifier = modifier
             .let { base ->
-                if (glow && tint != null) {
+                if (effectiveElevation == 0.dp) {
+                    base
+                } else if (glow && tint != null) {
                     base.shadow(
-                        elevation = if (enabled) elevation else 0.dp,
+                        elevation = effectiveElevation,
                         shape = shape,
                         clip = false,
                         ambientColor = tint.copy(alpha = GlassTokens.glowAlpha),
                         spotColor = tint.copy(alpha = GlassTokens.glowAlpha),
                     )
                 } else {
-                    base.shadow(elevation = if (enabled) elevation else 0.dp, shape = shape, clip = false)
+                    base.shadow(elevation = effectiveElevation, shape = shape, clip = false)
                 }
             }
             .let { base ->

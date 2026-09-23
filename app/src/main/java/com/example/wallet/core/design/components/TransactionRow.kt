@@ -52,6 +52,10 @@ fun TransactionRow(
         modifier = Modifier.fillMaxWidth(),
         style = GlassStyle.Thin,
         shape = GlassShapes.small,
+        // A slight blue tint (liquid-glass reference design) rather than a neutral grey/black
+        // card — GlassStyle.Thin blends this in at GlassTokens.contextTintAlpha (10%), so it
+        // reads as a hint of color, not a saturated blue card.
+        tint = WalletTheme.extendedColors.transfer,
         // No drop shadow: at this small size/elevation, Android's shadow renders as a tight grey
         // ring hugging the card edge rather than a soft lift — on a white/light background that
         // reads as an unwanted outline. The fill-color contrast alone defines the card edge.
