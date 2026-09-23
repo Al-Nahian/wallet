@@ -88,7 +88,7 @@ fun CategoryPickerField(
 }
 
 @Composable
-private fun CategoryPickerDialog(
+internal fun CategoryPickerDialog(
     groups: List<CategoryGroup>,
     categories: List<Category>,
     onSelected: (String?) -> Unit,

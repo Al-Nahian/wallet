@@ -28,6 +28,9 @@ data class Transaction(
      * dedup key `ProcessIncomingSmsUseCase` checks before ever creating a second transaction for
      * the same real-world event (plan.md §33). Null for manual entries. */
     val sourceReference: String? = null,
+    /** Free-text location, e.g. "Agora, Dhanmondi" — optional, user-entered only (never inferred
+     * from a parsed SMS/notification). */
+    val place: String? = null,
 )
 
 data class TransactionSplit(

@@ -15,6 +15,7 @@ val LightTransfer = Color(0xFF42B5E8)
 val LightWarning = Color(0xFFFF9F1C)
 val LightError = Color(0xFFD32F2F)
 val LightSuccess = Color(0xFF4CAF50)
+val LightAccent = Color(0xFF8B5CF6)
 
 // Dark palette
 val DarkPrimary = Color(0xFF6FCF97)
@@ -29,6 +30,7 @@ val DarkTransfer = Color(0xFF64B5F6)
 val DarkWarning = Color(0xFFFFB74D)
 val DarkError = Color(0xFFEF5350)
 val DarkSuccess = Color(0xFF81C784)
+val DarkAccent = Color(0xFFB388FF)
 
 /** Parses a category/label hex color string from the DB (e.g. "#F44336") — never a hardcoded
  * per-category color in a Composable (plan.md §69 rule 8). Falls back to gray for a malformed

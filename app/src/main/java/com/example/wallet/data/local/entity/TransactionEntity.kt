@@ -62,4 +62,5 @@ data class TransactionEntity(
     val recurringTransactionId: String? = null,
     val source: TransactionSource = TransactionSource.MANUAL,
     val sourceReference: String? = null,
+    val place: String? = null,
 )

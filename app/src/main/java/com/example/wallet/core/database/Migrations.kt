@@ -99,3 +99,11 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         )
     }
 }
+
+/** v5 -> v6: adds `transactions.place` (nullable free-text location) for the redesigned
+ * transaction form's "Place" field. */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `transactions` ADD COLUMN `place` TEXT")
+    }
+}

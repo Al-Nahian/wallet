@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.wallet.core.common.minorUnitsToEditableString
 import com.example.wallet.core.common.parseMoneyToMinorUnits
 import com.example.wallet.core.design.components.SelectorOption
+import com.example.wallet.core.design.components.applyAmountKeypadKey
 import com.example.wallet.domain.model.Category
 import com.example.wallet.domain.model.CategoryGroup
 import com.example.wallet.domain.model.Label
@@ -62,6 +63,7 @@ data class TransactionFormState(
     val categoryId: String? = null,
     val payee: String = "",
     val note: String = "",
+    val place: String = "",
     val date: Long = System.currentTimeMillis(),
     val accountOptions: List<SelectorOption> = emptyList(),
     val categoryGroups: List<CategoryGroup> = emptyList(),
@@ -146,6 +148,7 @@ class TransactionFormViewModel @Inject constructor(
                     categoryId = transaction.categoryId,
                     payee = transaction.payee.orEmpty(),
                     note = transaction.note.orEmpty(),
+                    place = transaction.place.orEmpty(),
                     date = transaction.date,
                     isSplitEnabled = existingSplits.isNotEmpty(),
                     splitRows = existingSplits.map { split ->
@@ -167,9 +170,13 @@ class TransactionFormViewModel @Inject constructor(
     }
     fun onToAccountChange(id: String) = _uiState.update { it.copy(toAccountId = id, errorMessage = null) }
     fun onAmountChange(value: String) = _uiState.update { it.copy(amountInput = value, errorMessage = null) }
+    fun onAmountKeypadKey(key: String) = _uiState.update {
+        it.copy(amountInput = applyAmountKeypadKey(it.amountInput, key), errorMessage = null)
+    }
     fun onCategoryChange(id: String?) = _uiState.update { it.copy(categoryId = id) }
     fun onPayeeChange(value: String) = _uiState.update { it.copy(payee = value) }
     fun onNoteChange(value: String) = _uiState.update { it.copy(note = value) }
+    fun onPlaceChange(value: String) = _uiState.update { it.copy(place = value) }
     fun onDateChange(value: Long) = _uiState.update { it.copy(date = value) }
 
     fun onToggleSplit(enabled: Boolean) = _uiState.update {
@@ -251,6 +258,7 @@ class TransactionFormViewModel @Inject constructor(
                     payee = state.payee,
                     note = state.note,
                     date = state.date,
+                    place = state.place,
                 )
             } else {
                 createTransactionUseCase(
@@ -261,6 +269,7 @@ class TransactionFormViewModel @Inject constructor(
                     payee = state.payee,
                     note = state.note,
                     date = state.date,
+                    place = state.place,
                 )
             }
 

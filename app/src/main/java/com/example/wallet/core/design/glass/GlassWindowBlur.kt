@@ -1,7 +1,7 @@
 package com.example.wallet.core.design.glass
 
 import android.os.Build
-import android.view.View
+import android.view.Window
 import android.view.WindowManager
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
@@ -23,14 +23,22 @@ fun GlassWindowBlur(radiusPx: Int = 48) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
     val view = LocalView.current
     DisposableEffect(view, radiusPx) {
-        applyBlurBehind(view, radiusPx)
+        val window = (view.parent as? DialogWindowProvider)?.window
+        if (window != null) applyDialogBlurBehind(window, radiusPx)
         onDispose {}
     }
 }
 
+/** The non-Compose counterpart of [GlassWindowBlur] — for a raw platform dialog (e.g.
+ * `DatePickerDialog`/`TimePickerDialog`, which have no Compose content to call [GlassWindowBlur]
+ * from), call this directly on `dialog.window` before `dialog.show()`. No-op below API 31. */
+fun applyDialogBlurBehind(window: Window, radiusPx: Int = 48) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+    applyBlurBehindApi31(window, radiusPx)
+}
+
 @RequiresApi(Build.VERSION_CODES.S)
-private fun applyBlurBehind(view: View, radiusPx: Int) {
-    val window = (view.parent as? DialogWindowProvider)?.window ?: return
+private fun applyBlurBehindApi31(window: Window, radiusPx: Int) {
     window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
     window.attributes = window.attributes.apply { blurBehindRadius = radiusPx }
 }

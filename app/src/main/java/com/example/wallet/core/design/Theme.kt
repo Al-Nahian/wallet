@@ -40,6 +40,7 @@ private val LightExtended = WalletExtendedColors(
     transfer = LightTransfer,
     warning = LightWarning,
     success = LightSuccess,
+    accent = LightAccent,
 )
 
 private val DarkExtended = WalletExtendedColors(
@@ -48,6 +49,7 @@ private val DarkExtended = WalletExtendedColors(
     transfer = DarkTransfer,
     warning = DarkWarning,
     success = DarkSuccess,
+    accent = DarkAccent,
 )
 
 val WalletTypography = Typography(

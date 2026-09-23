@@ -21,6 +21,7 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     recurringTransactionId = recurringTransactionId,
     source = source,
     sourceReference = sourceReference,
+    place = place,
 )
 
 fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
@@ -41,4 +42,5 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     recurringTransactionId = recurringTransactionId,
     source = source,
     sourceReference = sourceReference,
+    place = place,
 )

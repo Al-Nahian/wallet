@@ -13,6 +13,7 @@ data class WalletExtendedColors(
     val transfer: Color,
     val warning: Color,
     val success: Color,
+    val accent: Color,
 )
 
 val LocalWalletExtendedColors = staticCompositionLocalOf {
@@ -22,5 +23,6 @@ val LocalWalletExtendedColors = staticCompositionLocalOf {
         transfer = LightTransfer,
         warning = LightWarning,
         success = LightSuccess,
+        accent = LightAccent,
     )
 }

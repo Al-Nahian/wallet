@@ -20,6 +20,7 @@ class UpdateTransactionUseCase @Inject constructor(
         payee: String?,
         note: String?,
         date: Long,
+        place: String? = null,
     ): Result<Transaction> {
         val existing = transactionRepository.getTransaction(transactionId)
             ?: return Result.failure(TransactionValidationException(TransactionError.TransactionNotFound))
@@ -41,6 +42,7 @@ class UpdateTransactionUseCase @Inject constructor(
             categoryId = categoryId,
             payee = payee?.trim()?.takeIf { it.isNotEmpty() },
             note = note?.trim()?.takeIf { it.isNotEmpty() },
+            place = place?.trim()?.takeIf { it.isNotEmpty() },
             date = date,
             updatedAt = System.currentTimeMillis(),
         )

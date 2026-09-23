@@ -26,6 +26,7 @@ class CreateTransactionUseCase @Inject constructor(
         payee: String?,
         note: String?,
         date: Long,
+        place: String? = null,
         source: TransactionSource = TransactionSource.MANUAL,
         sourceReference: String? = null,
     ): Result<Transaction> {
@@ -48,6 +49,7 @@ class CreateTransactionUseCase @Inject constructor(
             categoryId = categoryId,
             payee = payee?.trim()?.takeIf { it.isNotEmpty() },
             note = note?.trim()?.takeIf { it.isNotEmpty() },
+            place = place?.trim()?.takeIf { it.isNotEmpty() },
             date = date,
             createdAt = now,
             updatedAt = now,
