@@ -15,4 +15,5 @@ interface NotificationRepository {
     suspend fun hasAny(): Boolean
     suspend fun create(notification: Notification)
     suspend fun markRead(id: String)
+    suspend fun markAllRead()
 }

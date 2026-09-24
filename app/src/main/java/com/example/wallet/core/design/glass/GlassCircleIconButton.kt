@@ -15,6 +15,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.example.wallet.core.design.WalletTheme
 
 /**
  * A small circular glass bubble around a single icon — the top bar's profile/notification
@@ -41,11 +42,15 @@ fun GlassCircleIconButton(
                 role = Role.Button
                 contentDescription?.let { this.contentDescription = it }
             },
+        // Same neutral-fill-blended-with-accent treatment as every other "black card" in the app,
+        // rather than a drop shadow — on this fully circular shape, the shadow rendered as a
+        // visible darker crescent along the bottom edge instead of a soft lift.
         style = GlassStyle.Thick,
         shape = CircleShape,
+        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
         interaction = GlassInteraction.Pressable,
         interactionSource = interactionSource,
-        elevation = 4.dp,
+        elevation = 0.dp,
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { content() }
     }

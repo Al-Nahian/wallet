@@ -23,4 +23,7 @@ class NotificationRepositoryImpl @Inject constructor(
 
     override suspend fun markRead(id: String) =
         notificationDao.markRead(id, System.currentTimeMillis())
+
+    override suspend fun markAllRead() =
+        notificationDao.markAllRead(System.currentTimeMillis())
 }

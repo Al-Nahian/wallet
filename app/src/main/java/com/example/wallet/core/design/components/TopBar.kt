@@ -1,6 +1,7 @@
 package com.example.wallet.core.design.components
 
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Notifications
@@ -17,7 +18,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import com.example.wallet.core.design.glass.GlassCircleIconButton
+
+/** Extra inset added on top of [CenterAlignedTopAppBar]'s own ~4dp nav-icon/action padding, so the
+ * profile/bell glass bubbles' outer edges land on the same 16dp margin every screen's card list
+ * uses below — without this the bubbles sit noticeably closer to the screen edge than the cards. */
+private val TopBarIconExtraInset = 12.dp
 
 /**
  * Shared top bar for every top-level screen (plan.md §83): a profile icon on the left
@@ -42,12 +49,20 @@ fun WalletTopBar(
         modifier = modifier,
         title = { Text(title) },
         navigationIcon = {
-            GlassCircleIconButton(onClick = onProfileClick, contentDescription = "Profile") {
+            GlassCircleIconButton(
+                onClick = onProfileClick,
+                contentDescription = "Profile",
+                modifier = Modifier.padding(start = TopBarIconExtraInset),
+            ) {
                 Icon(imageVector = Icons.Filled.AccountCircle, contentDescription = null)
             }
         },
         actions = {
-            GlassCircleIconButton(onClick = onNotificationsClick, contentDescription = notificationContentDescription(unreadNotificationCount)) {
+            GlassCircleIconButton(
+                onClick = onNotificationsClick,
+                contentDescription = notificationContentDescription(unreadNotificationCount),
+                modifier = Modifier.padding(end = TopBarIconExtraInset),
+            ) {
                 NotificationBellIcon(unreadCount = unreadNotificationCount)
             }
         },

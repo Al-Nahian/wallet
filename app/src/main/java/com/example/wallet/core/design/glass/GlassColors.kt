@@ -91,4 +91,20 @@ object GlassColors {
     @Composable
     fun selectedTint(tint: Color = MaterialTheme.colorScheme.primary): Color =
         tint.copy(alpha = GlassTokens.selectedTintAlpha)
+
+    /** An explicit neutral fill blended with [tint], rather than [GlassStyle.Thin]'s barely-there
+     * translucency over the live theme surface: in light mode `colorScheme.surface` sits only a
+     * hair off `colorScheme.background`, and in dark mode a low-alpha near-black fill reads as
+     * a flat black bar rather than a card. Every "neutral tinted card" in the app (Cash Flow,
+     * transaction/account/notification rows, settings cards) uses this same fixed light/dark pair
+     * so they all read as the same tinted-glass material. Pass an explicit [fill] to
+     * [GlassSurface] with this value — it bypasses [fill]'s own [style]/[tint] computation. */
+    @Composable
+    fun neutralTintedFill(tint: Color, alpha: Float = 0.85f): Color {
+        val neutral = if (isSystemInDarkTheme()) NeutralCardFillDark else NeutralCardFillLight
+        return lerp(neutral, tint, GlassTokens.contextTintAlpha).copy(alpha = alpha)
+    }
 }
+
+private val NeutralCardFillLight = Color(0xFFEDEDF2)
+private val NeutralCardFillDark = Color(0xFF1C1C1E)

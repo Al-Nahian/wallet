@@ -21,6 +21,8 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.wallet.core.design.WalletTheme
+import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassInteraction
 import com.example.wallet.core.design.glass.GlassShapes
 import com.example.wallet.core.design.glass.GlassStyle
@@ -47,11 +49,16 @@ fun SocialSignInButton(
                 onClick = onClick,
             )
             .semantics { role = Role.Button },
-        style = GlassStyle.Regular,
+        // Same neutral-fill-blended-with-accent treatment as the Cash Flow card and every other
+        // "black card" in the app, rather than GlassStyle.Regular's theme-surface fill + drop
+        // shadow — that shadow, combined with the pill's fully-rounded shape, rendered as a
+        // visible darker crescent along the bottom edge instead of a soft lift.
+        style = GlassStyle.Thick,
         shape = GlassShapes.pill,
+        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
         interaction = GlassInteraction.Pressable,
         interactionSource = interactionSource,
-        elevation = 3.dp,
+        elevation = 0.dp,
     ) {
         Box(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentAlignment = Alignment.Center) {
             Row(verticalAlignment = Alignment.CenterVertically) {

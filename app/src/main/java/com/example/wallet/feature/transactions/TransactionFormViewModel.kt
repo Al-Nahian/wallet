@@ -60,6 +60,10 @@ data class TransactionFormState(
     val accountId: String? = null,
     val toAccountId: String? = null,
     val amountInput: String = "",
+    /** The expression just evaluated by "=" (e.g. "120+35"), shown greyed-out above [amountInput]
+     * once it holds the result — cleared the moment the user types anything new, same as a
+     * calculator's history line. */
+    val amountEquation: String? = null,
     val categoryId: String? = null,
     val payee: String = "",
     val note: String = "",
@@ -169,9 +173,23 @@ class TransactionFormViewModel @Inject constructor(
         it.copy(accountId = id, toAccountId = it.toAccountId.takeUnless { to -> to == id }, errorMessage = null)
     }
     fun onToAccountChange(id: String) = _uiState.update { it.copy(toAccountId = id, errorMessage = null) }
-    fun onAmountChange(value: String) = _uiState.update { it.copy(amountInput = value, errorMessage = null) }
+    fun onAmountChange(value: String) = _uiState.update { it.copy(amountInput = value, amountEquation = null, errorMessage = null) }
     fun onAmountKeypadKey(key: String) = _uiState.update {
-        it.copy(amountInput = applyAmountKeypadKey(it.amountInput, key), errorMessage = null)
+        // Right after "=" shows a result, "⌫" clears the whole thing back to the default "0.00"
+        // instead of deleting one digit off the result — there's no expression left to edit at
+        // that point, only a finished answer, so a full reset reads more like "clear" than
+        // "backspace one character into a stale result."
+        if (key == "⌫" && it.amountEquation != null) {
+            return@update it.copy(amountInput = "", amountEquation = null, errorMessage = null)
+        }
+        // Right after "=" shows a result, a fresh digit/"." starts an entirely new number instead
+        // of appending to that result — standard calculator behavior. An operator instead chains
+        // off the result (e.g. result "+" continues a running total), so only digits/"." reset.
+        val isDigitOrDot = key.length == 1 && (key[0].isDigit() || key == ".")
+        val base = if (it.amountEquation != null && isDigitOrDot) "" else it.amountInput
+        val next = applyAmountKeypadKey(base, key)
+        val equation = if (key == "=" && next != base) base else null
+        it.copy(amountInput = next, amountEquation = equation, errorMessage = null)
     }
     fun onCategoryChange(id: String?) = _uiState.update { it.copy(categoryId = id) }
     fun onPayeeChange(value: String) = _uiState.update { it.copy(payee = value) }

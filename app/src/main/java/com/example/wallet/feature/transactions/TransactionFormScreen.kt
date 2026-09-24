@@ -2,18 +2,30 @@ package com.example.wallet.feature.transactions
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,6 +38,7 @@ import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -33,8 +46,8 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -65,6 +78,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -83,6 +97,7 @@ import com.example.wallet.core.design.components.LabelChip
 import com.example.wallet.core.design.components.PrimaryButton
 import com.example.wallet.core.design.components.SecondaryButton
 import com.example.wallet.core.design.components.SelectorOption
+import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassShapes
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
@@ -225,6 +240,12 @@ private fun MainPage(
 
             AmountGlassCard(
                 amountInput = uiState.amountInput,
+                equation = uiState.amountEquation,
+                icon = when (uiState.type) {
+                    TransactionType.INCOME -> Icons.Filled.Add
+                    TransactionType.EXPENSE -> Icons.Filled.Remove
+                    TransactionType.TRANSFER, TransactionType.REFUND, TransactionType.ADJUSTMENT -> null
+                },
                 tint = amountTint,
                 onOpenDetails = onOpenDetails,
             )
@@ -392,31 +413,78 @@ private fun TransactionTypeSegmented(
 
     GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        style = GlassStyle.Thin,
+        style = GlassStyle.Thick,
+        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
         shape = GlassShapes.pill,
         elevation = 0.dp,
     ) {
-        Row(modifier = Modifier.padding(4.dp).fillMaxWidth()) {
-            segments.forEach { segment ->
-                val isSelected = segment.type == selected
-                Box(modifier = Modifier.weight(1f)) {
-                    if (isSelected) {
-                        GlassSurface(
-                            modifier = Modifier.fillMaxWidth().clickable { onSelected(segment.type) },
-                            style = GlassStyle.Vivid,
-                            tint = segment.color,
-                            fill = segment.color.copy(alpha = 0.9f),
-                            glow = true,
-                            shape = GlassShapes.pill,
-                            elevation = 0.dp,
-                        ) {
-                            SegmentLabel(segment.icon, segment.label, Color.White)
-                        }
-                    } else {
+        BoxWithConstraints(modifier = Modifier.padding(4.dp).fillMaxWidth()) {
+            val segmentWidth = maxWidth / segments.size
+            val selectedIndex = segments.indexOfFirst { it.type == selected }.coerceAtLeast(0)
+            val targetLeft = segmentWidth * selectedIndex
+            val targetRight = segmentWidth * (selectedIndex + 1)
+
+            // A liquid-droplet stretch rather than a rigid slide: the two edges of the pill are
+            // independent springs, not one shared offset+width tween. Whichever edge leads in the
+            // direction of travel gets the stiffer spring and arrives first, so the pill stretches
+            // out ahead of itself before the trailing edge catches up and the shape snaps back to
+            // its resting width — the same "reach, then catch up" motion a drop of liquid makes.
+            val leftEdge = remember { Animatable(targetLeft, Dp.VectorConverter) }
+            val rightEdge = remember { Animatable(targetRight, Dp.VectorConverter) }
+            LaunchedEffect(targetLeft, targetRight) {
+                val movingRight = targetLeft > leftEdge.value
+                val leadSpring = spring<Dp>(dampingRatio = 0.68f, stiffness = 420f)
+                val followSpring = spring<Dp>(dampingRatio = 0.68f, stiffness = 190f)
+                if (movingRight) {
+                    launch { rightEdge.animateTo(targetRight, leadSpring) }
+                    launch { leftEdge.animateTo(targetLeft, followSpring) }
+                } else {
+                    launch { leftEdge.animateTo(targetLeft, leadSpring) }
+                    launch { rightEdge.animateTo(targetRight, followSpring) }
+                }
+            }
+
+            val indicatorColor by animateColorAsState(
+                targetValue = segments[selectedIndex].color,
+                animationSpec = tween(durationMillis = 280),
+                label = "segmentIndicatorColor",
+            )
+
+            // height(IntrinsicSize.Min) lets the sliding indicator's fillMaxHeight() resolve
+            // against the label Row's real (wrap-content) height instead of an unbounded parent
+            // max height, which would otherwise make it collapse to zero — the same pitfall
+            // AmountGlassCard's digits hit earlier.
+            Box(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                val left = leftEdge.value.coerceAtMost(rightEdge.value)
+                val right = rightEdge.value.coerceAtLeast(leftEdge.value)
+                GlassSurface(
+                    modifier = Modifier
+                        .offset(x = left)
+                        .width(right - left)
+                        .fillMaxHeight(),
+                    style = GlassStyle.Vivid,
+                    tint = indicatorColor,
+                    fill = indicatorColor.copy(alpha = 0.9f),
+                    glow = true,
+                    shape = GlassShapes.pill,
+                    elevation = 0.dp,
+                ) {}
+
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    segments.forEach { segment ->
+                        val isSelected = segment.type == selected
+                        val labelColor by animateColorAsState(
+                            targetValue = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            animationSpec = tween(durationMillis = 280),
+                            label = "segmentLabelColor",
+                        )
                         Box(
-                            modifier = Modifier.fillMaxWidth().clickable { onSelected(segment.type) },
+                            modifier = Modifier.weight(1f).clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) { onSelected(segment.type) },
                         ) {
-                            SegmentLabel(segment.icon, segment.label, MaterialTheme.colorScheme.onSurfaceVariant)
+                            SegmentLabel(segment.icon, segment.label, labelColor)
                         }
                     }
                 }
@@ -451,10 +519,15 @@ private val transparentTextFieldColors
 
 /** The amount card: shows the amount [AmountKeypad] is building below it (never the system IME —
  * see plans notes on why), plus a trailing circular button that opens [DetailsPage] — matches the
- * reference design's two-step flow. */
+ * reference design's two-step flow. A third, always-reserved line above the amount shows the
+ * equation just evaluated by "=" (e.g. "120+35"), greyed out, calculator-style — reserved even
+ * when empty so the card's height (and the amount's vertical position) doesn't jump between
+ * plain-number and post-equation states. */
 @Composable
 private fun AmountGlassCard(
     amountInput: String,
+    equation: String?,
+    icon: androidx.compose.ui.graphics.vector.ImageVector?,
     tint: Color,
     onOpenDetails: () -> Unit,
 ) {
@@ -467,17 +540,34 @@ private fun AmountGlassCard(
         shape = GlassShapes.large,
         elevation = 0.dp,
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
+        // A tall "hero" display, reaching down to about where the Account/Category row used to
+        // end, so the card reads as a calculator-style amount display rather than a thin banner —
+        // Account/Category and the split button sit below it in the Column, so they simply move
+        // down to make room. The icon sits at the top, the digits at the bottom (like a
+        // calculator screen); the chevron button is centered on the card's full height. heightIn
+        // (min) has to be on this Column itself, not on the wrapping Box: a plain Box measures
+        // non-matchParentSize content with minHeight loosened to 0, so a Column below it doing
+        // Modifier.fillMaxSize() would fall back to wrap-content height, leaving the weighted
+        // Spacer nothing to expand into and the digits stuck near the top instead of the bottom.
+        Box(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
         ) {
-            GlassIconBubble(icon = Icons.Filled.Payments, tint = tint, size = 40.dp)
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = "Amount", fontSize = 12.sp, color = Color.White.copy(alpha = 0.85f))
+            Column(modifier = Modifier.fillMaxWidth().heightIn(min = 188.dp).padding(end = 52.dp)) {
+                // No icon for a transfer — it isn't a "+" or "-" against the account it's shown
+                // on, so neither arithmetic sign would be accurate.
+                if (icon != null) {
+                    GlassIconBubble(icon = icon, tint = tint, size = 40.dp)
+                }
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = equation.orEmpty(),
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.55f),
+                    maxLines = 1,
+                )
                 Text(
                     text = amountInput.ifEmpty { "0.00" },
-                    fontSize = 28.sp,
+                    fontSize = 34.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (amountInput.isEmpty()) Color.White.copy(alpha = 0.5f) else Color.White,
                 )
@@ -485,6 +575,7 @@ private fun AmountGlassCard(
             IconButton(
                 onClick = onOpenDetails,
                 modifier = Modifier
+                    .align(Alignment.CenterEnd)
                     .size(40.dp)
                     .background(Color.White.copy(alpha = 0.25f), CircleShape),
             ) {

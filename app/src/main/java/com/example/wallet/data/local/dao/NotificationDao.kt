@@ -24,4 +24,7 @@ interface NotificationDao {
     // COALESCE keeps the first mark-read timestamp — a second call is a no-op (idempotent).
     @Query("UPDATE notifications SET readAt = COALESCE(readAt, :readAt) WHERE id = :id")
     suspend fun markRead(id: String, readAt: Long)
+
+    @Query("UPDATE notifications SET readAt = COALESCE(readAt, :readAt) WHERE readAt IS NULL")
+    suspend fun markAllRead(readAt: Long)
 }

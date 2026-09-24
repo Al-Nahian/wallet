@@ -1,6 +1,5 @@
 package com.example.wallet.feature.reports
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,12 +29,14 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.common.formatMoney
+import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.components.BalanceCard
 import com.example.wallet.core.design.components.CashFlowCard
 import com.example.wallet.core.design.components.CategoryBreakdownRow
 import com.example.wallet.core.design.components.DateRangeSelector
 import com.example.wallet.core.design.components.StatCard
 import com.example.wallet.core.design.components.WalletBottomNavSpace
+import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
 import com.example.wallet.domain.usecase.reports.AccountReport
@@ -46,12 +47,6 @@ private val ReportsAccentPalette = listOf(
     Color(0xFF42B5E8), Color(0xFF9C6ADE), Color(0xFFFF9F1C), Color(0xFF26A69A),
     Color(0xFFEC407A), Color(0xFF7CB342),
 )
-
-/** Same explicit neutral fill CashFlowCard uses, and for the same reason: in light mode
- * [GlassStyle.Thick]'s theme-surface-derived fill sits too close to the page background to read
- * as a card at all. */
-private val LightNeutralCardFill = Color(0xFFEDEDF2)
-private val DarkNeutralCardFill = Color(0xFF1C1C1E)
 
 /** Mirrors the dashboard's brighter palette so the two screens feel like one cohesive app rather
  * than each inventing its own tinting. */
@@ -183,11 +178,10 @@ private fun EmptyRowText(text: String) {
 
 @Composable
 private fun AccountReportCard(report: AccountReport) {
-    val fill = if (isSystemInDarkTheme()) DarkNeutralCardFill else LightNeutralCardFill
     GlassSurface(
         modifier = Modifier.fillMaxWidth(),
         style = GlassStyle.Thick,
-        fill = fill.copy(alpha = 0.85f),
+        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
         elevation = 0.dp,
         lightweight = true,
     ) {
@@ -216,11 +210,10 @@ private fun AccountReportCard(report: AccountReport) {
 
 @Composable
 private fun CategoryTrendCard(trend: CategoryTrend, currency: String) {
-    val fill = if (isSystemInDarkTheme()) DarkNeutralCardFill else LightNeutralCardFill
     GlassSurface(
         modifier = Modifier.fillMaxWidth(),
         style = GlassStyle.Thick,
-        fill = fill.copy(alpha = 0.85f),
+        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
         elevation = 0.dp,
         lightweight = true,
     ) {

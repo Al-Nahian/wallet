@@ -1,6 +1,7 @@
 package com.example.wallet.core.design.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,12 +12,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.wallet.core.design.WalletTheme
+import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassShapes
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
@@ -71,7 +75,7 @@ fun evaluateAmountExpression(expr: String): String {
  * system IME so entry doesn't depend on IME focus/timing at all; also supports basic arithmetic
  * (e.g. entering "120+35" and tapping "=") for combining two amounts inline. */
 @Composable
-fun AmountKeypad(onKeyPress: (String) -> Unit, modifier: Modifier = Modifier, tint: Color = MaterialTheme.colorScheme.surfaceVariant) {
+fun AmountKeypad(onKeyPress: (String) -> Unit, modifier: Modifier = Modifier, tint: Color = WalletTheme.extendedColors.transfer) {
     val rows = listOf(
         listOf("7", "8", "9", "÷"),
         listOf("4", "5", "6", "×"),
@@ -98,9 +102,17 @@ fun AmountKeypad(onKeyPress: (String) -> Unit, modifier: Modifier = Modifier, ti
 @Composable
 private fun KeypadButton(label: String, tint: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
     GlassSurface(
-        modifier = modifier.height(52.dp).clickable(onClick = onClick),
-        style = GlassStyle.Thin,
+        modifier = modifier.height(52.dp).clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            onClick = onClick,
+        ),
+        // Same neutral-fill-blended-with-accent treatment as every other "black card" in the app,
+        // rather than GlassStyle.Thin's low-alpha fill, which read as a flat black key against
+        // the page background.
+        style = GlassStyle.Thick,
         shape = GlassShapes.medium,
+        fill = GlassColors.neutralTintedFill(tint),
         elevation = 0.dp,
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

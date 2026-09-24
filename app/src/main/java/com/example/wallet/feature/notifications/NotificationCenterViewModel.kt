@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.wallet.domain.model.Notification
 import com.example.wallet.domain.model.needsAttention
 import com.example.wallet.domain.repository.NotificationRepository
+import com.example.wallet.domain.usecase.notification.MarkAllNotificationsReadUseCase
 import com.example.wallet.domain.usecase.notification.MarkNotificationReadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -26,7 +27,13 @@ sealed interface NotificationCenterUiState {
 class NotificationCenterViewModel @Inject constructor(
     private val notificationRepository: NotificationRepository,
     private val markNotificationReadUseCase: MarkNotificationReadUseCase,
+    private val markAllNotificationsReadUseCase: MarkAllNotificationsReadUseCase,
 ) : ViewModel() {
+
+    init {
+        // Opening Notification Center is itself the "seen" signal — clears the bell's badge.
+        viewModelScope.launch { markAllNotificationsReadUseCase() }
+    }
 
     val uiState: StateFlow<NotificationCenterUiState> = notificationRepository.observeAll()
         .map { notifications ->

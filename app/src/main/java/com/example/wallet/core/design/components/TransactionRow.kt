@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.wallet.core.common.formatMoney
 import com.example.wallet.core.design.WalletTheme
+import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassShapes
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
@@ -50,12 +51,11 @@ fun TransactionRow(
 
     GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        style = GlassStyle.Thin,
+        style = GlassStyle.Thick,
         shape = GlassShapes.small,
-        // A slight blue tint (liquid-glass reference design) rather than a neutral grey/black
-        // card — GlassStyle.Thin blends this in at GlassTokens.contextTintAlpha (10%), so it
-        // reads as a hint of color, not a saturated blue card.
-        tint = WalletTheme.extendedColors.transfer,
+        // Same neutral-fill-blended-with-accent treatment as CashFlowCard — reads as tinted glass
+        // instead of GlassStyle.Thin's low-alpha fill, which looked like a flat black bar.
+        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
         // No drop shadow: at this small size/elevation, Android's shadow renders as a tight grey
         // ring hugging the card edge rather than a soft lift — on a white/light background that
         // reads as an unwanted outline. The fill-color contrast alone defines the card edge.

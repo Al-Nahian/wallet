@@ -55,6 +55,7 @@ import com.example.wallet.core.design.components.EmptyState
 import com.example.wallet.core.design.components.StatCard
 import com.example.wallet.core.design.components.TransactionRow
 import com.example.wallet.core.design.components.WalletBottomNavSpace
+import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassShapes
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
@@ -298,7 +299,6 @@ fun DashboardScreen(
                             icon = Icons.Filled.CalendarMonth,
                             actionLabel = "Add recurring payment",
                             onAction = onManageRecurring,
-                            modifier = Modifier.height(200.dp),
                         )
                     }
                 } else {
@@ -343,8 +343,9 @@ private fun UpcomingRecurringRow(item: RecurringTransactionUi, onClick: () -> Un
 
     GlassSurface(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        style = GlassStyle.Thin,
+        style = GlassStyle.Thick,
         shape = GlassShapes.small,
+        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
         elevation = 0.dp,
         lightweight = true,
     ) {

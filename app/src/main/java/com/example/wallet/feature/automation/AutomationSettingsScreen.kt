@@ -33,7 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.components.GlassScreenTopBar
+import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassShapes
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
@@ -138,8 +140,9 @@ private fun SettingCard(
 ) {
     GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        style = GlassStyle.Thin,
+        style = GlassStyle.Thick,
         shape = GlassShapes.medium,
+        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
         elevation = 0.dp,
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -168,8 +171,9 @@ private fun SettingCard(
 private fun ReviewQueueRow(pendingCount: Int, onClick: () -> Unit) {
     GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        style = GlassStyle.Thin,
+        style = GlassStyle.Thick,
         shape = GlassShapes.medium,
+        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
         elevation = 0.dp,
     ) {
         Row(

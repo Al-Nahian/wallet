@@ -1,5 +1,12 @@
 package com.example.wallet.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -10,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -54,6 +62,22 @@ import com.example.wallet.feature.transactions.TransactionFormScreen
 import com.example.wallet.feature.transactions.TransactionRoutes
 import com.example.wallet.feature.transactions.TransactionsScreen
 
+/** The 4 bottom-nav destinations swap via `popUpTo`/`restoreState`, not a push/pop stack, so they
+ * cross-fade like tab switches instead of sliding like the rest of the screens below (a slide
+ * would look like a step forward/back in a hierarchy that doesn't exist between tabs). */
+private val topLevelRoutes = setOf(
+    WalletDestination.Home.route,
+    WalletDestination.Transactions.route,
+    WalletDestination.Reports.route,
+    WalletDestination.Accounts.route,
+)
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isTopLevelSwitch(): Boolean =
+    initialState.destination.route in topLevelRoutes && targetState.destination.route in topLevelRoutes
+
+private const val TransitionDurationMs = 260
+private val TransitionEasing = FastOutSlowInEasing
+
 private val screenTitles = mapOf(
     WalletDestination.Home.route to "Wallet",
     WalletDestination.Transactions.route to "Transactions",
@@ -65,7 +89,50 @@ private val screenTitles = mapOf(
 fun WalletNavHost() {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = WalletDestination.Home.route) {
+    NavHost(
+        navController = navController,
+        startDestination = WalletDestination.Home.route,
+        enterTransition = {
+            if (isTopLevelSwitch()) {
+                fadeIn(animationSpec = tween(TransitionDurationMs))
+            } else {
+                slideInHorizontally(
+                    initialOffsetX = { it / 3 },
+                    animationSpec = tween(TransitionDurationMs, easing = TransitionEasing),
+                ) + fadeIn(animationSpec = tween(TransitionDurationMs))
+            }
+        },
+        exitTransition = {
+            if (isTopLevelSwitch()) {
+                fadeOut(animationSpec = tween(TransitionDurationMs))
+            } else {
+                slideOutHorizontally(
+                    targetOffsetX = { -it / 4 },
+                    animationSpec = tween(TransitionDurationMs, easing = TransitionEasing),
+                ) + fadeOut(animationSpec = tween(TransitionDurationMs / 2))
+            }
+        },
+        popEnterTransition = {
+            if (isTopLevelSwitch()) {
+                fadeIn(animationSpec = tween(TransitionDurationMs))
+            } else {
+                slideInHorizontally(
+                    initialOffsetX = { -it / 4 },
+                    animationSpec = tween(TransitionDurationMs, easing = TransitionEasing),
+                ) + fadeIn(animationSpec = tween(TransitionDurationMs))
+            }
+        },
+        popExitTransition = {
+            if (isTopLevelSwitch()) {
+                fadeOut(animationSpec = tween(TransitionDurationMs))
+            } else {
+                slideOutHorizontally(
+                    targetOffsetX = { it / 3 },
+                    animationSpec = tween(TransitionDurationMs, easing = TransitionEasing),
+                ) + fadeOut(animationSpec = tween(TransitionDurationMs / 2))
+            }
+        },
+    ) {
         composable(WalletDestination.Home.route) {
             TopLevelScaffold(
                 navController = navController,
