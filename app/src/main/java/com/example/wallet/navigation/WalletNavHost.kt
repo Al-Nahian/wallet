@@ -7,14 +7,18 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
@@ -25,11 +29,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.example.wallet.core.design.components.WalletBottomNavigation
 import com.example.wallet.core.design.components.WalletScaffold
 import com.example.wallet.core.design.components.WalletTopBar
-import com.example.wallet.core.design.glass.glassBackdropSource
-import com.example.wallet.core.design.glass.rememberGlassBackdrop
+import com.example.wallet.core.design.glass.LiquidDarkPageBackground
 import com.example.wallet.feature.accounts.AccountDetailScreen
 import com.example.wallet.feature.accounts.AccountFormScreen
 import com.example.wallet.feature.accounts.AccountRoutes
@@ -355,54 +360,77 @@ private fun TopLevelScaffold(
 ) {
     val badgeViewModel: NotificationBadgeViewModel = hiltViewModel()
     val unreadCount by badgeViewModel.unreadCount.collectAsStateWithLifecycle()
-    val backdrop = rememberGlassBackdrop()
+    // Shared by both the bottom bar's blur and the FAB's refraction (see GlassBottomBar's doc) —
+    // capturing the whole screen content once instead of twice measurably cut scroll jank
+    // (confirmed via `dumpsys gfxinfo framestats`), with no visual difference since both were
+    // always reading the exact same content anyway.
+    val liquidFabBackdrop = rememberLayerBackdrop()
+    val isDark = isSystemInDarkTheme()
 
-    WalletScaffold(
-        topBar = {
-            WalletTopBar(
-                title = screenTitles[currentRoute] ?: "Wallet",
-                unreadNotificationCount = unreadCount,
-                onProfileClick = { navController.navigate(ProfileRoutes.PROFILE) },
-                onNotificationsClick = { navController.navigate(NotificationRoutes.NOTIFICATION_CENTER) },
-            )
-        },
-    ) { paddingValues ->
-        // The nav bar overlays the content rather than sitting in the Scaffold's bottomBar slot:
-        // a reserved slot would leave an opaque page-background strip behind the floating pill,
-        // so nothing would show through its glass. Screens add WalletBottomNavSpace to their own
-        // bottom content padding so their last item still scrolls clear of it.
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            // Recorded so the nav bar can draw it back blurred behind itself. The opaque
-            // background is part of the recording on purpose: the blurred copy has to fully
-            // cover the sharp original underneath it, or both would show at once.
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .glassBackdropSource(backdrop, MaterialTheme.colorScheme.surface),
-            ) {
-                content()
+    // The reference design's dark-mode background is a real glow-blob image, not flat black —
+    // drawn once here, inside the blur capture, rather than per-screen.
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Recorded so the nav bar/FAB can draw it back blurred/refracted behind themselves.
+        // The capture wraps background + scaffold as one fullscreen layer with the nav pill as
+        // a sibling outside it (a capture may never contain its own reader — recording the pill
+        // from inside itself crashes the render thread). One background copy only: an earlier
+        // version drew a second copy inside a smaller padded box, whose different image crop
+        // left a visible hairline seam below the top bar. In dark mode there is deliberately NO
+        // opaque base paint — the glow image is already a soft blur itself, so blurring it again
+        // barely changes it. Light mode keeps an opaque surface base, since its background is a
+        // flat color a transparency seam would still show against.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .let { if (isDark) it else it.background(MaterialTheme.colorScheme.surface) }
+                .layerBackdrop(liquidFabBackdrop),
+        ) {
+            if (isDark) {
+                LiquidDarkPageBackground()
             }
-            WalletBottomNavigation(
-                items = walletBottomNavItems,
-                selectedRoute = currentRoute,
-                onItemSelected = { route ->
-                    navController.navigate(route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+            WalletScaffold(
+                containerColor = Color.Transparent,
+                topBar = {
+                    WalletTopBar(
+                        title = screenTitles[currentRoute] ?: "Wallet",
+                        unreadNotificationCount = unreadCount,
+                        onProfileClick = { navController.navigate(ProfileRoutes.PROFILE) },
+                        onNotificationsClick = { navController.navigate(NotificationRoutes.NOTIFICATION_CENTER) },
+                    )
                 },
-                fabOnClick = fabOnClick,
-                fabContentDescription = if (currentRoute == WalletDestination.Accounts.route) {
-                    "Add account"
-                } else {
-                    "Add transaction"
-                },
-                modifier = Modifier.align(Alignment.BottomCenter),
-                backdrop = backdrop,
-            )
+            ) { paddingValues ->
+                Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                    content()
+                }
+            }
         }
+        // The nav bar overlays the content rather than sitting in the Scaffold's bottomBar
+        // slot: a reserved slot would leave an opaque page-background strip behind the
+        // floating pill, so nothing would show through its glass. Kept outside the capture
+        // above (it reads that capture). navigationBarsPadding replaces the Scaffold content
+        // inset it previously sat inside, so the pill still clears the system gesture bar.
+        // Screens add WalletBottomNavSpace to their own bottom content padding so their last
+        // item still scrolls clear of it.
+        WalletBottomNavigation(
+            items = walletBottomNavItems,
+            selectedRoute = currentRoute,
+            onItemSelected = { route ->
+                navController.navigate(route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            fabOnClick = fabOnClick,
+            fabContentDescription = if (currentRoute == WalletDestination.Accounts.route) {
+                "Add account"
+            } else {
+                "Add transaction"
+            },
+            liquidFabBackdrop = liquidFabBackdrop,
+            modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding(),
+        )
     }
 }

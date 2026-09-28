@@ -57,6 +57,11 @@ fun GlassSurface(
      * one, so the surface reads as lit from within against a near-black page. Reserved for
      * headline [GlassStyle.Vivid] cards — chrome surfaces (bars, sheets) never set this. */
     glow: Boolean = false,
+    /** Whether [glow]'s colored rim border also draws. Split out from [glow] because the
+     * liquid-glass reference design's light-mode pastel cards want the colored ambient shadow
+     * without a crisp saturated outline ring — the shadow alone already reads as "lit," and the
+     * border on top of it looked like an outlined sticker rather than soft glass. */
+    showGlowBorder: Boolean = glow,
     interaction: GlassInteraction = GlassInteraction.None,
     interactionSource: MutableInteractionSource? = null,
     enabled: Boolean = true,
@@ -145,7 +150,7 @@ fun GlassSurface(
         // colored glow's rim. Chrome surfaces (bars, sheets, plain rows) skip it: a neutral
         // 1dp border on a large/edge-to-edge shape reads as an unwanted outline box rather than
         // a material edge.
-        if (glow && tint != null) {
+        if (glow && tint != null && showGlowBorder) {
             Box(
                 modifier = Modifier
                     .matchParentSize()

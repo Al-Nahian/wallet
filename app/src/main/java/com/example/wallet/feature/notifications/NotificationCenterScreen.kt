@@ -34,10 +34,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.components.EmptyState
 import com.example.wallet.core.design.components.GlassScreenTopBar
+import com.example.wallet.core.design.components.LiquidGlassCard
 import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassShapes
-import com.example.wallet.core.design.glass.GlassStyle
-import com.example.wallet.core.design.glass.GlassSurface
+import com.example.wallet.core.design.glass.liquidGlassContentColor
 import com.example.wallet.domain.model.Notification
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -122,13 +122,17 @@ private fun SectionHeader(title: String) {
 
 @Composable
 private fun NotificationRow(notification: Notification, onClick: () -> Unit) {
-    GlassSurface(
+    val tint = if (notification.isUnread) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        GlassColors.neutralGlassTint(WalletTheme.extendedColors.transfer)
+    }
+    val contentColor = liquidGlassContentColor(tint)
+    LiquidGlassCard(
         modifier = Modifier.fillMaxWidth(),
-        style = if (notification.isUnread) GlassStyle.Regular else GlassStyle.Thick,
         shape = GlassShapes.small,
-        tint = if (notification.isUnread) MaterialTheme.colorScheme.primary else null,
-        fill = if (notification.isUnread) null else GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
-        elevation = 0.dp,
+        cornerRadius = 14.dp,
+        tint = tint,
         lightweight = true,
     ) {
         ListItem(
@@ -136,10 +140,11 @@ private fun NotificationRow(notification: Notification, onClick: () -> Unit) {
             headlineContent = {
                 Text(
                     text = notification.title,
+                    color = contentColor,
                     fontWeight = if (notification.isUnread) FontWeight.Bold else FontWeight.Normal,
                 )
             },
-            supportingContent = { Text(notification.body) },
+            supportingContent = { Text(notification.body, color = contentColor.copy(alpha = 0.85f)) },
             trailingContent = {
                 Text(
                     text = DateUtils.getRelativeTimeSpanString(
@@ -148,7 +153,7 @@ private fun NotificationRow(notification: Notification, onClick: () -> Unit) {
                         DateUtils.MINUTE_IN_MILLIS,
                     ).toString(),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = contentColor.copy(alpha = 0.75f),
                 )
             },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),

@@ -80,7 +80,7 @@ fun RecurringTransactionFormScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
                 .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             RecurringTypeToggle(selected = uiState.type, onSelected = viewModel::onTypeChange)
 

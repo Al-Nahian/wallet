@@ -104,6 +104,22 @@ object GlassColors {
         val neutral = if (isSystemInDarkTheme()) NeutralCardFillDark else NeutralCardFillLight
         return lerp(neutral, tint, GlassTokens.contextTintAlpha).copy(alpha = alpha)
     }
+
+    /** Same neutral base [neutralTintedFill] blends toward [tint], but without an alpha applied —
+     * for feeding [com.example.wallet.core.design.components.LiquidGlassCard]'s `tint` param,
+     * which needs an opaque seed color to build its own gradient/wave/border from. Every "neutral"
+     * card in the app (transaction/account/notification rows, sign-in buttons) uses this so they
+     * read as glass without being recolored away from white/black. */
+    @Composable
+    fun neutralGlassTint(tint: Color): Color {
+        val neutral = if (isSystemInDarkTheme()) NeutralCardFillDark else NeutralCardFillLight
+        // Dark mode blends much further toward tint than light mode's barely-there 10% — the
+        // reference design's "neutral" dark cards (Cash Flow, transaction/notification rows) read
+        // as a dark, saturated teal-blue, not a neutral gray, once LiquidGlassCard's own
+        // further-darkened gradient is layered on top.
+        val blend = if (isSystemInDarkTheme()) 0.35f else GlassTokens.contextTintAlpha
+        return lerp(neutral, tint, blend)
+    }
 }
 
 private val NeutralCardFillLight = Color(0xFFEDEDF2)

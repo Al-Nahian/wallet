@@ -23,10 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.glass.GlassColors
-import com.example.wallet.core.design.glass.GlassInteraction
 import com.example.wallet.core.design.glass.GlassShapes
-import com.example.wallet.core.design.glass.GlassStyle
-import com.example.wallet.core.design.glass.GlassSurface
 
 /** A pill-shaped glass row for a third-party sign-in option (Google/Microsoft/Email…), with a
  * leading brand icon — matches the standard "Continue with X" sign-in button convention, styled
@@ -39,7 +36,7 @@ fun SocialSignInButton(
     icon: @Composable () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    GlassSurface(
+    LiquidGlassCard(
         modifier = modifier
             .fillMaxWidth()
             .height(52.dp)
@@ -49,16 +46,12 @@ fun SocialSignInButton(
                 onClick = onClick,
             )
             .semantics { role = Role.Button },
-        // Same neutral-fill-blended-with-accent treatment as the Cash Flow card and every other
-        // "black card" in the app, rather than GlassStyle.Regular's theme-surface fill + drop
-        // shadow — that shadow, combined with the pill's fully-rounded shape, rendered as a
-        // visible darker crescent along the bottom edge instead of a soft lift.
-        style = GlassStyle.Thick,
         shape = GlassShapes.pill,
-        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
-        interaction = GlassInteraction.Pressable,
-        interactionSource = interactionSource,
-        elevation = 0.dp,
+        cornerRadius = 999.dp,
+        tint = GlassColors.neutralGlassTint(WalletTheme.extendedColors.transfer),
+        // No drop shadow: on this fully-rounded pill shape a shadow rendered as a visible darker
+        // crescent along the bottom edge instead of a soft lift.
+        lightweight = true,
     ) {
         Box(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentAlignment = Alignment.Center) {
             Row(verticalAlignment = Alignment.CenterVertically) {

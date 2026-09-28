@@ -32,8 +32,6 @@ import com.example.wallet.core.common.formatMoney
 import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassShapes
-import com.example.wallet.core.design.glass.GlassStyle
-import com.example.wallet.core.design.glass.GlassSurface
 import java.util.Locale
 import kotlin.math.abs
 
@@ -74,12 +72,11 @@ fun CashFlowCard(
         ?.takeIf { it != 0L }
         ?.let { previous -> (netMinor - previous) * 100.0 / abs(previous) }
 
-    GlassSurface(
+    LiquidGlassCard(
         modifier = modifier.fillMaxWidth(),
-        style = GlassStyle.Thick,
         shape = GlassShapes.large,
-        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
-        elevation = 0.dp,
+        cornerRadius = 28.dp,
+        tint = GlassColors.neutralGlassTint(WalletTheme.extendedColors.transfer),
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             Row(
@@ -88,7 +85,7 @@ fun CashFlowCard(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    GlassIconBubble(icon = Icons.Filled.SwapHoriz, tint = CashFlowIconTint, size = 32.dp)
+                    LiquidIconBubble(icon = Icons.Filled.SwapHoriz, tint = CashFlowIconTint, size = 32.dp)
                     Spacer(Modifier.width(10.dp))
                     Text(
                         text = "Cash Flow",

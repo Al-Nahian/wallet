@@ -13,6 +13,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
@@ -20,8 +21,9 @@ import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.toIntSize
+import kotlin.math.roundToInt
 
 /**
  * A recording of the content sitting behind a glass surface, so that surface can draw it back
@@ -36,6 +38,10 @@ class GlassBackdrop internal constructor(internal val layer: GraphicsLayer) {
     /** Where the recording starts, so a surface can work out which slice of it sits behind it. */
     internal var sourceCoordinates: LayoutCoordinates? by mutableStateOf(null)
 }
+
+/** Fraction of full resolution the bottom nav's live blur is recorded/blurred at — see the
+ * comment in [glassBackdrop] for why this is a safe, visually-invisible cost cut. */
+private const val BlurDownsampleFactor = 0.5f
 
 @Composable
 fun rememberGlassBackdrop(): GlassBackdrop {
@@ -77,14 +83,30 @@ fun Modifier.glassBackdrop(backdrop: GlassBackdrop?, radius: Dp = 14.dp): Modifi
                     ?: Offset.Zero
             }
             .drawBehind {
-                val radiusPx = radius.toPx()
+                // Blurring at full resolution every scroll frame was the dominant cost behind
+                // the bottom nav bar's real backdrop blur — confirmed via `dumpsys gfxinfo
+                // framestats`, which showed 100-300ms frames during scroll (vs. a 16.6ms
+                // budget). A Gaussian blur's cost scales with pixel count, and a blur already
+                // discards fine detail, so recording + blurring at a quarter of the pixels
+                // (half width, half height) then scaling the result back up is visually
+                // indistinguishable while cutting that per-frame blur work to a quarter.
+                val downsample = BlurDownsampleFactor
+                val radiusPx = radius.toPx() * downsample
                 blurLayer.renderEffect = BlurEffect(radiusPx, radiusPx, TileMode.Clamp)
-                blurLayer.record(size = size.toIntSize()) {
-                    translate(-offsetInSource.x, -offsetInSource.y) {
-                        drawLayer(backdrop.layer)
+                val downSize = IntSize(
+                    (size.width * downsample).roundToInt().coerceAtLeast(1),
+                    (size.height * downsample).roundToInt().coerceAtLeast(1),
+                )
+                blurLayer.record(size = downSize) {
+                    scale(downsample, pivot = Offset.Zero) {
+                        translate(-offsetInSource.x, -offsetInSource.y) {
+                            drawLayer(backdrop.layer)
+                        }
                     }
                 }
-                drawLayer(blurLayer)
+                scale(1f / downsample, pivot = Offset.Zero) {
+                    drawLayer(blurLayer)
+                }
             }
     }
 }

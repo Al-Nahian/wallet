@@ -23,35 +23,31 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.wallet.core.design.glass.GlassStyle
-import com.example.wallet.core.design.glass.GlassSurface
-import com.example.wallet.core.design.glass.GlassTokens
+import com.example.wallet.core.design.glass.liquidGlassContentColor
 
 /** A small labeled stat, e.g. "Savings Rate" / "12.5%" — unlike [BalanceCard], the value is a
- * pre-formatted string rather than always a currency amount. Same frosted tinted glass treatment
- * as [AccountSummaryCard] and [BalanceCard], with an icon bubble and trailing chevron. */
+ * pre-formatted string rather than always a currency amount. Same [LiquidGlassCard] treatment as
+ * [AccountSummaryCard] and [BalanceCard], with an icon bubble and trailing chevron. */
 @Composable
 fun StatCard(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
-    contentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    contentColor: Color = liquidGlassContentColor(containerColor),
     icon: ImageVector = Icons.Filled.Insights,
+    waveVariant: Int? = null,
 ) {
-    GlassSurface(
+    LiquidGlassCard(
         modifier = modifier.fillMaxWidth(),
-        style = GlassStyle.Vivid,
         tint = containerColor,
-        fill = containerColor.copy(alpha = GlassTokens.frostedFillAlpha),
-        glow = false,
-        elevation = 0.dp,
+        waveVariant = waveVariant ?: defaultWaveVariant(containerColor),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp).fillMaxWidth(),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            GlassIconBubble(icon = icon, tint = containerColor, size = 28.dp)
+            LiquidIconBubble(icon = icon, tint = containerColor, size = 28.dp)
             Spacer(Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(

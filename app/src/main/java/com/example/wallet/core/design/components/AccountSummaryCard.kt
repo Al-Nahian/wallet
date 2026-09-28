@@ -23,14 +23,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.wallet.core.common.formatMoney
-import com.example.wallet.core.design.glass.GlassStyle
-import com.example.wallet.core.design.glass.GlassSurface
-import com.example.wallet.core.design.glass.GlassTokens
+import com.example.wallet.core.design.glass.liquidGlassContentColor
 
 /** A compact, frosted tinted glass account tile for the dashboard's two-per-row accounts grid —
  * a glass icon bubble and trailing chevron over a lighter, translucent tint, per the
- * liquid-glass reference design. See [BalanceCard] for why the fill runs at
- * [GlassTokens.frostedFillAlpha] with no shadow rather than the old solid-glow treatment. */
+ * liquid-glass reference design. See [LiquidGlassCard]/[liquidGlassContentColor] for how this
+ * differs between light mode (pastel fill, dark text, real refraction) and dark mode (vivid fill,
+ * white text). */
 @Composable
 fun AccountSummaryCard(
     label: String,
@@ -39,27 +38,26 @@ fun AccountSummaryCard(
     icon: ImageVector,
     backgroundColor: Color,
     modifier: Modifier = Modifier,
+    waveVariant: Int? = null,
 ) {
-    GlassSurface(
+    val contentColor = liquidGlassContentColor(backgroundColor)
+    LiquidGlassCard(
         modifier = modifier.fillMaxWidth(),
-        style = GlassStyle.Vivid,
         tint = backgroundColor,
-        fill = backgroundColor.copy(alpha = GlassTokens.frostedFillAlpha),
-        glow = false,
-        elevation = 0.dp,
+        waveVariant = waveVariant ?: defaultWaveVariant(backgroundColor),
         lightweight = true,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp).fillMaxWidth(),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            GlassIconBubble(icon = icon, tint = backgroundColor, size = 28.dp)
+            LiquidIconBubble(icon = icon, tint = backgroundColor, size = 28.dp)
             Spacer(Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
                     fontSize = 11.sp,
-                    color = Color.White.copy(alpha = 0.95f),
+                    color = contentColor.copy(alpha = 0.95f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -68,7 +66,7 @@ fun AccountSummaryCard(
                     text = formatMoney(amountMinor, currency),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
+                    color = contentColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -76,7 +74,7 @@ fun AccountSummaryCard(
             Icon(
                 imageVector = Icons.Filled.ChevronRight,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.75f),
+                tint = contentColor.copy(alpha = 0.75f),
                 modifier = Modifier.size(16.dp),
             )
         }

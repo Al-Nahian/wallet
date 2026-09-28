@@ -28,11 +28,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.common.formatMoney
 import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.components.EmptyState
+import com.example.wallet.core.design.components.LiquidGlassCard
 import com.example.wallet.core.design.components.WalletBottomNavSpace
 import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassShapes
-import com.example.wallet.core.design.glass.GlassStyle
-import com.example.wallet.core.design.glass.GlassSurface
 
 @Composable
 fun AccountsScreen(
@@ -82,12 +81,11 @@ fun AccountsScreen(
 
 @Composable
 private fun AccountRow(account: AccountUi, onClick: () -> Unit) {
-    GlassSurface(
+    LiquidGlassCard(
         modifier = Modifier.fillMaxWidth(),
-        style = GlassStyle.Thick,
         shape = GlassShapes.small,
-        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
-        elevation = 0.dp,
+        cornerRadius = 14.dp,
+        tint = GlassColors.neutralGlassTint(WalletTheme.extendedColors.transfer),
         lightweight = true,
     ) {
         ListItem(

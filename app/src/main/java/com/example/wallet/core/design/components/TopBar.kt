@@ -1,10 +1,12 @@
 package com.example.wallet.core.design.components
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -18,8 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.wallet.core.design.glass.GlassCircleIconButton
 
 /** Extra inset added on top of [CenterAlignedTopAppBar]'s own ~4dp nav-icon/action padding, so the
  * profile/bell glass bubbles' outer edges land on the same 16dp margin every screen's card list
@@ -49,29 +51,51 @@ fun WalletTopBar(
         modifier = modifier,
         title = { Text(title) },
         navigationIcon = {
-            GlassCircleIconButton(
+            LiquidCircleIconButton(
                 onClick = onProfileClick,
                 contentDescription = "Profile",
                 modifier = Modifier.padding(start = TopBarIconExtraInset),
+                size = TopBarBubbleSize,
             ) {
-                Icon(imageVector = Icons.Filled.AccountCircle, contentDescription = null)
+                // Reference design's top-left control is a solid person silhouette (head +
+                // shoulders), not a ringed account-circle glyph. White in dark mode, slate
+                // navy in light mode where a white glyph would vanish on the bright bead.
+                Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = null,
+                    tint = topBarGlyphTint(),
+                    modifier = Modifier.size(topBarGlyphSize()),
+                )
             }
         },
         actions = {
-            GlassCircleIconButton(
+            LiquidCircleIconButton(
                 onClick = onNotificationsClick,
                 contentDescription = notificationContentDescription(unreadNotificationCount),
                 modifier = Modifier.padding(end = TopBarIconExtraInset),
+                size = TopBarBubbleSize,
             ) {
-                NotificationBellIcon(unreadCount = unreadNotificationCount)
+                NotificationBellIcon(unreadCount = unreadNotificationCount, glyphSize = topBarGlyphSize())
             }
         },
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+        colors = TopAppBarDefaults.topAppBarColors(
             containerColor = Color.Transparent,
             scrolledContainerColor = Color.Transparent,
         ),
     )
 }
+
+/** Diameter of the top-bar profile/notification glass bubbles, matching the reference
+ * design's chrome — noticeably larger than the 40dp default [LiquidCircleIconButton] ships
+ * with. Glyphs inside run just over half the bubble. Light mode's glyphs run a touch larger,
+ * matching its chunkier white beads; dark keeps its confirmed size. */
+private val TopBarBubbleSize = 40.dp
+private val TopBarGlyphSizeLight = 24.dp
+private val TopBarGlyphSizeDark = 22.dp
+
+@Composable
+private fun topBarGlyphSize(): Dp =
+    if (isSystemInDarkTheme()) TopBarGlyphSizeDark else TopBarGlyphSizeLight
 
 private fun notificationContentDescription(unreadCount: Int): String =
     if (unreadCount > 0) "Notifications ($unreadCount unread)" else "Notifications"
@@ -102,10 +126,18 @@ fun GlassScreenTopBar(
 }
 
 @Composable
-private fun NotificationBellIcon(unreadCount: Int) {
-    val bellIcon: ImageVector = Icons.Filled.Notifications
+private fun NotificationBellIcon(unreadCount: Int, glyphSize: Dp) {
+    // Reference design's bell is a thin outline glyph, not the filled one. Same dark/light
+    // glyph-tint treatment as the profile icon.
+    val bellIcon: ImageVector = Icons.Outlined.Notifications
+    val glyphTint = topBarGlyphTint()
     if (unreadCount <= 0) {
-        Icon(imageVector = bellIcon, contentDescription = null)
+        Icon(
+            imageVector = bellIcon,
+            contentDescription = null,
+            tint = glyphTint,
+            modifier = Modifier.size(glyphSize),
+        )
         return
     }
     BadgedBox(
@@ -115,6 +147,18 @@ private fun NotificationBellIcon(unreadCount: Int) {
             }
         },
     ) {
-        Icon(imageVector = bellIcon, contentDescription = null)
+        Icon(
+            imageVector = bellIcon,
+            contentDescription = null,
+            tint = glyphTint,
+            modifier = Modifier.size(glyphSize),
+        )
     }
 }
+
+/** Glyph color for the top-bar bubbles: white on the dark steel-blue bead, slate navy on the
+ * bright-white light-mode bead (reference dashboard) — black read as harsh against the white
+ * glass, while slate matches the reference's person/bell glyphs. */
+@Composable
+private fun topBarGlyphTint(): Color =
+    if (isSystemInDarkTheme()) Color.White else Color(0xFF3B4D6B)

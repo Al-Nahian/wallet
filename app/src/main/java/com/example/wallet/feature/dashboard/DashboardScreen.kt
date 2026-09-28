@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -52,13 +53,12 @@ import com.example.wallet.core.design.components.BudgetProgress
 import com.example.wallet.core.design.components.CashFlowCard
 import com.example.wallet.core.design.components.CategoryBreakdownRow
 import com.example.wallet.core.design.components.EmptyState
+import com.example.wallet.core.design.components.LiquidGlassCard
 import com.example.wallet.core.design.components.StatCard
 import com.example.wallet.core.design.components.TransactionRow
 import com.example.wallet.core.design.components.WalletBottomNavSpace
 import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassShapes
-import com.example.wallet.core.design.glass.GlassStyle
-import com.example.wallet.core.design.glass.GlassSurface
 import com.example.wallet.domain.model.TransactionType
 import com.example.wallet.feature.accounts.icon
 import com.example.wallet.feature.recurring.RecurringTransactionUi
@@ -113,7 +113,7 @@ fun DashboardScreen(
                     top = 16.dp,
                     bottom = 16.dp + WalletBottomNavSpace,
                 ),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 item { SectionHeader("Accounts") }
                 if (state.accountBalances.isEmpty()) {
@@ -125,22 +125,35 @@ fun DashboardScreen(
                         )
                     }
                 } else {
-                    val accountRows = state.accountBalances.chunked(2)
-                    items(accountRows, key = { row -> row.joinToString { it.id } }) { row ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                            row.forEach { account ->
-                                val accent = DashboardAccentPalette[state.accountBalances.indexOf(account) % DashboardAccentPalette.size]
-                                AccountSummaryCard(
-                                    label = account.name,
-                                    amountMinor = account.balanceMinor,
-                                    currency = account.currency,
-                                    icon = account.type.icon(),
-                                    backgroundColor = accent,
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                            if (row.size == 1) {
-                                Spacer(modifier = Modifier.weight(1f))
+                    // One LazyColumn item holding every account row, with its own tighter
+                    // vertical spacing — the outer LazyColumn's 16dp spacedBy is a section-to-
+                    // section gap (Accounts → Total Balance, etc.), which read as too loose
+                    // *within* this one section's own rows.
+                    item {
+                        val accountRows = state.accountBalances.chunked(2)
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            accountRows.forEach { row ->
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                                    row.forEach { account ->
+                                        val index = state.accountBalances.indexOf(account)
+                                        val accent = DashboardAccentPalette[index % DashboardAccentPalette.size]
+                                        AccountSummaryCard(
+                                            label = account.name,
+                                            amountMinor = account.balanceMinor,
+                                            currency = account.currency,
+                                            icon = account.type.icon(),
+                                            backgroundColor = accent,
+                                            modifier = Modifier.weight(1f),
+                                            // Explicit rather than hash-derived: neighbors in the
+                                            // same row otherwise risk landing on the same wave
+                                            // shape by coincidence.
+                                            waveVariant = index % 5,
+                                        )
+                                    }
+                                    if (row.size == 1) {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
+                                }
                             }
                         }
                     }
@@ -152,8 +165,8 @@ fun DashboardScreen(
                         amountMinor = state.totalBalanceMinor,
                         currency = state.currency,
                         containerColor = TotalBalanceColor,
-                        contentColor = Color.White,
                         icon = Icons.Filled.AccountBalance,
+                        waveVariant = 0,
                     )
                 }
                 item {
@@ -171,27 +184,27 @@ fun DashboardScreen(
                         amountMinor = state.savingsMinor,
                         currency = state.currency,
                         containerColor = SavingsColor,
-                        contentColor = Color.White,
                         icon = Icons.Filled.Savings,
+                        waveVariant = 1,
                     )
                 }
                 item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                         StatCard(
                             label = "Savings Rate",
                             value = String.format(Locale.getDefault(), "%.1f%%", state.savingsRatePercent),
                             modifier = Modifier.weight(1f),
                             containerColor = SavingsRateColor,
-                            contentColor = Color.White,
                             icon = Icons.Filled.Percent,
+                            waveVariant = 2,
                         )
                         StatCard(
                             label = "Avg. Daily Spend",
                             value = formatMoney(state.averageDailySpendMinor, state.currency),
                             modifier = Modifier.weight(1f),
                             containerColor = AvgDailySpendColor,
-                            contentColor = Color.White,
                             icon = Icons.AutoMirrored.Filled.TrendingUp,
+                            waveVariant = 3,
                         )
                     }
                 }
@@ -341,12 +354,11 @@ private fun UpcomingRecurringRow(item: RecurringTransactionUi, onClick: () -> Un
     val sign = if (item.type == TransactionType.INCOME) "+" else "-"
     val title = item.payee ?: item.categoryName ?: "Recurring payment"
 
-    GlassSurface(
+    LiquidGlassCard(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        style = GlassStyle.Thick,
         shape = GlassShapes.small,
-        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
-        elevation = 0.dp,
+        cornerRadius = 14.dp,
+        tint = GlassColors.neutralGlassTint(WalletTheme.extendedColors.transfer),
         lightweight = true,
     ) {
         ListItem(

@@ -74,7 +74,7 @@ fun ImportExportScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
                 .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(text = "Export", style = MaterialTheme.typography.titleMedium)

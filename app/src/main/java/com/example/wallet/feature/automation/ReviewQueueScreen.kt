@@ -31,13 +31,12 @@ import com.example.wallet.core.design.components.AccountSelector
 import com.example.wallet.core.design.components.CategoryPickerField
 import com.example.wallet.core.design.components.EmptyState
 import com.example.wallet.core.design.components.GlassScreenTopBar
+import com.example.wallet.core.design.components.LiquidGlassCard
 import com.example.wallet.core.design.components.PrimaryButton
 import com.example.wallet.core.design.components.SecondaryButton
 import com.example.wallet.core.design.components.SelectorOption
 import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassShapes
-import com.example.wallet.core.design.glass.GlassStyle
-import com.example.wallet.core.design.glass.GlassSurface
 import com.example.wallet.domain.model.AutomationCandidate
 import com.example.wallet.domain.model.Category
 import com.example.wallet.domain.model.CategoryGroup
@@ -128,12 +127,10 @@ private fun CandidateCard(
     val isTransfer = candidate.type == TransactionType.TRANSFER
     val canAccept = selectedAccountId != null && (!isTransfer || selectedToAccountId != null)
 
-    GlassSurface(
+    LiquidGlassCard(
         modifier = Modifier.fillMaxWidth(),
-        style = GlassStyle.Thick,
         shape = GlassShapes.medium,
-        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
-        elevation = 0.dp,
+        tint = GlassColors.neutralGlassTint(WalletTheme.extendedColors.transfer),
         lightweight = true,
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {

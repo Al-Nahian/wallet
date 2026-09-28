@@ -44,10 +44,9 @@ import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.components.ConfirmationDialog
 import com.example.wallet.core.design.components.EmptyState
 import com.example.wallet.core.design.components.GlassScreenTopBar
+import com.example.wallet.core.design.components.LiquidGlassCard
 import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassShapes
-import com.example.wallet.core.design.glass.GlassStyle
-import com.example.wallet.core.design.glass.GlassSurface
 import com.example.wallet.domain.model.TransactionType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -143,12 +142,11 @@ private fun RecurringTransactionRow(item: RecurringTransactionUi, onClick: () ->
         if (!item.autoPost) "Reminder only" else null,
     )
 
-    GlassSurface(
+    LiquidGlassCard(
         modifier = Modifier.fillMaxWidth(),
-        style = GlassStyle.Thick,
         shape = GlassShapes.small,
-        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
-        elevation = 0.dp,
+        cornerRadius = 14.dp,
+        tint = GlassColors.neutralGlassTint(WalletTheme.extendedColors.transfer),
         lightweight = true,
     ) {
         ListItem(

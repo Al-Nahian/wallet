@@ -34,11 +34,10 @@ import com.example.wallet.core.design.components.BalanceCard
 import com.example.wallet.core.design.components.CashFlowCard
 import com.example.wallet.core.design.components.CategoryBreakdownRow
 import com.example.wallet.core.design.components.DateRangeSelector
+import com.example.wallet.core.design.components.LiquidGlassCard
 import com.example.wallet.core.design.components.StatCard
 import com.example.wallet.core.design.components.WalletBottomNavSpace
 import com.example.wallet.core.design.glass.GlassColors
-import com.example.wallet.core.design.glass.GlassStyle
-import com.example.wallet.core.design.glass.GlassSurface
 import com.example.wallet.domain.usecase.reports.AccountReport
 import com.example.wallet.domain.usecase.reports.CategoryTrend
 import java.util.Locale
@@ -75,7 +74,7 @@ fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = h
                     top = 16.dp,
                     bottom = 16.dp + WalletBottomNavSpace,
                 ),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 item {
                     DateRangeSelector(
@@ -103,7 +102,6 @@ fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = h
                         amountMinor = state.savingsMinor,
                         currency = state.currency,
                         containerColor = SavingsColor,
-                        contentColor = Color.White,
                         icon = Icons.Filled.Savings,
                     )
                 }
@@ -113,7 +111,6 @@ fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = h
                         value = String.format(Locale.getDefault(), "%.1f%%", state.savingsRatePercent),
                         modifier = Modifier.fillMaxWidth(),
                         containerColor = SavingsRateColor,
-                        contentColor = Color.White,
                         icon = Icons.Filled.Percent,
                     )
                 }
@@ -178,11 +175,9 @@ private fun EmptyRowText(text: String) {
 
 @Composable
 private fun AccountReportCard(report: AccountReport) {
-    GlassSurface(
+    LiquidGlassCard(
         modifier = Modifier.fillMaxWidth(),
-        style = GlassStyle.Thick,
-        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
-        elevation = 0.dp,
+        tint = GlassColors.neutralGlassTint(WalletTheme.extendedColors.transfer),
         lightweight = true,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -210,11 +205,9 @@ private fun AccountReportCard(report: AccountReport) {
 
 @Composable
 private fun CategoryTrendCard(trend: CategoryTrend, currency: String) {
-    GlassSurface(
+    LiquidGlassCard(
         modifier = Modifier.fillMaxWidth(),
-        style = GlassStyle.Thick,
-        fill = GlassColors.neutralTintedFill(WalletTheme.extendedColors.transfer),
-        elevation = 0.dp,
+        tint = GlassColors.neutralGlassTint(WalletTheme.extendedColors.transfer),
         lightweight = true,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {

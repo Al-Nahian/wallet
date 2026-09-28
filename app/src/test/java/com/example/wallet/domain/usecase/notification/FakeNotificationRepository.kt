@@ -30,4 +30,11 @@ class FakeNotificationRepository : NotificationRepository {
             }
         }
     }
+
+    override suspend fun markAllRead() {
+        val now = System.currentTimeMillis()
+        notifications.value = notifications.value.map { notification ->
+            if (notification.readAt == null) notification.copy(readAt = now) else notification
+        }
+    }
 }
