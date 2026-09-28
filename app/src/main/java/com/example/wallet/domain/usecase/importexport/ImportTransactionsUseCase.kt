@@ -5,11 +5,13 @@ import com.example.wallet.domain.model.Account
 import com.example.wallet.domain.model.AccountType
 import com.example.wallet.domain.model.Category
 import com.example.wallet.domain.model.Label
+import com.example.wallet.domain.model.NotificationType
 import com.example.wallet.domain.model.Transaction
 import com.example.wallet.domain.repository.AccountRepository
 import com.example.wallet.domain.repository.CategoryRepository
 import com.example.wallet.domain.repository.LabelRepository
 import com.example.wallet.domain.repository.TransactionRepository
+import com.example.wallet.domain.usecase.notification.CreateNotificationUseCase
 import java.util.Locale
 import javax.inject.Inject
 
@@ -17,18 +19,22 @@ import javax.inject.Inject
  * Commits the accepted, error-free rows from the import preview (plans/12-import-export.md).
  * Missing accounts referenced by name are created as `OTHER`/row currency before the batch
  * insert; unmatched categories stay uncategorized rather than auto-creating category hierarchy
- * (a deliberate scope decision — see [MapCsvRowsUseCase]'s doc comment), and a row's label name
- * is found-or-created the same way accounts are. The transaction rows themselves land in the
- * database as a single atomic batch via [TransactionRepository.createBatch], so a
- * cancelled/failed import leaves the database unchanged (§36's atomicity acceptance criterion);
- * label assignment happens as a follow-up step per row, same as everywhere else in the app that
- * isn't a single Room `@Transaction` (e.g. `AssignCategoryUseCase`).
+ * (a deliberate scope decision — see [MapCsvRowsUseCase]'s doc comment) and instead raise a
+ * [NotificationType.TRANSACTION_NEEDS_REVIEW] notification so the user reconciles them to the
+ * closest existing category by hand; a row's label name, by contrast, is found-or-created the
+ * same way accounts are, since a label carries no taxonomy to get wrong (plan.md §69 rule 8 is a
+ * categories-only constraint). The transaction rows themselves land in the database as a single
+ * atomic batch via [TransactionRepository.createBatch], so a cancelled/failed import leaves the
+ * database unchanged (§36's atomicity acceptance criterion); label assignment happens as a
+ * follow-up step per row, same as everywhere else in the app that isn't a single Room
+ * `@Transaction` (e.g. `AssignCategoryUseCase`).
  */
 class ImportTransactionsUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val labelRepository: LabelRepository,
+    private val createNotification: CreateNotificationUseCase,
 ) {
     suspend operator fun invoke(
         rows: List<ParsedImportRow>,
@@ -53,6 +59,7 @@ class ImportTransactionsUseCase @Inject constructor(
 
         val now = System.currentTimeMillis()
         val labelAssignments = mutableListOf<Pair<String, String>>()
+        var unmatchedCategoryCount = 0
 
         val transactions = committable.map { row ->
             val accountKey = row.accountName!!.trim().lowercase(Locale.US)
@@ -71,7 +78,11 @@ class ImportTransactionsUseCase @Inject constructor(
                 accountRepository.create(created)
                 created.id
             }
-            val categoryId = row.categoryName?.let { categoryIdByLowerName[it.trim().lowercase(Locale.US)] }
+            val requestedCategoryName = row.categoryName?.trim()?.takeIf { it.isNotEmpty() }
+            val categoryId = requestedCategoryName?.let { categoryIdByLowerName[it.lowercase(Locale.US)] }
+            if (requestedCategoryName != null && categoryId == null) {
+                unmatchedCategoryCount++
+            }
 
             val transactionId = newId()
             row.labelName?.trim()?.takeIf { it.isNotEmpty() }?.let { labelName ->
@@ -102,6 +113,21 @@ class ImportTransactionsUseCase @Inject constructor(
 
         transactionRepository.createBatch(transactions)
         labelAssignments.forEach { (transactionId, labelId) -> labelRepository.assign(transactionId, labelId) }
+
+        if (unmatchedCategoryCount > 0) {
+            val plural = unmatchedCategoryCount > 1
+            createNotification(
+                type = NotificationType.TRANSACTION_NEEDS_REVIEW,
+                title = "Reconcile ${unmatchedCategoryCount} imported ${if (plural) "categories" else "category"}",
+                body = if (plural) {
+                    "$unmatchedCategoryCount imported transactions used a category name we don't recognize. Tap to assign the closest match yourself."
+                } else {
+                    "One imported transaction used a category name we don't recognize. Tap to assign the closest match yourself."
+                },
+                deepLink = "transactions",
+            )
+        }
+
         return transactions.size
     }
 }

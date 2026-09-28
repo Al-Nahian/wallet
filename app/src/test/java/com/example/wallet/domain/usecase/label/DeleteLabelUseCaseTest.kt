@@ -22,7 +22,7 @@ class DeleteLabelUseCaseTest {
 
     @Test
     fun `deletes a label and clears it from any assigned transaction`() = runTest {
-        val label = createUseCase("Family", "#F44336").getOrThrow()
+        val label = createUseCase("Family").getOrThrow()
         repository.assign("tx-1", label.id)
 
         val result = deleteUseCase(label.id)

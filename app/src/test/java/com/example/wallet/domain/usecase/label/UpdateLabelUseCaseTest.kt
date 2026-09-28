@@ -20,22 +20,32 @@ class UpdateLabelUseCaseTest {
     }
 
     @Test
-    fun `renames and recolors a label`() = runTest {
-        val label = createUseCase("Family", "#F44336").getOrThrow()
+    fun `renames a label`() = runTest {
+        val label = createUseCase("Family").getOrThrow()
 
-        val result = updateUseCase(label.id, "Household", "#4CAF50")
+        val result = updateUseCase(label.id, "Household")
 
         assertTrue(result.isSuccess)
         val updated = result.getOrThrow()
         assertEquals("Household", updated.name)
-        assertEquals("#4CAF50", updated.color)
     }
 
     @Test
     fun `unknown label is rejected`() = runTest {
-        val result = updateUseCase("does-not-exist", "Name", "#F44336")
+        val result = updateUseCase("does-not-exist", "Name")
 
         assertTrue(result.isFailure)
         assertEquals(LabelError.LabelNotFound, (result.exceptionOrNull() as LabelValidationException).error)
+    }
+
+    @Test
+    fun `renaming to another label's name is rejected`() = runTest {
+        val first = createUseCase("Family").getOrThrow()
+        createUseCase("Work").getOrThrow()
+
+        val result = updateUseCase(first.id, "work")
+
+        assertTrue(result.isFailure)
+        assertEquals(LabelError.DuplicateName, (result.exceptionOrNull() as LabelValidationException).error)
     }
 }

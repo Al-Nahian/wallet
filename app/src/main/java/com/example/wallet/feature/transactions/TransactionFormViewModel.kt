@@ -18,6 +18,8 @@ import com.example.wallet.domain.repository.TransactionSplitRepository
 import com.example.wallet.domain.usecase.account.CalculateBalanceUseCase
 import com.example.wallet.domain.usecase.budget.CheckBudgetAlertsUseCase
 import com.example.wallet.domain.usecase.label.AssignLabelUseCase
+import com.example.wallet.domain.usecase.label.CreateLabelUseCase
+import com.example.wallet.domain.usecase.label.LabelValidationException
 import com.example.wallet.domain.usecase.transaction.CreateTransactionUseCase
 import com.example.wallet.domain.usecase.transaction.CreateTransferUseCase
 import com.example.wallet.domain.usecase.transaction.DeleteTransactionUseCase
@@ -39,7 +41,21 @@ private data class CategoryFormData(
     val groups: List<CategoryGroup>,
     val categories: List<Category>,
     val labels: List<Label>,
+    val payeeSuggestions: List<String>,
+    val placeSuggestions: List<String>,
 )
+
+/** Ranks past values by how often they recur, then by recency — a payee/place used many times
+ * belongs near the top even if a one-off entry happened more recently. Blank/whitespace-only
+ * values are dropped (an empty payee/place isn't a suggestion). */
+private fun rankSuggestions(values: List<Pair<String?, Long>>, limit: Int = 8): List<String> =
+    values
+        .mapNotNull { (value, date) -> value?.trim()?.takeIf { it.isNotEmpty() }?.let { it to date } }
+        .groupBy({ it.first }, { it.second })
+        .map { (value, dates) -> value to (dates.size to dates.max()) }
+        .sortedWith(compareByDescending<Pair<String, Pair<Int, Long>>> { it.second.first }.thenByDescending { it.second.second })
+        .map { it.first }
+        .take(limit)
 
 /** One account in the Select-Account popup: identity plus the live balance the popup shows
  * under each name (computed by [CalculateBalanceUseCase], never stored). */
@@ -72,6 +88,8 @@ data class TransactionFormState(
     val categories: List<Category> = emptyList(),
     val labelOptions: List<Label> = emptyList(),
     val selectedLabelIds: Set<String> = emptySet(),
+    val payeeSuggestions: List<String> = emptyList(),
+    val placeSuggestions: List<String> = emptyList(),
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
     val saved: Boolean = false,
@@ -94,6 +112,7 @@ class TransactionFormViewModel @Inject constructor(
     private val createTransferUseCase: CreateTransferUseCase,
     private val calculateBalance: CalculateBalanceUseCase,
     private val assignLabelUseCase: AssignLabelUseCase,
+    private val createLabelUseCase: CreateLabelUseCase,
     private val checkBudgetAlertsUseCase: CheckBudgetAlertsUseCase,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
 ) : ViewModel() {
@@ -116,7 +135,7 @@ class TransactionFormViewModel @Inject constructor(
                 categoryRepository.observeGroups(),
                 categoryRepository.observeCategories(),
                 labelRepository.observeLabels(),
-            ) { accounts, _, groups, categories, labels ->
+            ) { accounts, transactions, groups, categories, labels ->
                 CategoryFormData(
                     accounts.map { account ->
                         AccountPickerOption(
@@ -130,10 +149,19 @@ class TransactionFormViewModel @Inject constructor(
                     groups,
                     categories,
                     labels,
+                    payeeSuggestions = rankSuggestions(transactions.map { it.payee to it.date }),
+                    placeSuggestions = rankSuggestions(transactions.map { it.place to it.date }),
                 )
-            }.collect { (accountOptions, groups, categories, labels) ->
+            }.collect { data ->
                 _uiState.update {
-                    it.copy(accountOptions = accountOptions, categoryGroups = groups, categories = categories, labelOptions = labels)
+                    it.copy(
+                        accountOptions = data.accountOptions,
+                        categoryGroups = data.groups,
+                        categories = data.categories,
+                        labelOptions = data.labels,
+                        payeeSuggestions = data.payeeSuggestions,
+                        placeSuggestions = data.placeSuggestions,
+                    )
                 }
             }
         }
@@ -208,9 +236,29 @@ class TransactionFormViewModel @Inject constructor(
     fun onPlaceChange(value: String) = _uiState.update { it.copy(place = value) }
     fun onDateChange(value: Long) = _uiState.update { it.copy(date = value) }
 
+    fun clearError() = _uiState.update { it.copy(errorMessage = null) }
+
     fun onToggleLabel(labelId: String) = _uiState.update {
         val current = it.selectedLabelIds
         it.copy(selectedLabelIds = if (labelId in current) current - labelId else current + labelId)
+    }
+
+    /** Creates and immediately selects a new label from the Labels picker dialog — lets the user
+     * add one without leaving the transaction form for Profile > Manage labels. [labelOptions]
+     * picks it up on its own via the [labelRepository.observeLabels] flow this init already
+     * collects. */
+    fun createLabel(name: String) {
+        viewModelScope.launch {
+            createLabelUseCase(name)
+                .onSuccess { label ->
+                    _uiState.update { it.copy(selectedLabelIds = it.selectedLabelIds + label.id) }
+                }
+                .onFailure { error ->
+                    val message = (error as? LabelValidationException)?.error?.userMessage
+                        ?: "Couldn't create that label. Please try again."
+                    _uiState.update { it.copy(errorMessage = message) }
+                }
+        }
     }
 
     fun save() {

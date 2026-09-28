@@ -17,13 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/** A fixed swatch palette for the label color picker — a UI choice, not a category taxonomy
- * value, so unlike category colors this is fine to define here (plan.md §69 rule 8 concerns
- * categories specifically, which must always come from the DB). */
-val LabelColorPalette = listOf(
-    "#F44336", "#FF9F1C", "#4CAF50", "#42B5E8", "#9C6ADE", "#26A69A", "#EC407A", "#9E9E9E",
-)
-
 @HiltViewModel
 class LabelsViewModel @Inject constructor(
     labelRepository: LabelRepository,
@@ -45,15 +38,15 @@ class LabelsViewModel @Inject constructor(
         _errorMessage.value = null
     }
 
-    fun createLabel(name: String, color: String) {
+    fun createLabel(name: String) {
         viewModelScope.launch {
-            createLabelUseCase(name, color).onFailure { error -> _errorMessage.value = errorMessageFor(error) }
+            createLabelUseCase(name).onFailure { error -> _errorMessage.value = errorMessageFor(error) }
         }
     }
 
-    fun updateLabel(labelId: String, name: String, color: String) {
+    fun updateLabel(labelId: String, name: String) {
         viewModelScope.launch {
-            updateLabelUseCase(labelId, name, color).onFailure { error -> _errorMessage.value = errorMessageFor(error) }
+            updateLabelUseCase(labelId, name).onFailure { error -> _errorMessage.value = errorMessageFor(error) }
         }
     }
 

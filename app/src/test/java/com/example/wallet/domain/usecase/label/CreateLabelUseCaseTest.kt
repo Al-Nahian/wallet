@@ -19,21 +19,30 @@ class CreateLabelUseCaseTest {
     }
 
     @Test
-    fun `creates a label with the given name and color`() = runTest {
-        val result = useCase("Family", "#F44336")
+    fun `creates a label with the given name`() = runTest {
+        val result = useCase("Family")
 
         assertTrue(result.isSuccess)
         val label = result.getOrThrow()
         assertEquals("Family", label.name)
-        assertEquals("#F44336", label.color)
         assertEquals(label, repository.observeLabels().first().single())
     }
 
     @Test
     fun `blank name is rejected`() = runTest {
-        val result = useCase("  ", "#F44336")
+        val result = useCase("  ")
 
         assertTrue(result.isFailure)
         assertEquals(LabelError.NameRequired, (result.exceptionOrNull() as LabelValidationException).error)
+    }
+
+    @Test
+    fun `duplicate name is rejected case-insensitively`() = runTest {
+        useCase("Family")
+
+        val result = useCase("family")
+
+        assertTrue(result.isFailure)
+        assertEquals(LabelError.DuplicateName, (result.exceptionOrNull() as LabelValidationException).error)
     }
 }

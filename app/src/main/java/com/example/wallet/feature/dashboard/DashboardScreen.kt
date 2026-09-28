@@ -143,15 +143,15 @@ fun DashboardScreen(
                                             currency = account.currency,
                                             icon = account.type.icon(),
                                             backgroundColor = accent,
+                                            // A lone odd-one-out in the last row spreads to fill the
+                                            // row (like Total Balance below) instead of leaving an
+                                            // empty slot beside it where its pair would have gone.
                                             modifier = Modifier.weight(1f),
                                             // Explicit rather than hash-derived: neighbors in the
                                             // same row otherwise risk landing on the same wave
                                             // shape by coincidence.
                                             waveVariant = index % 5,
                                         )
-                                    }
-                                    if (row.size == 1) {
-                                        Spacer(modifier = Modifier.weight(1f))
                                     }
                                 }
                             }

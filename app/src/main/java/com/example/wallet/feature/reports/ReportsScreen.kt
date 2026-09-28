@@ -80,6 +80,9 @@ fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = h
                     DateRangeSelector(
                         selected = state.selectedPreset,
                         onSelect = viewModel::onPresetSelected,
+                        onCustomRangeSelected = viewModel::onCustomRangeSelected,
+                        customRangeLabel = state.customRangeLabel,
+                        currentCustomRange = state.customRange,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -89,7 +92,7 @@ fun ReportsScreen(modifier: Modifier = Modifier, viewModel: ReportsViewModel = h
                     // instead of "this month" — keeps the two screens visually consistent. No
                     // section header above it: the card carries its own "Cash Flow" title.
                     CashFlowCard(
-                        periodLabel = state.selectedPreset.label,
+                        periodLabel = state.customRangeLabel ?: state.selectedPreset.label,
                         incomeMinor = state.totalIncomeMinor,
                         expenseMinor = state.totalExpenseMinor,
                         currency = state.currency,

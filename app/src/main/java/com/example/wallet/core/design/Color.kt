@@ -18,7 +18,12 @@ val LightSuccess = Color(0xFF4CAF50)
 val LightAccent = Color(0xFF8B5CF6)
 
 // Dark palette
-val DarkPrimary = Color(0xFF6FCF97)
+val DarkPrimary = Color(0xFF4EE897)
+
+/** Brighter, more saturated highlight than [DarkPrimary] for the bottom nav's *selected* tab
+ * icon/label specifically — the FAB keeps [DarkPrimary] unchanged; only the active-tab
+ * indicator should read as more lit-up. */
+val NavActiveGreen = Color(0xFF7CFFC2)
 val DarkSecondary = Color(0xFF4DB6AC)
 val DarkBackground = Color(0xFF000000)
 val DarkSurface = Color(0xFF0C0C0E)

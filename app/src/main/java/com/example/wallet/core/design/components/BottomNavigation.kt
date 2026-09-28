@@ -24,16 +24,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow as TextGlowShadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.wallet.core.design.DarkPrimary
+import com.example.wallet.core.design.NavActiveGreen
 import com.example.wallet.core.design.glass.GlassBottomBar
 import com.example.wallet.core.design.glass.GlassInteraction
 import com.example.wallet.core.design.glass.GlassStyle
@@ -50,8 +56,14 @@ import com.kyant.backdrop.shadow.Shadow
 /** Nav item tints on the dark mode slate pill: mint-green selected, cool grey idle. Light
  * mode's near-white liquid-glass pill instead falls back to the theme's own primary /
  * onSurfaceVariant (see [NavItem]) — these pale values would wash out against white. */
-private val NavSelectedTint = DarkPrimary
+private val NavSelectedTint = NavActiveGreen
 private val NavIdleTint = Color(0xFFAEB9C5)
+
+/** Light mode's selected-tab tint — the theme's own [MaterialTheme.colorScheme.primary]
+ * (`LightPrimary`, a dark sea green meant for text/button contrast on white) read as too dark
+ * and heavy for a small icon+label against the near-white glass pill; this is a lighter, more
+ * saturated mint that keeps the same hue family. */
+private val NavSelectedTintLight = Color(0xFF2FBF71)
 
 data class WalletBottomNavItem(
     val route: String,
@@ -90,13 +102,23 @@ fun WalletBottomNavigation(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 items.take(midpoint).forEach { item ->
-                    NavItem(item = item, selected = item.route == selectedRoute, onClick = { onItemSelected(item.route) })
+                    NavItem(
+                        item = item,
+                        selected = item.route == selectedRoute,
+                        onClick = { onItemSelected(item.route) },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
                 // Reserves the center gap the popped-out FAB floats over, so the side items
                 // stay evenly spaced instead of drifting toward the middle.
                 Spacer(modifier = Modifier.size(fabSize))
                 items.drop(midpoint).forEach { item ->
-                    NavItem(item = item, selected = item.route == selectedRoute, onClick = { onItemSelected(item.route) })
+                    NavItem(
+                        item = item,
+                        selected = item.route == selectedRoute,
+                        onClick = { onItemSelected(item.route) },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
         }
@@ -116,17 +138,17 @@ fun WalletBottomNavigation(
  * real liquid-glass badge (io.github.kyant0:backdrop) — same safe capture pattern as the FAB
  */
 @Composable
-private fun NavItem(item: WalletBottomNavItem, selected: Boolean, onClick: () -> Unit) {
+private fun NavItem(item: WalletBottomNavItem, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     // Light mode's pill is a near-white glass, so its tints must be the theme's darker
     // values (sea green / dark grey); dark mode keeps the pale pair that reads on slate.
     val tint = when {
         isSystemInDarkTheme() -> if (selected) NavSelectedTint else NavIdleTint
-        selected -> MaterialTheme.colorScheme.primary
+        selected -> NavSelectedTintLight
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
+        modifier = modifier
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -136,10 +158,47 @@ private fun NavItem(item: WalletBottomNavItem, selected: Boolean, onClick: () ->
                 role = Role.Tab
                 contentDescription = item.label
             }
-            .padding(horizontal = 4.dp, vertical = 2.dp),
+            .padding(horizontal = 2.dp, vertical = 2.dp),
     ) {
-        Icon(imageVector = item.icon, contentDescription = null, tint = tint)
-        Text(text = item.label, style = MaterialTheme.typography.labelSmall, color = tint)
+        Icon(
+            imageVector = item.icon,
+            contentDescription = null,
+            tint = tint,
+            modifier = if (selected) {
+                Modifier.drawBehind {
+                    // A small, even halo hugging the glyph — kept tight (just a few dp past the
+                    // icon's own radius) so it can't get clipped unevenly by the bar's bounds,
+                    // which read as a lopsided glow when the radius was large.
+                    val glowRadius = size.maxDimension / 2f + 4.dp.toPx()
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(tint.copy(alpha = 0.4f), Color.Transparent),
+                            radius = glowRadius,
+                            center = center,
+                        ),
+                        radius = glowRadius,
+                        center = center,
+                    )
+                }
+            } else {
+                Modifier
+            },
+        )
+        Text(
+            text = item.label,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 10.sp,
+                shadow = if (selected) {
+                    TextGlowShadow(color = tint.copy(alpha = 0.6f), blurRadius = 6f)
+                } else {
+                    null
+                },
+            ),
+            color = tint,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+        )
     }
 }
 

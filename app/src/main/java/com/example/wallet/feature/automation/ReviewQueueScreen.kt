@@ -16,7 +16,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import com.example.wallet.core.design.components.GlassScreenScaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -52,7 +52,7 @@ fun ReviewQueueScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Scaffold(
+    GlassScreenScaffold(
         modifier = modifier,
         topBar = {
             GlassScreenTopBar(
@@ -72,7 +72,7 @@ fun ReviewQueueScreen(
                 icon = Icons.Filled.TaskAlt,
                 modifier = Modifier.padding(paddingValues).fillMaxSize(),
             )
-            return@Scaffold
+            return@GlassScreenScaffold
         }
 
         Column(modifier = Modifier.padding(paddingValues).fillMaxSize()) {

@@ -12,11 +12,14 @@ enum class ReportRangePreset(val label: String) {
     LAST_3_MONTHS("Last 3 Months"),
     LAST_6_MONTHS("Last 6 Months"),
     THIS_YEAR("This Year"),
+    CUSTOM("Custom"),
 }
 
 /** Resolves a preset to a concrete range against [now], so every report section recomputes
- * consistently when the user changes the selector. */
-fun dateRangeForPreset(preset: ReportRangePreset, now: Long = System.currentTimeMillis()): DateRange =
+ * consistently when the user changes the selector. [customRange] backs [ReportRangePreset.CUSTOM]
+ * — the only preset with no fixed formula, since it comes from the user's own date-range pick;
+ * it falls back to "this month" if a caller ever hits it before one has been chosen. */
+fun dateRangeForPreset(preset: ReportRangePreset, now: Long = System.currentTimeMillis(), customRange: DateRange? = null): DateRange =
     when (preset) {
         ReportRangePreset.THIS_MONTH -> DateRange(startOfCurrentMonthMillis(now), now)
         ReportRangePreset.LAST_MONTH -> monthRange(1, now)
@@ -33,6 +36,7 @@ fun dateRangeForPreset(preset: ReportRangePreset, now: Long = System.currentTime
             }
             DateRange(start.timeInMillis, now)
         }
+        ReportRangePreset.CUSTOM -> customRange ?: DateRange(startOfCurrentMonthMillis(now), now)
     }
 
 private fun monthsAgoStart(monthsBack: Int, now: Long): Long =

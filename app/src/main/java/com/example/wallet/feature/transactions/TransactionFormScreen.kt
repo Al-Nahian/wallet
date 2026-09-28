@@ -1,7 +1,6 @@
 package com.example.wallet.feature.transactions
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
+import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.Animatable
@@ -67,7 +66,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import com.example.wallet.core.design.components.GlassScreenScaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -82,6 +82,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -109,17 +110,23 @@ import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
 import com.example.wallet.core.design.glass.GlassTokens
 import com.example.wallet.core.design.glass.GlassWindowBlur
-import com.example.wallet.core.design.glass.applyDialogBlurBehind
 import com.example.wallet.core.design.glass.glassDialogContainerColor
+import com.example.wallet.core.design.components.GlassDatePickerDialog
+import com.example.wallet.core.design.components.GlassTimePickerDialog
 import com.example.wallet.domain.model.Category
 import com.example.wallet.domain.model.CategoryGroup
 import com.example.wallet.domain.model.Label
 import com.example.wallet.domain.model.TransactionType
 import com.example.wallet.feature.accounts.icon
+import com.example.wallet.feature.labels.LabelFormDialog
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
+/** Shared floor for every details-page row (Note/Labels/Payee/Date/Time/Place) so a plain
+ * two-line Text row (Date, Time) doesn't end up visibly shorter than a [TextField]-backed one
+ * (Note, Payee, Place) — they used to size to their own content and read as uneven card heights. */
+private val DetailRowMinHeight = 72.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -140,7 +147,7 @@ fun TransactionFormScreen(
         if (uiState.deleted) onBack()
     }
 
-    Scaffold(
+    GlassScreenScaffold(
         modifier = modifier,
         topBar = {
             GlassScreenTopBar(
@@ -177,7 +184,7 @@ fun TransactionFormScreen(
             ) {
                 CircularProgressIndicator()
             }
-            return@Scaffold
+            return@GlassScreenScaffold
         }
 
         if (showDetailsPage) {
@@ -360,6 +367,14 @@ private fun DetailsPage(
 ) {
     val extended = WalletTheme.extendedColors
     val teal = MaterialTheme.colorScheme.secondary
+    val context = LocalContext.current
+
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -384,6 +399,7 @@ private fun DetailsPage(
             allLabels = uiState.labelOptions,
             selectedLabelIds = uiState.selectedLabelIds,
             onToggleLabel = viewModel::onToggleLabel,
+            onCreateLabel = viewModel::createLabel,
         )
 
         if (uiState.type != TransactionType.TRANSFER) {
@@ -394,6 +410,7 @@ private fun DetailsPage(
                 value = uiState.payee,
                 placeholder = "Enter payee name",
                 onValueChange = viewModel::onPayeeChange,
+                suggestions = uiState.payeeSuggestions,
             )
         }
 
@@ -407,6 +424,7 @@ private fun DetailsPage(
             value = uiState.place,
             placeholder = "Add place (optional)",
             onValueChange = viewModel::onPlaceChange,
+            suggestions = uiState.placeSuggestions,
         )
     }
 }
@@ -937,13 +955,28 @@ private fun GlassTextRow(
     value: String,
     placeholder: String,
     onValueChange: (String) -> Unit,
+    suggestions: List<String> = emptyList(),
 ) {
+    var isFocused by remember { mutableStateOf(false) }
+    // Recent/recurring values (Payee, Place) minus whatever's already typed and an exact match —
+    // once the field holds one of these verbatim there's nothing left to suggest.
+    val visibleSuggestions = remember(suggestions, value, isFocused) {
+        if (!isFocused || suggestions.isEmpty()) {
+            emptyList()
+        } else {
+            suggestions.filter { it.contains(value, ignoreCase = true) && !it.equals(value, ignoreCase = true) }
+        }
+    }
     LiquidGlassCard(
         tint = tint,
         modifier = Modifier.fillMaxWidth(),
         lightweight = true,
     ) {
-        Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Column {
+        Row(
+            modifier = Modifier.heightIn(min = DetailRowMinHeight).padding(12.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             GlassIconBubble(icon = icon, tint = tint, size = 32.dp)
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -955,7 +988,7 @@ private fun GlassTextRow(
                     textStyle = TextStyle(fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface),
                     placeholder = { Text(placeholder, fontSize = 15.sp) },
                     colors = transparentTextFieldColors,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().onFocusChanged { isFocused = it.isFocused },
                 )
             }
             Spacer(Modifier.width(8.dp))
@@ -966,12 +999,25 @@ private fun GlassTextRow(
                 modifier = Modifier.size(16.dp),
             )
         }
+        if (visibleSuggestions.isNotEmpty()) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .padding(start = 54.dp, end = 12.dp, bottom = 12.dp),
+            ) {
+                visibleSuggestions.forEach { suggestion ->
+                    LabelChip(name = suggestion, onClick = { onValueChange(suggestion) })
+                }
+            }
+        }
+        }
     }
 }
 
 @Composable
 private fun GlassDateRow(tint: Color, dateMillis: Long, onDateChange: (Long) -> Unit) {
-    val context = LocalContext.current
+    var showPicker by remember { mutableStateOf(false) }
     val formatted = remember(dateMillis) {
         SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(dateMillis))
     }
@@ -983,22 +1029,8 @@ private fun GlassDateRow(tint: Color, dateMillis: Long, onDateChange: (Long) -> 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable {
-                    val calendar = Calendar.getInstance().apply { timeInMillis = dateMillis }
-                    DatePickerDialog(
-                        context,
-                        { _, year, month, dayOfMonth ->
-                            val picked = Calendar.getInstance().apply {
-                                timeInMillis = dateMillis
-                                set(year, month, dayOfMonth)
-                            }
-                            onDateChange(picked.timeInMillis)
-                        },
-                        calendar.get(Calendar.YEAR),
-                        calendar.get(Calendar.MONTH),
-                        calendar.get(Calendar.DAY_OF_MONTH),
-                    ).apply { window?.let { applyDialogBlurBehind(it) } }.show()
-                }
+                .clickable { showPicker = true }
+                .heightIn(min = DetailRowMinHeight)
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -1017,11 +1049,18 @@ private fun GlassDateRow(tint: Color, dateMillis: Long, onDateChange: (Long) -> 
             )
         }
     }
+    if (showPicker) {
+        GlassDatePickerDialog(
+            initialDateMillis = dateMillis,
+            onDismiss = { showPicker = false },
+            onConfirm = onDateChange,
+        )
+    }
 }
 
 @Composable
 private fun GlassTimeRow(tint: Color, dateMillis: Long, onTimeChange: (Long) -> Unit) {
-    val context = LocalContext.current
+    var showPicker by remember { mutableStateOf(false) }
     val formatted = remember(dateMillis) {
         SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(dateMillis))
     }
@@ -1033,25 +1072,8 @@ private fun GlassTimeRow(tint: Color, dateMillis: Long, onTimeChange: (Long) -> 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable {
-                    val calendar = Calendar.getInstance().apply { timeInMillis = dateMillis }
-                    TimePickerDialog(
-                        context,
-                        { _, hourOfDay, minute ->
-                            val picked = Calendar.getInstance().apply {
-                                timeInMillis = dateMillis
-                                set(Calendar.HOUR_OF_DAY, hourOfDay)
-                                set(Calendar.MINUTE, minute)
-                                set(Calendar.SECOND, 0)
-                                set(Calendar.MILLISECOND, 0)
-                            }
-                            onTimeChange(picked.timeInMillis)
-                        },
-                        calendar.get(Calendar.HOUR_OF_DAY),
-                        calendar.get(Calendar.MINUTE),
-                        false,
-                    ).apply { window?.let { applyDialogBlurBehind(it) } }.show()
-                }
+                .clickable { showPicker = true }
+                .heightIn(min = DetailRowMinHeight)
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -1070,6 +1092,13 @@ private fun GlassTimeRow(tint: Color, dateMillis: Long, onTimeChange: (Long) -> 
             )
         }
     }
+    if (showPicker) {
+        GlassTimePickerDialog(
+            initialDateMillis = dateMillis,
+            onDismiss = { showPicker = false },
+            onConfirm = onTimeChange,
+        )
+    }
 }
 
 /** plan.md §16: multi-select label picker, styled as a page-2 glass row — selected labels show
@@ -1080,8 +1109,10 @@ private fun GlassLabelsRow(
     allLabels: List<Label>,
     selectedLabelIds: Set<String>,
     onToggleLabel: (String) -> Unit,
+    onCreateLabel: (name: String) -> Unit,
 ) {
     var showPicker by remember { mutableStateOf(false) }
+    var showCreateLabel by remember { mutableStateOf(false) }
     val selectedLabels = allLabels.filter { it.id in selectedLabelIds }
 
     LiquidGlassCard(
@@ -1090,7 +1121,11 @@ private fun GlassLabelsRow(
         lightweight = true,
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().clickable { showPicker = true }.padding(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showPicker = true }
+                .heightIn(min = DetailRowMinHeight)
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             GlassIconBubble(icon = Icons.Filled.Sell, tint = tint, size = 32.dp)
@@ -1104,7 +1139,7 @@ private fun GlassLabelsRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.horizontalScroll(rememberScrollState()).padding(top = 2.dp),
                     ) {
-                        selectedLabels.forEach { label -> LabelChip(name = label.name, color = label.color) }
+                        selectedLabels.forEach { label -> LabelChip(name = label.name) }
                     }
                 }
             }
@@ -1119,35 +1154,63 @@ private fun GlassLabelsRow(
     }
 
     if (showPicker) {
-        AlertDialog(
-            onDismissRequest = { showPicker = false },
-            title = { Text("Labels") },
-            text = {
-                GlassWindowBlur()
-                if (allLabels.isEmpty()) {
-                    Text("No labels yet. Create some from Profile > Manage labels.")
-                } else {
-                    Column {
+        // A custom Dialog+Surface rather than AlertDialog — AlertDialog's fixed title/text/button
+        // section padding leaves a large empty gap under a short list like this one (a handful of
+        // labels, or none). This hugs the content instead.
+        Dialog(onDismissRequest = { showPicker = false }) {
+            GlassWindowBlur()
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = glassDialogContainerColor(GlassStyle.Thick),
+            ) {
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Text(text = "Labels", style = MaterialTheme.typography.headlineSmall)
+                    Spacer(Modifier.height(16.dp))
+                    if (allLabels.isEmpty()) {
+                        Text("No labels yet — create your first one below.")
+                        Spacer(Modifier.height(4.dp))
+                    } else {
                         allLabels.forEach { label ->
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(48.dp)
-                                    .clickable { onToggleLabel(label.id) },
+                                    .clickable { onToggleLabel(label.id) }
+                                    .padding(vertical = 4.dp),
                             ) {
                                 Checkbox(checked = label.id in selectedLabelIds, onCheckedChange = { onToggleLabel(label.id) })
                                 Spacer(Modifier.width(8.dp))
-                                LabelChip(name = label.name, color = label.color)
+                                LabelChip(name = label.name)
                             }
                         }
                     }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showCreateLabel = true }
+                            .padding(vertical = 10.dp),
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Add label", color = tint)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = { showPicker = false }) { Text("Done") }
+                    }
                 }
+            }
+        }
+    }
+
+    if (showCreateLabel) {
+        LabelFormDialog(
+            title = "New label",
+            onConfirm = { name ->
+                onCreateLabel(name)
+                showCreateLabel = false
             },
-            confirmButton = {
-                TextButton(onClick = { showPicker = false }) { Text("Done") }
-            },
-            containerColor = glassDialogContainerColor(GlassStyle.Thick),
+            onDismiss = { showCreateLabel = false },
         )
     }
 }

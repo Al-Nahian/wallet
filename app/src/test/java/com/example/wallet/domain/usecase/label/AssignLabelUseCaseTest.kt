@@ -22,8 +22,8 @@ class AssignLabelUseCaseTest {
 
     @Test
     fun `assigns multiple labels to a transaction`() = runTest {
-        val family = createUseCase("Family", "#F44336").getOrThrow()
-        val work = createUseCase("Work", "#42B5E8").getOrThrow()
+        val family = createUseCase("Family").getOrThrow()
+        val work = createUseCase("Work").getOrThrow()
 
         val result = assignUseCase("tx-1", setOf(family.id, work.id))
 
@@ -34,8 +34,8 @@ class AssignLabelUseCaseTest {
 
     @Test
     fun `re-assigning replaces the previous label set, not adds to it`() = runTest {
-        val family = createUseCase("Family", "#F44336").getOrThrow()
-        val work = createUseCase("Work", "#42B5E8").getOrThrow()
+        val family = createUseCase("Family").getOrThrow()
+        val work = createUseCase("Work").getOrThrow()
         assignUseCase("tx-1", setOf(family.id, work.id))
 
         val result = assignUseCase("tx-1", setOf(family.id))
@@ -47,7 +47,7 @@ class AssignLabelUseCaseTest {
 
     @Test
     fun `an empty set clears all labels`() = runTest {
-        val family = createUseCase("Family", "#F44336").getOrThrow()
+        val family = createUseCase("Family").getOrThrow()
         assignUseCase("tx-1", setOf(family.id))
 
         val result = assignUseCase("tx-1", emptySet())

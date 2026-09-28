@@ -259,8 +259,9 @@ fun LiquidCircleIconButton(
                         if (isDark) {
                             Highlight(width = 1.5.dp, alpha = 1f, style = HighlightStyle.Default(intensity = 0.9f))
                         } else {
-                            // Crisp bright rim — the reference's white beads read as glowing rings.
-                            Highlight(width = 2.dp, alpha = 1f, style = HighlightStyle.Default(intensity = 1f))
+                            // Narrower rim than the earlier 2dp version — that read as a thick
+                            // white ring rather than a glass edge.
+                            Highlight(width = 0.75.dp, alpha = 1f, style = HighlightStyle.Default(intensity = 1f))
                         }
                     },
                     shadow = glowShadow,

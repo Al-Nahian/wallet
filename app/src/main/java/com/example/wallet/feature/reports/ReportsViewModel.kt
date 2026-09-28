@@ -2,9 +2,13 @@ package com.example.wallet.feature.reports
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.wallet.core.common.DateRange
 import com.example.wallet.core.common.ReportRangePreset
 import com.example.wallet.core.common.dateRangeForPreset
 import com.example.wallet.core.common.monthRange
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import com.example.wallet.domain.model.Transaction
 import com.example.wallet.domain.model.TransactionType
 import com.example.wallet.domain.repository.AccountRepository
@@ -32,6 +36,8 @@ sealed interface ReportsUiState {
     data object Loading : ReportsUiState
     data class Loaded(
         val selectedPreset: ReportRangePreset,
+        val customRange: DateRange?,
+        val customRangeLabel: String?,
         val currency: String,
         val totalIncomeMinor: Long,
         val totalExpenseMinor: Long,
@@ -69,16 +75,21 @@ class ReportsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val selectedPreset = MutableStateFlow(ReportRangePreset.THIS_MONTH)
+    private val customRange = MutableStateFlow<DateRange?>(null)
+
+    // kotlinx.coroutines' combine() only has typed overloads up to 5 flows — folding the two
+    // range-selection flows into one Pair first keeps the main combine below at 5 instead of 6.
+    private val rangeSelection = combine(selectedPreset, customRange) { preset, custom -> preset to custom }
 
     val uiState: StateFlow<ReportsUiState> = combine(
         accountRepository.observeActiveAccounts(),
         transactionRepository.observeTransactions(),
         categoryRepository.observeCategories(),
         transactionSplitRepository.observeAllSplits(),
-        selectedPreset,
-    ) { accounts, transactions, categories, splits, preset ->
+        rangeSelection,
+    ) { accounts, transactions, categories, splits, (preset, custom) ->
         val now = System.currentTimeMillis()
-        val range = dateRangeForPreset(preset, now)
+        val range = dateRangeForPreset(preset, now, custom)
         val categoriesById = categories.associateBy { it.id }
 
         val totalIncome = transactionRepository.sumByTypeInRange(TransactionType.INCOME, range.startInclusive, range.endInclusive)
@@ -114,8 +125,15 @@ class ReportsViewModel @Inject constructor(
             last6Months = (0..5).map(::categorySpendForMonth),
         )
 
+        val customRangeLabel = custom?.let {
+            val formatter = SimpleDateFormat("MMM d", Locale.getDefault())
+            "${formatter.format(Date(it.startInclusive))} – ${formatter.format(Date(it.endInclusive))}"
+        }
+
         ReportsUiState.Loaded(
             selectedPreset = preset,
+            customRange = custom,
+            customRangeLabel = customRangeLabel,
             currency = accounts.firstOrNull()?.currency ?: "BDT",
             totalIncomeMinor = totalIncome,
             totalExpenseMinor = totalExpense,
@@ -135,5 +153,12 @@ class ReportsViewModel @Inject constructor(
 
     fun onPresetSelected(preset: ReportRangePreset) {
         selectedPreset.value = preset
+    }
+
+    /** From the custom date-range picker — sets the range and switches the selector to
+     * [ReportRangePreset.CUSTOM] in one step, so picking a range is itself the selection. */
+    fun onCustomRangeSelected(range: DateRange) {
+        customRange.value = range
+        selectedPreset.value = ReportRangePreset.CUSTOM
     }
 }

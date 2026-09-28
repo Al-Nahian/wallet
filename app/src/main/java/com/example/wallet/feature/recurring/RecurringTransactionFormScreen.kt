@@ -18,7 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
+import com.example.wallet.core.design.components.GlassScreenScaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,7 +54,7 @@ fun RecurringTransactionFormScreen(
         if (uiState.saved) onSaved()
     }
 
-    Scaffold(
+    GlassScreenScaffold(
         modifier = modifier,
         topBar = {
             GlassScreenTopBar(
@@ -71,7 +71,7 @@ fun RecurringTransactionFormScreen(
             Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-            return@Scaffold
+            return@GlassScreenScaffold
         }
 
         Column(

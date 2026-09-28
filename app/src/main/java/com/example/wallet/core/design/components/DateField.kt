@@ -1,26 +1,25 @@
 package com.example.wallet.core.design.components
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import com.example.wallet.core.design.glass.applyDialogBlurBehind
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-/** A read-only text field that opens the platform date picker on tap. Shared between the
+/** A read-only text field that opens [GlassDatePickerDialog] on tap. Shared between the
  * transaction and transfer forms. */
 @Composable
 fun DateField(dateMillis: Long, onDateChange: (Long) -> Unit, modifier: Modifier = Modifier, label: String = "Date") {
-    val context = LocalContext.current
+    var showPicker by remember { mutableStateOf(false) }
     val formatted = remember(dateMillis) {
         SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(dateMillis))
     }
@@ -36,22 +35,15 @@ fun DateField(dateMillis: Long, onDateChange: (Long) -> Unit, modifier: Modifier
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .clickable {
-                    val calendar = Calendar.getInstance().apply { timeInMillis = dateMillis }
-                    DatePickerDialog(
-                        context,
-                        { _, year, month, dayOfMonth ->
-                            val picked = Calendar.getInstance().apply {
-                                timeInMillis = dateMillis
-                                set(year, month, dayOfMonth)
-                            }
-                            onDateChange(picked.timeInMillis)
-                        },
-                        calendar.get(Calendar.YEAR),
-                        calendar.get(Calendar.MONTH),
-                        calendar.get(Calendar.DAY_OF_MONTH),
-                    ).apply { window?.let { applyDialogBlurBehind(it) } }.show()
-                },
+                .clickable { showPicker = true },
+        )
+    }
+
+    if (showPicker) {
+        GlassDatePickerDialog(
+            initialDateMillis = dateMillis,
+            onDismiss = { showPicker = false },
+            onConfirm = onDateChange,
         )
     }
 }

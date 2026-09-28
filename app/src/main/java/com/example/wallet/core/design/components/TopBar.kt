@@ -1,7 +1,10 @@
 package com.example.wallet.core.design.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -11,17 +14,21 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.wallet.core.design.glass.LiquidDarkPageBackground
 
 /** Extra inset added on top of [CenterAlignedTopAppBar]'s own ~4dp nav-icon/action padding, so the
  * profile/bell glass bubbles' outer edges land on the same 16dp margin every screen's card list
@@ -123,6 +130,45 @@ fun GlassScreenTopBar(
             scrolledContainerColor = Color.Transparent,
         ),
     )
+}
+
+/** Drop-in [Scaffold] replacement for every pushed back-button screen (account/budget/category/
+ * label forms and detail screens, profile, notification center, etc.) — gives them the same
+ * dark-mode glow-image page background as the 4 top-level tabs instead of a flat black fill,
+ * so a sub-screen doesn't visually "drop out" of the liquid-glass look when pushed on top of one.
+ * Same light/dark split as `TopLevelScaffold` (navigation/WalletNavHost.kt): dark mode skips the
+ * opaque base paint since the glow image is already soft, light mode keeps a flat surface base
+ * since its background has no image to fall back on. */
+@Composable
+fun GlassScreenScaffold(
+    modifier: Modifier = Modifier,
+    topBar: @Composable () -> Unit = {},
+    bottomBar: @Composable () -> Unit = {},
+    snackbarHost: @Composable () -> Unit = {},
+    floatingActionButton: @Composable () -> Unit = {},
+    floatingActionButtonPosition: FabPosition = FabPosition.End,
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    val isDark = isSystemInDarkTheme()
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .let { if (isDark) it else it.background(MaterialTheme.colorScheme.surface) },
+    ) {
+        if (isDark) {
+            LiquidDarkPageBackground()
+        }
+        Scaffold(
+            modifier = modifier,
+            topBar = topBar,
+            bottomBar = bottomBar,
+            snackbarHost = snackbarHost,
+            floatingActionButton = floatingActionButton,
+            floatingActionButtonPosition = floatingActionButtonPosition,
+            containerColor = Color.Transparent,
+            content = content,
+        )
+    }
 }
 
 @Composable
