@@ -159,6 +159,7 @@ fun WalletNavHost() {
             // so the FAB keeps its old direct-navigate behavior.
             val templateShortcutsViewModel: TemplateShortcutsViewModel = hiltViewModel()
             val shortcutTemplates by templateShortcutsViewModel.templates.collectAsStateWithLifecycle()
+            val shortcutCategories by templateShortcutsViewModel.categories.collectAsStateWithLifecycle()
             var isFabMenuExpanded by remember { mutableStateOf(false) }
             var showTemplatePicker by remember { mutableStateOf(false) }
 
@@ -207,6 +208,7 @@ fun WalletNavHost() {
             if (showTemplatePicker) {
                 TemplateShortcutPickerDialog(
                     templates = shortcutTemplates,
+                    categories = shortcutCategories,
                     onSelected = { templateId ->
                         showTemplatePicker = false
                         navController.navigate(TransactionRoutes.createFromTemplate(templateId))

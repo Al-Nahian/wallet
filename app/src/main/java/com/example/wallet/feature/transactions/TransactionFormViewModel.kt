@@ -96,6 +96,11 @@ data class TransactionFormState(
     val labelOptions: List<Label> = emptyList(),
     val selectedLabelIds: Set<String> = emptySet(),
     val templates: List<Template> = emptyList(),
+    /** Which saved template (if any) the form's current account/category/label/payee/place came
+     * from — shown as the Template card's subtitle instead of the generic placeholder text.
+     * Cleared the moment the user picks a different account or category by hand, since at that
+     * point the form no longer matches what the template would apply. */
+    val appliedTemplateId: String? = null,
     val payeeSuggestions: List<String> = emptyList(),
     val placeSuggestions: List<String> = emptyList(),
     val isSaving: Boolean = false,
@@ -253,7 +258,12 @@ class TransactionFormViewModel @Inject constructor(
 
     fun onTypeChange(type: TransactionType) = _uiState.update { it.copy(type = type, errorMessage = null) }
     fun onAccountChange(id: String) = _uiState.update {
-        it.copy(accountId = id, toAccountId = it.toAccountId.takeUnless { to -> to == id }, errorMessage = null)
+        it.copy(
+            accountId = id,
+            toAccountId = it.toAccountId.takeUnless { to -> to == id },
+            appliedTemplateId = null,
+            errorMessage = null,
+        )
     }
     fun onToAccountChange(id: String) = _uiState.update { it.copy(toAccountId = id, errorMessage = null) }
     fun onAmountChange(value: String) = _uiState.update { it.copy(amountInput = value, amountEquation = null, errorMessage = null) }
@@ -274,7 +284,7 @@ class TransactionFormViewModel @Inject constructor(
         val equation = if (key == "=" && next != base) base else null
         it.copy(amountInput = next, amountEquation = equation, errorMessage = null)
     }
-    fun onCategoryChange(id: String?) = _uiState.update { it.copy(categoryId = id) }
+    fun onCategoryChange(id: String?) = _uiState.update { it.copy(categoryId = id, appliedTemplateId = null) }
     fun onPayeeChange(value: String) = _uiState.update { it.copy(payee = value) }
     fun onNoteChange(value: String) = _uiState.update { it.copy(note = value) }
     fun onPlaceChange(value: String) = _uiState.update { it.copy(place = value) }
@@ -318,6 +328,7 @@ class TransactionFormViewModel @Inject constructor(
                 selectedLabelIds = it.selectedLabelIds + template.labelId,
                 payee = template.payee ?: it.payee,
                 place = template.place ?: it.place,
+                appliedTemplateId = templateId,
                 errorMessage = null,
             )
         }

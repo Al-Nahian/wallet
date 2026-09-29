@@ -86,6 +86,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -97,6 +98,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.common.formatMoney
+import com.example.wallet.core.design.DarkPrimary
 import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.components.AmountKeypad
 import com.example.wallet.core.design.components.CategoryPickerDialog
@@ -320,8 +322,9 @@ private fun MainPage(
             }
 
             GlassTemplateRow(
-                tint = WalletTheme.extendedColors.warning,
+                tint = DarkPrimary,
                 templates = uiState.templates,
+                appliedTemplateId = uiState.appliedTemplateId,
                 accountOptions = uiState.accountOptions,
                 categoryOptions = uiState.categories,
                 labelOptions = uiState.labelOptions,
@@ -698,6 +701,13 @@ private fun AmountGlassCard(
     }
 }
 
+/** Darkens [this] toward black by [amount] (0f = unchanged, 1f = black) — a card's own value text
+ * in light mode needs to read as a deeper shade of the tile's pastel tint, not the tint itself
+ * (too close in value to the pastel glass surface underneath it) and not a flat neutral black
+ * (loses the per-card color identity Account/Template share with Category's own accent-colored
+ * value text). */
+private fun Color.darkenForLightCard(amount: Float = 0.45f): Color = lerp(this, Color.Black, amount)
+
 /** A glossy account picker card (reference design's blue "Account / Select" tile) — tapping it
  * opens a centered [AccountPickerDialog] popup listing every account with its live balance
  * (select-account-reference.png) instead of an anchored dropdown. Used for Account/From
@@ -739,7 +749,7 @@ private fun GlassAccountPickerCard(
                     text = selectedLabel,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface,
+                    color = if (isDark) Color.White else tint.darkenForLightCard(0.3f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -983,6 +993,7 @@ private fun GlassCategoryPickerCard(
 private fun GlassTemplateRow(
     tint: Color,
     templates: List<Template>,
+    appliedTemplateId: String?,
     accountOptions: List<AccountPickerOption>,
     categoryOptions: List<Category>,
     labelOptions: List<Label>,
@@ -1015,6 +1026,8 @@ private fun GlassTemplateRow(
     val categoryNamesById = remember(categoryPairs) { categoryPairs.toMap() }
     val labelNamesById = remember(labelPairs) { labelPairs.toMap() }
     val isDark = isSystemInDarkTheme()
+    val appliedTemplate = remember(templates, appliedTemplateId) { templates.firstOrNull { it.id == appliedTemplateId } }
+    val appliedTemplateIcon = appliedTemplate?.let { categoryNamesById[it.categoryId] }?.let { categoryIcon(it) }
 
     LiquidGlassCard(
         tint = tint,
@@ -1025,14 +1038,22 @@ private fun GlassTemplateRow(
             modifier = Modifier.fillMaxWidth().clickable { showPicker = true }.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            GlassIconBubble(icon = Icons.Filled.Bookmark, tint = tint, size = 32.dp)
+            GlassIconBubble(icon = appliedTemplateIcon ?: Icons.Filled.Bookmark, tint = tint, size = 32.dp)
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = "Template", fontSize = 11.sp, color = tint)
+                // Matches Account/Category's own label + value treatment: a neutral small label
+                // (not tinted), then the value in the card's own raw tint — reading darker than
+                // the card's lightened glass surface, same as Category's accent-colored value.
                 Text(
-                    text = "Apply or save a template",
+                    text = "Template",
+                    fontSize = 11.sp,
+                    color = if (isDark) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = appliedTemplate?.name ?: "Apply or save a template",
                     fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isDark) Color.White else tint.darkenForLightCard(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -1104,7 +1125,8 @@ private fun GlassTemplateRow(
                                         }
                                         .padding(horizontal = 12.dp, vertical = 10.dp),
                                 ) {
-                                    GlassIconBubble(icon = Icons.Filled.Bookmark, tint = tint, size = 40.dp)
+                                    val rowIcon = categoryNamesById[template.categoryId]?.let { categoryIcon(it) } ?: Icons.Filled.Bookmark
+                                    GlassIconBubble(icon = rowIcon, tint = tint, size = 40.dp)
                                     Spacer(Modifier.width(12.dp))
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(

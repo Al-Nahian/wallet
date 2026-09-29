@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,8 +45,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.design.components.ConfirmationDialog
 import com.example.wallet.core.design.components.EmptyState
+import com.example.wallet.core.design.components.GlassIconBubble
 import com.example.wallet.core.design.components.GlassScreenScaffold
 import com.example.wallet.core.design.components.GlassScreenTopBar
+import com.example.wallet.core.design.components.categoryIcon
+import com.example.wallet.core.design.DarkPrimary
 import com.example.wallet.core.design.glass.GlassFab
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassWindowBlur
@@ -115,11 +119,17 @@ fun TemplatesScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        val accountName = accountsById[template.accountId]?.name ?: "Unknown account"
+                        val categoryName = categoriesById[template.categoryId]?.name ?: "Unknown category"
+                        val labelName = labelsById[template.labelId]?.name ?: "Unknown label"
+                        GlassIconBubble(
+                            icon = categoryIcon(categoryName),
+                            tint = DarkPrimary,
+                            size = 40.dp,
+                        )
+                        Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = template.name, style = MaterialTheme.typography.titleMedium)
-                            val accountName = accountsById[template.accountId]?.name ?: "Unknown account"
-                            val categoryName = categoriesById[template.categoryId]?.name ?: "Unknown category"
-                            val labelName = labelsById[template.labelId]?.name ?: "Unknown label"
                             Text(
                                 text = "$accountName · $categoryName · $labelName",
                                 style = MaterialTheme.typography.bodyMedium,

@@ -67,10 +67,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.wallet.core.design.DarkPrimary
-import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.glass.GlassShapes
 import com.example.wallet.core.design.glass.GlassTokens
 import com.example.wallet.core.design.glass.GlassWindowBlur
+import com.example.wallet.domain.model.Category
 import com.example.wallet.domain.model.Template
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.drawBackdrop
@@ -377,11 +377,13 @@ private fun FabMenuIcon(
 @Composable
 fun TemplateShortcutPickerDialog(
     templates: List<Template>,
+    categories: List<Category>,
     onSelected: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val tint = WalletTheme.extendedColors.warning
+    val tint = DarkPrimary
     val isDark = isSystemInDarkTheme()
+    val categoryNamesById = remember(categories) { categories.associate { it.id to it.name } }
 
     Dialog(onDismissRequest = onDismiss) {
         GlassWindowBlur()
@@ -429,7 +431,8 @@ fun TemplateShortcutPickerDialog(
                                     .clickable { onSelected(template.id) }
                                     .padding(horizontal = 12.dp, vertical = 10.dp),
                             ) {
-                                GlassIconBubble(icon = Icons.Filled.Bookmark, tint = tint, size = 40.dp)
+                                val rowIcon = categoryNamesById[template.categoryId]?.let { categoryIcon(it) } ?: Icons.Filled.Bookmark
+                                GlassIconBubble(icon = rowIcon, tint = tint, size = 40.dp)
                                 Spacer(Modifier.width(12.dp))
                                 Text(
                                     text = template.name,
