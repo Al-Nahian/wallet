@@ -172,7 +172,7 @@ fun TemplateFabMenu(
 ) {
     val progress by animateFloatAsState(
         targetValue = if (expanded) 1f else 0f,
-        animationSpec = tween(durationMillis = 420, easing = LinearEasing),
+        animationSpec = tween(durationMillis = 600, easing = LinearEasing),
         label = "templateFabMenuProgress",
     )
     // Nothing to draw once fully collapsed — avoids paying for the blur graphicsLayer at rest.
@@ -188,14 +188,20 @@ fun TemplateFabMenu(
         null
     }
 
-    val slotCount = fabMenuSlots.size
+    // Matches github.com/jurajkusnier/fluid-bottom-navigation's own MainScreen.kt exactly: each
+    // item's position window is `FastOutSlowInEasing.transform(index * 0.1f, 0.8f + index * 0.1f,
+    // progress)` — a 0.1-of-progress stagger between starts, each spanning 0.8 of progress, so
+    // item 0 (leftmost) is already moving at progress=0 and settles at 80%, item 1 (center)
+    // starts at 10% and settles at 90%, item 2 (rightmost) starts at 20% and settles at 100% —
+    // a visibly sequential left → center → right reveal, not all three fanning out together.
     val slotMotion = fabMenuSlots.mapIndexed { index, slot ->
-        val start = index * (0.12f / slotCount)
-        val posT = FastOutSlowInEasing.transform(start, (start + 0.75f).coerceAtMost(1f), progress)
+        val start = index * 0.1f
+        val end = (0.8f + index * 0.1f).coerceAtMost(1f)
+        val posT = FastOutSlowInEasing.transform(start, end, progress)
         val angleRad = Math.toRadians(slot.angleDegrees.toDouble())
         val offsetX = FanRadius * cos(angleRad).toFloat() * posT
         val offsetY = -FanRadius * sin(angleRad).toFloat() * posT
-        SlotMotion(slot, offsetX, offsetY, 0.4f + 0.6f * posT)
+        SlotMotion(slot, offsetX, offsetY, 0.4f + 0.6f * posT, posT)
     }
 
     // Fixed size (not fillMaxWidth/wrap-content): this becomes the Popup's own measured content
@@ -235,11 +241,12 @@ fun TemplateFabMenu(
             ) {
                 // Anchors the goo to the FAB itself — without this, blobs appear to spawn out of
                 // thin air instead of pinching off the button that opened them. Stays large
-                // through most of the motion (shrinking away only in the last ~15%) so the
+                // through nearly the entire motion (shrinking away only in the last 20%) so the
                 // blurred "neck" bridging it to each traveling circle stays visible for the
-                // whole fan-out — the actual liquid-looking part of this effect — rather than
-                // vanishing early and leaving three separate circles animating with no goo
-                // between them. Shrinks via SCALE, not alpha: an earlier version faded this
+                // whole staggered fan-out — including the rightmost circle, whose own reveal
+                // window (see slotMotion above) doesn't finish until progress hits 1.0 — rather
+                // than vanishing early and leaving later circles animating with no goo between
+                // them. Shrinks via SCALE, not alpha: an earlier version faded this
                 // anchor's alpha out instead, but the goo threshold ColorMatrix (see
                 // gooRenderEffect) snaps every alpha above its cutoff to fully OPAQUE — there's
                 // no such thing as a "40% faded" shape inside this render effect, so that fade
@@ -248,7 +255,7 @@ fun TemplateFabMenu(
                 // blurs to a smaller (still smooth) result. Timed to finish shrinking around
                 // when CenterFabItem's own drainProgress empties the real FAB, so nothing opaque
                 // is left sitting behind it once the FAB itself goes hollow.
-                val anchorScale = 1f - LinearEasing.transform(0.55f, 0.95f, progress)
+                val anchorScale = 1f - LinearEasing.transform(0.8f, 1f, progress)
                 Box(
                     Modifier
                         .size(fabSize)
@@ -277,6 +284,9 @@ fun TemplateFabMenu(
                 offsetX = motion.offsetX,
                 offsetY = motion.offsetY,
                 scale = motion.scale,
+                // 0 while still traveling, 1 once settled at its resting spot — see FabMenuIcon's
+                // own doc for why the glossy border is faded by this instead of always shown.
+                borderAlpha = motion.posT,
                 onClick = { onAction(motion.slot.action) },
             )
         }
@@ -288,6 +298,7 @@ private class SlotMotion(
     val offsetX: Dp,
     val offsetY: Dp,
     val scale: Float,
+    val posT: Float,
 )
 
 /** The un-blurred layer drawn over each blob, rendered with the FAB's own fixed, never-animated
@@ -295,10 +306,19 @@ private class SlotMotion(
  * so every circle looks like a piece of the FAB itself budding off, not a differently-styled menu
  * item. Only position and [scale] animate; a growing-then-settling circle reads as fluid motion
  * on its own, and fading the glass material itself on top of that turned out to double-render
- * badly (see the anchor blob's own comment in [TemplateFabMenu] for why). With [liquidBackdrop]
- * captured (API 31+), this renders through the exact same [drawBackdrop] call [CenterFabItem]
- * itself uses — real background blur/refraction, not an approximation. Without a backdrop, falls
- * back to a gradient-and-border "glass bead" approximation. */
+ * badly (see the anchor blob's own comment in [TemplateFabMenu] for why).
+ *
+ * [borderAlpha] (0 while traveling, 1 once settled) hides just the crisp white highlight ring
+ * while this circle is still in motion — with it always on, a small circle mid-flight reads as a
+ * hard-edged bordered disc shrinking/growing near the FAB, not a soft liquid blob, undercutting
+ * the whole goo illusion the blurred layer beneath is trying to sell. The fill, shadow and icon
+ * stay constant throughout (matching the FAB's own idle look, per this composable's own point);
+ * only the border — the one detail that reads as "solid object" rather than "liquid" — fades in
+ * once the blob has actually arrived.
+ *
+ * With [liquidBackdrop] captured (API 31+), this renders through the exact same [drawBackdrop]
+ * call [CenterFabItem] itself uses — real background blur/refraction, not an approximation.
+ * Without a backdrop, falls back to a gradient-and-border "glass bead" approximation. */
 @Composable
 private fun FabMenuIcon(
     icon: ImageVector,
@@ -308,6 +328,7 @@ private fun FabMenuIcon(
     offsetX: Dp,
     offsetY: Dp,
     scale: Float,
+    borderAlpha: Float,
     onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -325,7 +346,7 @@ private fun FabMenuIcon(
                         backdropBlur(2.dp.toPx())
                         lens(12.dp.toPx(), 24.dp.toPx(), depthEffect = true)
                     },
-                    highlight = { Highlight(width = 3.dp, alpha = 1f, style = HighlightStyle.Default(intensity = 1f)) },
+                    highlight = { Highlight(width = 3.dp, alpha = borderAlpha, style = HighlightStyle.Default(intensity = 1f)) },
                     shadow = { BackdropShadow(radius = 16.dp, color = tint.copy(alpha = 0.55f)) },
                     onDrawSurface = {
                         drawRect(tint, blendMode = BlendMode.Hue)
@@ -368,7 +389,7 @@ private fun FabMenuIcon(
                         ),
                     ),
                 )
-                .border(1.5.dp, Color.White.copy(alpha = 0.6f), CircleShape)
+                .border(1.5.dp, Color.White.copy(alpha = 0.6f * borderAlpha), CircleShape)
                 .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
                 .semantics {
                     role = Role.Button

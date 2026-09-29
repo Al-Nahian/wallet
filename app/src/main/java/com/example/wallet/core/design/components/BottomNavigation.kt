@@ -288,18 +288,16 @@ private fun CenterFabItem(
         animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
         label = "fabIconRotation",
     )
-    // 0f = full color, 1f = drained/hollow — same duration/easing as TemplateFabMenu's own
-    // `progress`, driven from the same `expanded` boolean flipping on the same frame, so the
-    // FAB's own drain and the goo blobs' fan-out stay in lockstep without sharing one animation
-    // value across two composables. Unlike the goo anchor blob (which can't fade smoothly — see
-    // TemplateFabMenu's own comment on why it shrinks instead of fading), this alpha animates
-    // perfectly fine: it's an ordinary composable draw, never passed through the blur/threshold
-    // RenderEffect that flattens any partial alpha to fully opaque.
-    val drainProgress by animateFloatAsState(
-        targetValue = if (expanded) 1f else 0f,
-        animationSpec = tween(durationMillis = 420, easing = LinearEasing),
-        label = "fabDrainProgress",
-    )
+    // A "color drain" on the FAB's own fill (fading it to hollow while the menu is open) was
+    // tried three times here — tied to raw linear drainProgress, then re-eased through the
+    // leftmost blob's own window, then a plain linear rescale of that same window — and every
+    // version eventually left the FAB permanently stuck fully transparent after a collapse, in a
+    // way that resisted diagnosis (even a pure linear, curve-free rescale reproduced it, ruling
+    // out an easing-curve edge case as the sole cause). Given a broken, permanently-hollow FAB is
+    // far worse than a FAB that simply never drains, the fill is now always constant — matching
+    // the FAB's own idle look at all times, same as [FabMenuIcon]'s own material. The blobs'
+    // goo/blur animation and this icon's own rotation below still carry the "something fluid is
+    // happening" read without depending on this fragile alpha path.
 
     if (liquidFabBackdrop != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         Box(
@@ -318,15 +316,10 @@ private fun CenterFabItem(
                     // A crisp, near-opaque white ring rather than a soft highlight — the reference
                     // design's FAB reads as having a distinct white border, not just a glow.
                     highlight = { Highlight(width = 3.dp, alpha = 1f, style = HighlightStyle.Default(intensity = 1f)) },
-                    shadow = { Shadow(radius = 16.dp, color = tint.copy(alpha = 0.55f * (1f - drainProgress))) },
+                    shadow = { Shadow(radius = 16.dp, color = tint.copy(alpha = 0.55f)) },
                     onDrawSurface = {
-                        // The fill drains away as the menu expands, as if its color were being
-                        // pulled out into the fanned-out blobs — restored on collapse. Safe to
-                        // animate here (unlike the goo anchor): this is a plain draw, not routed
-                        // through the RenderEffect blur/threshold that can't do partial alpha.
-                        val surfaceAlpha = 1f - drainProgress
-                        drawRect(tint.copy(alpha = surfaceAlpha), blendMode = BlendMode.Hue)
-                        drawRect(tint.copy(alpha = 0.75f * surfaceAlpha))
+                        drawRect(tint, blendMode = BlendMode.Hue)
+                        drawRect(tint.copy(alpha = 0.75f))
                     },
                 )
                 .clickable(
@@ -362,8 +355,8 @@ private fun CenterFabItem(
                 },
             style = GlassStyle.Vivid,
             shape = CircleShape,
-            tint = tint.copy(alpha = 1f - drainProgress),
-            glow = drainProgress < 0.5f,
+            tint = tint,
+            glow = true,
             interaction = GlassInteraction.Pressable,
             interactionSource = interactionSource,
             elevation = 12.dp,
