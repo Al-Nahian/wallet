@@ -1,6 +1,9 @@
 package com.example.wallet.core.design.components
 
 import android.os.Build
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,12 +34,15 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow as TextGlowShadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,7 +95,14 @@ fun WalletBottomNavigation(
     fabOnClick: () -> Unit,
     fabContentDescription: String,
     modifier: Modifier = Modifier,
+    // Rotates the FAB's own "+" into an "×" while the menu is open — the fill itself always
+    // keeps its normal idle look (no drain/fade), matching every fanned-out circle.
+    fabExpanded: Boolean = false,
     liquidFabBackdrop: LayerBackdrop? = null,
+    // Rendered above the FAB, given its exact size (and this same liquidFabBackdrop, so its own
+    // circles can render the identical real glass material the FAB uses) so a fan-out menu
+    // (TemplateFabMenu) can anchor its blobs to it. Optional — only Home passes one.
+    fabMenu: (@Composable (fabSize: Dp, liquidFabBackdrop: LayerBackdrop?) -> Unit)? = null,
 ) {
     val midpoint = items.size / 2
     val fabSize = 60.dp
@@ -122,14 +137,54 @@ fun WalletBottomNavigation(
                 }
             }
         }
+        // overlayAboveFab measures this at its own natural (fixed) size with no constraint from
+        // this pill's small height, then places it directly above the FAB — without it, a plain
+        // child this tall would either inflate this whole composable's measured height (a
+        // regular Box sizes itself to fit its tallest child, dragging the visible bar up the
+        // screen with it) or get starved down to near-zero height by this pill's own small
+        // bounds (silently collapsing the menu's icons/labels to nothing, an earlier bug here).
+        // Drawn BEFORE CenterFabItem (so the FAB paints on top of it): the fan's anchor blob
+        // sits at the exact same position/size as the FAB to bridge the goo, but it's a flat
+        // color with none of the FAB's real backdrop-glass rendering — if it painted on top, it
+        // would flatten/hide the FAB's own look (and its rotating icon) the moment the menu
+        // opened. With the FAB on top, its normal idle appearance is never covered by anything.
+        if (fabMenu != null) {
+            Box(modifier = Modifier.overlayAboveFab(fabSize)) {
+                fabMenu(fabSize, liquidFabBackdrop)
+            }
+        }
         // Popped out above the bar's top edge, per the liquid-glass reference design — not
-        // inline with the other nav items.
+        // inline with the other nav items. Declared last so it paints on top of fabMenu's anchor
+        // blob above.
         CenterFabItem(
             onClick = fabOnClick,
             contentDescription = fabContentDescription,
             size = fabSize,
+            expanded = fabExpanded,
             liquidFabBackdrop = liquidFabBackdrop,
             modifier = Modifier.offset(y = (-fabSize / 6)),
+        )
+    }
+}
+
+/** Measures its content unconstrained (so a fixed-size overlay like [TemplateFabMenu] always
+ * gets its full requested size, never starved down by this small pill's own bounds), reports a
+ * zero footprint to ITS OWN parent (so it can't inflate that parent's measured size the way an
+ * ordinary same-size Box child would), and places the real content's bottom-center directly
+ * above [fabSize]'s own popped-out position — the same `-fabSize / 6` upward shift
+ * [CenterFabItem] itself uses, so [TemplateFabMenu]'s internal "fan out from the FAB" math lines
+ * up for free. */
+private fun Modifier.overlayAboveFab(fabSize: Dp): Modifier = layout { measurable, _ ->
+    val placeable = measurable.measure(Constraints())
+    val fabSizePx = fabSize.roundToPx()
+    // This layout node itself gets positioned at (parentCenterX, parentTop) by the outer Box's
+    // TopCenter alignment (a zero-size node still receives that anchor point) — placement below
+    // is relative to that. CenterFabItem's own bottom edge, in the same outer-box-local
+    // coordinates, sits at (-fabSizePx/6 + fabSizePx) = 5*fabSizePx/6 down from parentTop.
+    layout(0, 0) {
+        placeable.place(
+            x = -placeable.width / 2,
+            y = (5 * fabSizePx / 6) - placeable.height,
         )
     }
 }
@@ -217,12 +272,21 @@ private fun CenterFabItem(
     size: Dp,
     liquidFabBackdrop: LayerBackdrop?,
     modifier: Modifier = Modifier,
+    expanded: Boolean = false,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     // Fixed mint green in both themes — the light-mode pill turned back to white glass, but
     // the plus icon stays green (the blue it once used in light mode was explicitly rejected);
     // a stable color also means it never shifts shade across a theme change.
     val tint = DarkPrimary
+
+    // The "+" rotates 45° into an "×" — cheaper and smoother than crossfading two icons.
+    val iconRotation by animateFloatAsState(
+        targetValue = if (expanded) 45f else 0f,
+        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+        label = "fabIconRotation",
+    )
+
     if (liquidFabBackdrop != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         Box(
             modifier = modifier
@@ -257,7 +321,12 @@ private fun CenterFabItem(
                 },
             contentAlignment = Alignment.Center,
         ) {
-            Icon(imageVector = Icons.Filled.Add, contentDescription = null, tint = Color.White)
+            Icon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.graphicsLayer { rotationZ = iconRotation },
+            )
         }
     } else {
         GlassSurface(
@@ -281,7 +350,12 @@ private fun CenterFabItem(
             elevation = 12.dp,
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Icon(imageVector = Icons.Filled.Add, contentDescription = null, tint = Color.White)
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.graphicsLayer { rotationZ = iconRotation },
+                )
             }
         }
     }

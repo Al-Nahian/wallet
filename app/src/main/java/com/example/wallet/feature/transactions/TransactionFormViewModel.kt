@@ -9,10 +9,12 @@ import com.example.wallet.domain.model.AccountType
 import com.example.wallet.domain.model.Category
 import com.example.wallet.domain.model.CategoryGroup
 import com.example.wallet.domain.model.Label
+import com.example.wallet.domain.model.Template
 import com.example.wallet.domain.model.TransactionType
 import com.example.wallet.domain.repository.AccountRepository
 import com.example.wallet.domain.repository.CategoryRepository
 import com.example.wallet.domain.repository.LabelRepository
+import com.example.wallet.domain.repository.TemplateRepository
 import com.example.wallet.domain.repository.TransactionRepository
 import com.example.wallet.domain.repository.TransactionSplitRepository
 import com.example.wallet.domain.usecase.account.CalculateBalanceUseCase
@@ -20,6 +22,10 @@ import com.example.wallet.domain.usecase.budget.CheckBudgetAlertsUseCase
 import com.example.wallet.domain.usecase.label.AssignLabelUseCase
 import com.example.wallet.domain.usecase.label.CreateLabelUseCase
 import com.example.wallet.domain.usecase.label.LabelValidationException
+import com.example.wallet.domain.usecase.template.CreateTemplateUseCase
+import com.example.wallet.domain.usecase.template.DeleteTemplateUseCase
+import com.example.wallet.domain.usecase.template.TemplateValidationException
+import com.example.wallet.domain.usecase.template.UpdateTemplateUseCase
 import com.example.wallet.domain.usecase.transaction.CreateTransactionUseCase
 import com.example.wallet.domain.usecase.transaction.CreateTransferUseCase
 import com.example.wallet.domain.usecase.transaction.DeleteTransactionUseCase
@@ -41,6 +47,7 @@ private data class CategoryFormData(
     val groups: List<CategoryGroup>,
     val categories: List<Category>,
     val labels: List<Label>,
+    val templates: List<Template>,
     val payeeSuggestions: List<String>,
     val placeSuggestions: List<String>,
 )
@@ -88,6 +95,7 @@ data class TransactionFormState(
     val categories: List<Category> = emptyList(),
     val labelOptions: List<Label> = emptyList(),
     val selectedLabelIds: Set<String> = emptySet(),
+    val templates: List<Template> = emptyList(),
     val payeeSuggestions: List<String> = emptyList(),
     val placeSuggestions: List<String> = emptyList(),
     val isSaving: Boolean = false,
@@ -98,6 +106,7 @@ data class TransactionFormState(
 )
 
 private const val TRANSACTION_ID_ARG = "transactionId"
+private const val TEMPLATE_ID_ARG = "templateId"
 
 @HiltViewModel
 class TransactionFormViewModel @Inject constructor(
@@ -105,6 +114,7 @@ class TransactionFormViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val transactionSplitRepository: TransactionSplitRepository,
     private val labelRepository: LabelRepository,
+    private val templateRepository: TemplateRepository,
     accountRepository: AccountRepository,
     categoryRepository: CategoryRepository,
     private val createTransactionUseCase: CreateTransactionUseCase,
@@ -113,11 +123,19 @@ class TransactionFormViewModel @Inject constructor(
     private val calculateBalance: CalculateBalanceUseCase,
     private val assignLabelUseCase: AssignLabelUseCase,
     private val createLabelUseCase: CreateLabelUseCase,
+    private val createTemplateUseCase: CreateTemplateUseCase,
+    private val updateTemplateUseCase: UpdateTemplateUseCase,
+    private val deleteTemplateUseCase: DeleteTemplateUseCase,
     private val checkBudgetAlertsUseCase: CheckBudgetAlertsUseCase,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
 ) : ViewModel() {
 
     private val transactionId: String? = savedStateHandle[TRANSACTION_ID_ARG]
+
+    // Set by the Home FAB's template shortcut (TransactionRoutes.createFromTemplate) — applied
+    // once, the first time the templates flow below actually contains this id, then cleared so
+    // a later template edit/recreate with the same id can't reapply it a second time.
+    private var pendingTemplateId: String? = savedStateHandle[TEMPLATE_ID_ARG]
 
     private val _uiState = MutableStateFlow(
         TransactionFormState(isEditMode = transactionId != null, isLoading = transactionId != null),
@@ -129,13 +147,20 @@ class TransactionFormViewModel @Inject constructor(
             // Transactions join the combine so balances recompute when entries change elsewhere —
             // a transaction added on another screen doesn't touch the accounts table, so
             // observeActiveAccounts() alone wouldn't re-emit (same pattern as AccountsViewModel).
+            // kotlinx.coroutines' combine() only has typed overloads up to 5 flows — folding
+            // labels+templates into one Pair first keeps this at 5 instead of 6.
+            val labelsAndTemplates = combine(
+                labelRepository.observeLabels(),
+                templateRepository.observeTemplates(),
+            ) { labels, templates -> labels to templates }
+
             combine(
                 accountRepository.observeActiveAccounts(),
                 transactionRepository.observeTransactions(),
                 categoryRepository.observeGroups(),
                 categoryRepository.observeCategories(),
-                labelRepository.observeLabels(),
-            ) { accounts, transactions, groups, categories, labels ->
+                labelsAndTemplates,
+            ) { accounts, transactions, groups, categories, (labels, templates) ->
                 CategoryFormData(
                     accounts.map { account ->
                         AccountPickerOption(
@@ -149,19 +174,38 @@ class TransactionFormViewModel @Inject constructor(
                     groups,
                     categories,
                     labels,
+                    templates,
                     payeeSuggestions = rankSuggestions(transactions.map { it.payee to it.date }),
                     placeSuggestions = rankSuggestions(transactions.map { it.place to it.date }),
                 )
             }.collect { data ->
                 _uiState.update {
+                    // New transactions (not edit mode) default to a Cash/Mobile Wallet account
+                    // rather than leaving the picker empty — most entries are everyday cash/wallet
+                    // spending, so this saves a tap on the common case. Only applies once, before
+                    // the user (or a template) has picked an account of their own.
+                    val defaultAccountId = if (!it.isEditMode && it.accountId == null) {
+                        data.accountOptions.firstOrNull { option ->
+                            option.type == AccountType.CASH || option.type == AccountType.MOBILE_WALLET
+                        }?.id
+                    } else {
+                        null
+                    }
                     it.copy(
+                        accountId = defaultAccountId ?: it.accountId,
                         accountOptions = data.accountOptions,
                         categoryGroups = data.groups,
                         categories = data.categories,
                         labelOptions = data.labels,
+                        templates = data.templates,
                         payeeSuggestions = data.payeeSuggestions,
                         placeSuggestions = data.placeSuggestions,
                     )
+                }
+                val templateId = pendingTemplateId
+                if (templateId != null && data.templates.any { it.id == templateId }) {
+                    pendingTemplateId = null
+                    applyTemplate(templateId)
                 }
             }
         }
@@ -260,6 +304,57 @@ class TransactionFormViewModel @Inject constructor(
                 }
         }
     }
+
+    /** Applies a saved template's fixed account/category/label/payee/place to the form in one
+     * tap — only amount and type are left for the user to fill in themselves. The label is added
+     * to whatever's already selected rather than replacing it; payee/place only overwrite the
+     * current value when the template actually set one. */
+    fun applyTemplate(templateId: String) {
+        val template = _uiState.value.templates.firstOrNull { it.id == templateId } ?: return
+        _uiState.update {
+            it.copy(
+                accountId = template.accountId,
+                categoryId = template.categoryId,
+                selectedLabelIds = it.selectedLabelIds + template.labelId,
+                payee = template.payee ?: it.payee,
+                place = template.place ?: it.place,
+                errorMessage = null,
+            )
+        }
+    }
+
+    fun createTemplate(name: String, accountId: String?, categoryId: String?, labelId: String?, payee: String?, place: String?) {
+        viewModelScope.launch {
+            createTemplateUseCase(name, accountId, categoryId, labelId, payee, place)
+                .onFailure { error -> _uiState.update { it.copy(errorMessage = templateErrorMessageFor(error)) } }
+        }
+    }
+
+    fun updateTemplate(
+        templateId: String,
+        name: String,
+        accountId: String?,
+        categoryId: String?,
+        labelId: String?,
+        payee: String?,
+        place: String?,
+    ) {
+        viewModelScope.launch {
+            updateTemplateUseCase(templateId, name, accountId, categoryId, labelId, payee, place)
+                .onFailure { error -> _uiState.update { it.copy(errorMessage = templateErrorMessageFor(error)) } }
+        }
+    }
+
+    fun deleteTemplate(templateId: String) {
+        viewModelScope.launch {
+            deleteTemplateUseCase(templateId)
+                .onFailure { error -> _uiState.update { it.copy(errorMessage = templateErrorMessageFor(error)) } }
+        }
+    }
+
+    private fun templateErrorMessageFor(error: Throwable): String =
+        (error as? TemplateValidationException)?.error?.userMessage
+            ?: "Couldn't save that template. Please try again."
 
     fun save() {
         val state = _uiState.value

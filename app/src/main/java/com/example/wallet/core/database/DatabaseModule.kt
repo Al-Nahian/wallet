@@ -15,6 +15,7 @@ import com.example.wallet.data.local.dao.LabelDao
 import com.example.wallet.data.local.dao.MerchantDao
 import com.example.wallet.data.local.dao.NotificationDao
 import com.example.wallet.data.local.dao.RecurringTransactionDao
+import com.example.wallet.data.local.dao.TemplateDao
 import com.example.wallet.data.local.dao.TransactionDao
 import com.example.wallet.data.local.dao.TransactionLabelDao
 import com.example.wallet.data.local.dao.TransactionSplitDao
@@ -34,7 +35,7 @@ object DatabaseModule {
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "wallet.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
             .build()
 
     @Provides
@@ -88,4 +89,7 @@ object DatabaseModule {
 
     @Provides
     fun provideAutomationCandidateDao(db: AppDatabase): AutomationCandidateDao = db.automationCandidateDao()
+
+    @Provides
+    fun provideTemplateDao(db: AppDatabase): TemplateDao = db.templateDao()
 }

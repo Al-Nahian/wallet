@@ -107,3 +107,24 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         db.execSQL("ALTER TABLE `transactions` ADD COLUMN `place` TEXT")
     }
 }
+
+/** v6 -> v7: adds `templates` — a saved account/category/label/payee/place shortcut applied from
+ * the transaction form. All three FKs cascade: a template pointing at a deleted account,
+ * category, or label can no longer be applied to anything, so it's deleted along with it (same
+ * reasoning as `transactions.accountId`'s cascade in the v1 schema). */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `templates` (" +
+                "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `accountId` TEXT NOT NULL, " +
+                "`categoryId` TEXT NOT NULL, `labelId` TEXT NOT NULL, `payee` TEXT, `place` TEXT, " +
+                "`createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`), " +
+                "FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, " +
+                "FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, " +
+                "FOREIGN KEY(`labelId`) REFERENCES `labels`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_templates_accountId` ON `templates` (`accountId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_templates_categoryId` ON `templates` (`categoryId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_templates_labelId` ON `templates` (`labelId`)")
+    }
+}

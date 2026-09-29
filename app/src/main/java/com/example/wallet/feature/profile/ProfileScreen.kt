@@ -37,6 +37,7 @@ fun ProfileScreen(
     onBack: () -> Unit,
     onManageCategories: () -> Unit,
     onManageLabels: () -> Unit,
+    onManageTemplates: () -> Unit,
     onImportExport: () -> Unit,
     onAutomationSettings: () -> Unit,
     modifier: Modifier = Modifier,
@@ -127,6 +128,11 @@ fun ProfileScreen(
             SecondaryButton(
                 text = "Manage labels",
                 onClick = onManageLabels,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
+            SecondaryButton(
+                text = "Manage templates",
+                onClick = onManageTemplates,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
             SecondaryButton(

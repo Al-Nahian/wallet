@@ -17,6 +17,7 @@ import com.example.wallet.data.local.dao.LabelDao
 import com.example.wallet.data.local.dao.MerchantDao
 import com.example.wallet.data.local.dao.NotificationDao
 import com.example.wallet.data.local.dao.RecurringTransactionDao
+import com.example.wallet.data.local.dao.TemplateDao
 import com.example.wallet.data.local.dao.TransactionDao
 import com.example.wallet.data.local.dao.TransactionLabelDao
 import com.example.wallet.data.local.dao.TransactionSplitDao
@@ -35,19 +36,21 @@ import com.example.wallet.data.local.entity.MerchantAliasEntity
 import com.example.wallet.data.local.entity.MerchantEntity
 import com.example.wallet.data.local.entity.NotificationEntity
 import com.example.wallet.data.local.entity.RecurringTransactionEntity
+import com.example.wallet.data.local.entity.TemplateEntity
 import com.example.wallet.data.local.entity.TransactionEntity
 import com.example.wallet.data.local.entity.TransactionLabelEntity
 import com.example.wallet.data.local.entity.TransactionSplitEntity
 import com.example.wallet.data.local.entity.UserEntity
 
 /**
- * v6 (plan.md §11-§19, §84, §86, §87). `notifications` and `users` arrived in migration v1 -> v2
+ * v7 (plan.md §11-§19, §84, §86, §87). `notifications` and `users` arrived in migration v1 -> v2
  * (Phase 4); `transactions.transferId` arrived in migration v2 -> v3 (Phase 6, §22);
  * `recurring_transactions.autoPost` and `transactions.recurringTransactionId` arrived in
  * migration v3 -> v4 (Phase 11, plans/11-recurring-goals.md); `transactions.source`/
  * `transactions.sourceReference` and `automation_candidates` arrived in migration v4 -> v5
  * (Phase 14, plans/14-sms-notification-automation.md); `transactions.place` arrived in migration
- * v5 -> v6 (the redesigned transaction form's "Place" field) — see Migrations.kt.
+ * v5 -> v6 (the redesigned transaction form's "Place" field); `templates` arrived in migration
+ * v6 -> v7 (the transaction form's fixed account/label/payee/place shortcut) — see Migrations.kt.
  * `exportSchema = true` remains on: every future change goes through a real migration (see
  * androidTest/.../AppDatabaseMigrationTest.kt for the harness).
  *
@@ -75,8 +78,9 @@ import com.example.wallet.data.local.entity.UserEntity
         NotificationEntity::class,
         UserEntity::class,
         AutomationCandidateEntity::class,
+        TemplateEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -98,4 +102,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun notificationDao(): NotificationDao
     abstract fun userDao(): UserDao
     abstract fun automationCandidateDao(): AutomationCandidateDao
+    abstract fun templateDao(): TemplateDao
 }

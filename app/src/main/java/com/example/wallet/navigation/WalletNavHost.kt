@@ -8,6 +8,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,8 +19,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
@@ -29,8 +35,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.example.wallet.core.design.components.TemplateFabAction
+import com.example.wallet.core.design.components.TemplateFabMenu
+import com.example.wallet.core.design.components.TemplateShortcutPickerDialog
 import com.example.wallet.core.design.components.WalletBottomNavigation
 import com.example.wallet.core.design.components.WalletScaffold
 import com.example.wallet.core.design.components.WalletTopBar
@@ -53,6 +63,9 @@ import com.example.wallet.feature.importexport.ImportExportRoutes
 import com.example.wallet.feature.importexport.ImportExportScreen
 import com.example.wallet.feature.importexport.ImportWizardScreen
 import com.example.wallet.feature.labels.LabelRoutes
+import com.example.wallet.feature.templates.TemplateRoutes
+import com.example.wallet.feature.templates.TemplateShortcutsViewModel
+import com.example.wallet.feature.templates.TemplatesScreen
 import com.example.wallet.feature.labels.LabelsScreen
 import com.example.wallet.feature.notifications.NotificationBadgeViewModel
 import com.example.wallet.feature.notifications.NotificationCenterScreen
@@ -139,10 +152,43 @@ fun WalletNavHost() {
         },
     ) {
         composable(WalletDestination.Home.route) {
+            // Home-only: tapping the FAB with saved templates fans out a tiny two-icon liquid
+            // speed-dial (github.com/jurajkusnier/fluid-bottom-navigation's gooey-blob
+            // technique) — "Add New Transaction" and "Select Template" — instead of navigating
+            // straight to a blank form. With no templates saved yet there's nothing to pick from,
+            // so the FAB keeps its old direct-navigate behavior.
+            val templateShortcutsViewModel: TemplateShortcutsViewModel = hiltViewModel()
+            val shortcutTemplates by templateShortcutsViewModel.templates.collectAsStateWithLifecycle()
+            var isFabMenuExpanded by remember { mutableStateOf(false) }
+            var showTemplatePicker by remember { mutableStateOf(false) }
+
             TopLevelScaffold(
                 navController = navController,
                 currentRoute = WalletDestination.Home.route,
-                fabOnClick = { navController.navigate(TransactionRoutes.CREATE) },
+                fabOnClick = {
+                    if (shortcutTemplates.isEmpty()) {
+                        navController.navigate(TransactionRoutes.CREATE)
+                    } else {
+                        isFabMenuExpanded = !isFabMenuExpanded
+                    }
+                },
+                fabMenuExpanded = isFabMenuExpanded,
+                onDismissFabMenu = { isFabMenuExpanded = false },
+                fabMenu = { fabSize, liquidBackdrop ->
+                    TemplateFabMenu(
+                        expanded = isFabMenuExpanded,
+                        fabSize = fabSize,
+                        liquidFabBackdrop = liquidBackdrop,
+                        onAction = { action ->
+                            isFabMenuExpanded = false
+                            when (action) {
+                                TemplateFabAction.ADD_NEW_TRANSACTION -> navController.navigate(TransactionRoutes.CREATE)
+                                TemplateFabAction.SELECT_TEMPLATE -> showTemplatePicker = true
+                                TemplateFabAction.ADD_ACCOUNT -> navController.navigate(AccountRoutes.CREATE)
+                            }
+                        },
+                    )
+                },
             ) {
                 DashboardScreen(
                     onTransactionClick = { id -> navController.navigate(TransactionRoutes.edit(id)) },
@@ -155,6 +201,17 @@ fun WalletNavHost() {
                     },
                     onManageBudgets = { navController.navigate(BudgetRoutes.LIST) },
                     onManageRecurring = { navController.navigate(RecurringRoutes.LIST) },
+                )
+            }
+
+            if (showTemplatePicker) {
+                TemplateShortcutPickerDialog(
+                    templates = shortcutTemplates,
+                    onSelected = { templateId ->
+                        showTemplatePicker = false
+                        navController.navigate(TransactionRoutes.createFromTemplate(templateId))
+                    },
+                    onDismiss = { showTemplatePicker = false },
                 )
             }
         }
@@ -282,7 +339,16 @@ fun WalletNavHost() {
 
         // Transaction sub-screens: same pattern as the account ones above. Expense/Income/
         // Transfer are one merged form (TransactionFormScreen) — no separate transfer route.
-        composable(TransactionRoutes.CREATE) {
+        composable(
+            route = TransactionRoutes.CREATE_PATTERN,
+            arguments = listOf(
+                navArgument(TransactionRoutes.TEMPLATE_ID_ARG) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+            ),
+        ) {
             TransactionFormScreen(
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
@@ -305,6 +371,7 @@ fun WalletNavHost() {
                 onBack = { navController.popBackStack() },
                 onManageCategories = { navController.navigate(CategoryRoutes.LIST) },
                 onManageLabels = { navController.navigate(LabelRoutes.LIST) },
+                onManageTemplates = { navController.navigate(TemplateRoutes.LIST) },
                 onImportExport = { navController.navigate(ImportExportRoutes.ENTRY) },
                 onAutomationSettings = { navController.navigate(AutomationRoutes.SETTINGS) },
             )
@@ -341,6 +408,9 @@ fun WalletNavHost() {
         composable(LabelRoutes.LIST) {
             LabelsScreen(onBack = { navController.popBackStack() })
         }
+        composable(TemplateRoutes.LIST) {
+            TemplatesScreen(onBack = { navController.popBackStack() })
+        }
         composable(NotificationRoutes.NOTIFICATION_CENTER) {
             NotificationCenterScreen(
                 onBack = { navController.popBackStack() },
@@ -356,6 +426,9 @@ private fun TopLevelScaffold(
     navController: NavHostController,
     currentRoute: String,
     fabOnClick: () -> Unit,
+    fabMenuExpanded: Boolean = false,
+    onDismissFabMenu: () -> Unit = {},
+    fabMenu: (@Composable (fabSize: Dp, liquidFabBackdrop: LayerBackdrop?) -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val badgeViewModel: NotificationBadgeViewModel = hiltViewModel()
@@ -404,6 +477,19 @@ private fun TopLevelScaffold(
                 }
             }
         }
+        // Tapping anywhere outside the fanned-out template menu closes it — sits above the
+        // page content but below the nav bar/FAB/menu itself in z-order, so those stay tappable.
+        if (fabMenuExpanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDismissFabMenu,
+                    ),
+            )
+        }
         // The nav bar overlays the content rather than sitting in the Scaffold's bottomBar
         // slot: a reserved slot would leave an opaque page-background strip behind the
         // floating pill, so nothing would show through its glass. Kept outside the capture
@@ -429,7 +515,9 @@ private fun TopLevelScaffold(
             } else {
                 "Add transaction"
             },
+            fabExpanded = fabMenuExpanded,
             liquidFabBackdrop = liquidFabBackdrop,
+            fabMenu = fabMenu,
             modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding(),
         )
     }

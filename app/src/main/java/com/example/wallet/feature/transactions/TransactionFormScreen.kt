@@ -47,11 +47,13 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Remove
@@ -98,6 +100,8 @@ import com.example.wallet.core.common.formatMoney
 import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.components.AmountKeypad
 import com.example.wallet.core.design.components.CategoryPickerDialog
+import com.example.wallet.core.design.components.categoryIcon
+import com.example.wallet.core.design.components.ConfirmationDialog
 import com.example.wallet.core.design.components.GlassIconBubble
 import com.example.wallet.core.design.components.formatAmountEntryForDisplay
 import com.example.wallet.core.design.components.GlassScreenTopBar
@@ -116,9 +120,11 @@ import com.example.wallet.core.design.components.GlassTimePickerDialog
 import com.example.wallet.domain.model.Category
 import com.example.wallet.domain.model.CategoryGroup
 import com.example.wallet.domain.model.Label
+import com.example.wallet.domain.model.Template
 import com.example.wallet.domain.model.TransactionType
 import com.example.wallet.feature.accounts.icon
 import com.example.wallet.feature.labels.LabelFormDialog
+import com.example.wallet.feature.templates.TemplateFormDialog
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -312,6 +318,23 @@ private fun MainPage(
                     )
                 }
             }
+
+            GlassTemplateRow(
+                tint = WalletTheme.extendedColors.warning,
+                templates = uiState.templates,
+                accountOptions = uiState.accountOptions,
+                categoryOptions = uiState.categories,
+                labelOptions = uiState.labelOptions,
+                currentAccountId = uiState.accountId,
+                currentCategoryId = uiState.categoryId,
+                currentLabelIds = uiState.selectedLabelIds,
+                currentPayee = uiState.payee,
+                currentPlace = uiState.place,
+                onApplyTemplate = viewModel::applyTemplate,
+                onCreateTemplate = viewModel::createTemplate,
+                onUpdateTemplate = viewModel::updateTemplate,
+                onDeleteTemplate = viewModel::deleteTemplate,
+            )
 
             if (uiState.errorMessage != null) {
                 Text(
@@ -616,7 +639,7 @@ private fun AmountGlassCard(
         Box(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
         ) {
-            Column(modifier = Modifier.fillMaxWidth().heightIn(min = 188.dp).padding(end = 52.dp)) {
+            Column(modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp).padding(end = 52.dp)) {
                 // No icon for a transfer — it isn't a "+" or "-" against the account it's shown
                 // on, so neither arithmetic sign would be accurate.
                 if (icon != null) {
@@ -760,6 +783,7 @@ private fun AccountPickerDialog(
     val extended = WalletTheme.extendedColors
     // Cycles blue → purple → green like the reference's per-account bubbles.
     val bubbleTints = listOf(extended.transfer, extended.accent, extended.income)
+    val isDark = isSystemInDarkTheme()
 
     Dialog(onDismissRequest = onDismiss) {
         // Blue-tinted liquid glass (select-account-reference) rather than the neutral GlassSheet:
@@ -816,13 +840,13 @@ private fun AccountPickerDialog(
                                             text = option.name,
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = Color.White,
+                                            color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface,
                                             maxLines = 1,
                                         )
                                         Text(
                                             text = formatMoney(option.balanceMinor, option.currency),
                                             fontSize = 13.sp,
-                                            color = Color.White.copy(alpha = 0.75f),
+                                            color = if (isDark) Color.White.copy(alpha = 0.75f) else MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1,
                                         )
                                     }
@@ -831,10 +855,15 @@ private fun AccountPickerDialog(
                                             modifier = Modifier
                                                 .size(28.dp)
                                                 .clip(CircleShape)
-                                                .background(Color.White.copy(alpha = 0.25f)),
+                                                .background(if (isDark) Color.White.copy(alpha = 0.25f) else Color.Black.copy(alpha = 0.12f)),
                                             contentAlignment = Alignment.Center,
                                         ) {
-                                            Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                            Icon(
+                                                Icons.Filled.Check,
+                                                contentDescription = null,
+                                                tint = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface,
+                                                modifier = Modifier.size(16.dp),
+                                            )
                                         }
                                     }
                                 }
@@ -884,7 +913,8 @@ private fun GlassCategoryPickerCard(
     modifier: Modifier = Modifier,
 ) {
     var showPicker by remember { mutableStateOf(false) }
-    val selectedLabel = categories.firstOrNull { it.id == selectedCategoryId }?.name ?: "Uncategorized"
+    val selectedCategory = categories.firstOrNull { it.id == selectedCategoryId }
+    val selectedLabel = selectedCategory?.name ?: "Uncategorized"
     // Reference light design: tag glyph (not the geometric mark), purple value text and a
     // trailing chevron on the pastel tile. Dark mode keeps its confirmed treatment untouched.
     val isDark = isSystemInDarkTheme()
@@ -899,7 +929,8 @@ private fun GlassCategoryPickerCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             GlassIconBubble(
-                icon = if (isDark) Icons.Filled.Category else Icons.Filled.Sell,
+                icon = selectedCategory?.let { categoryIcon(it.name) }
+                    ?: if (isDark) Icons.Filled.Category else Icons.Filled.Sell,
                 tint = tint,
                 size = 32.dp,
             )
@@ -934,11 +965,258 @@ private fun GlassCategoryPickerCard(
         CategoryPickerDialog(
             groups = groups,
             categories = categories,
+            selectedCategoryId = selectedCategoryId,
             onSelected = { id ->
                 onSelected(id)
                 showPicker = false
             },
             onDismiss = { showPicker = false },
+        )
+    }
+}
+
+/** A saved fixed-account/category/label/payee/place shortcut, applied in one tap — new templates
+ * can be added, and existing ones edited or deleted, all from this same card's picker dialog
+ * without leaving the form (plan requirement: manageable from both Profile > Manage templates and
+ * here). */
+@Composable
+private fun GlassTemplateRow(
+    tint: Color,
+    templates: List<Template>,
+    accountOptions: List<AccountPickerOption>,
+    categoryOptions: List<Category>,
+    labelOptions: List<Label>,
+    currentAccountId: String?,
+    currentCategoryId: String?,
+    currentLabelIds: Set<String>,
+    currentPayee: String,
+    currentPlace: String,
+    onApplyTemplate: (String) -> Unit,
+    onCreateTemplate: (name: String, accountId: String?, categoryId: String?, labelId: String?, payee: String?, place: String?) -> Unit,
+    onUpdateTemplate: (
+        id: String,
+        name: String,
+        accountId: String?,
+        categoryId: String?,
+        labelId: String?,
+        payee: String?,
+        place: String?,
+    ) -> Unit,
+    onDeleteTemplate: (String) -> Unit,
+) {
+    var showPicker by remember { mutableStateOf(false) }
+    var showCreateDialog by remember { mutableStateOf(false) }
+    var editingTemplate by remember { mutableStateOf<Template?>(null) }
+    var pendingDeleteTemplate by remember { mutableStateOf<Template?>(null) }
+    val accountPairs = remember(accountOptions) { accountOptions.map { it.id to it.name } }
+    val categoryPairs = remember(categoryOptions) { categoryOptions.map { it.id to it.name } }
+    val labelPairs = remember(labelOptions) { labelOptions.map { it.id to it.name } }
+    val accountNamesById = remember(accountPairs) { accountPairs.toMap() }
+    val categoryNamesById = remember(categoryPairs) { categoryPairs.toMap() }
+    val labelNamesById = remember(labelPairs) { labelPairs.toMap() }
+    val isDark = isSystemInDarkTheme()
+
+    LiquidGlassCard(
+        tint = tint,
+        modifier = Modifier.fillMaxWidth(),
+        lightweight = true,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable { showPicker = true }.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassIconBubble(icon = Icons.Filled.Bookmark, tint = tint, size = 32.dp)
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "Template", fontSize = 11.sp, color = tint)
+                Text(
+                    text = "Apply or save a template",
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+    }
+
+    if (showPicker) {
+        Dialog(onDismissRequest = { showPicker = false }) {
+            // Same tinted liquid-glass popup as AccountPickerDialog/CategoryPickerDialog: a
+            // genuine page blur behind a tinted glass panel, icon-bubble rows, and an "Add" row
+            // instead of a separate FAB, so the three pickers read as one component family.
+            GlassWindowBlur()
+            LiquidGlassCard(
+                tint = tint,
+                modifier = Modifier.fillMaxWidth().heightIn(max = 560.dp),
+                shape = GlassShapes.large,
+                cornerRadius = GlassTokens.cornerLarge,
+            ) {
+                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                    ) {
+                        GlassIconBubble(icon = Icons.Filled.Bookmark, tint = tint, size = 32.dp)
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text = "Templates",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(onClick = { showPicker = false }) {
+                            Icon(
+                                Icons.Filled.Close,
+                                contentDescription = "Close",
+                                tint = if (isDark) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    if (templates.isEmpty()) {
+                        Text(
+                            text = "No templates yet — add one below.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (isDark) Color.White.copy(alpha = 0.75f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                        )
+                    } else {
+                        LazyColumn {
+                            itemsIndexed(templates, key = { _, template -> template.id }) { _, template ->
+                                val subtitle = listOfNotNull(
+                                    accountNamesById[template.accountId],
+                                    categoryNamesById[template.categoryId],
+                                    labelNamesById[template.labelId],
+                                ).joinToString(" · ")
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onApplyTemplate(template.id)
+                                            showPicker = false
+                                        }
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                ) {
+                                    GlassIconBubble(icon = Icons.Filled.Bookmark, tint = tint, size = 40.dp)
+                                    Spacer(Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = template.name,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                        Text(
+                                            text = subtitle,
+                                            fontSize = 13.sp,
+                                            color = if (isDark) Color.White.copy(alpha = 0.75f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                    IconButton(onClick = { editingTemplate = template }) {
+                                        Icon(
+                                            Icons.Filled.Edit,
+                                            contentDescription = "Edit ${template.name}",
+                                            tint = if (isDark) Color.White.copy(alpha = 0.85f) else tint,
+                                        )
+                                    }
+                                    IconButton(onClick = { pendingDeleteTemplate = template }) {
+                                        Icon(
+                                            Icons.Filled.Delete,
+                                            contentDescription = "Delete ${template.name}",
+                                            tint = if (isDark) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showCreateDialog = true }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                    ) {
+                        Icon(
+                            Icons.Filled.Add,
+                            contentDescription = null,
+                            tint = if (isDark) Color.White else tint,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "Add template",
+                            color = if (isDark) Color.White else tint,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    if (showCreateDialog) {
+        TemplateFormDialog(
+            title = "New template",
+            accountOptions = accountPairs,
+            categoryOptions = categoryPairs,
+            labelOptions = labelPairs,
+            initialAccountId = currentAccountId,
+            initialCategoryId = currentCategoryId,
+            initialLabelId = currentLabelIds.firstOrNull(),
+            initialPayee = currentPayee,
+            initialPlace = currentPlace,
+            onConfirm = { name, accountId, categoryId, labelId, payee, place ->
+                onCreateTemplate(name, accountId, categoryId, labelId, payee, place)
+                showCreateDialog = false
+            },
+            onDismiss = { showCreateDialog = false },
+        )
+    }
+
+    val templateToEdit = editingTemplate
+    if (templateToEdit != null) {
+        TemplateFormDialog(
+            title = "Edit template",
+            accountOptions = accountPairs,
+            categoryOptions = categoryPairs,
+            labelOptions = labelPairs,
+            initialName = templateToEdit.name,
+            initialAccountId = templateToEdit.accountId,
+            initialCategoryId = templateToEdit.categoryId,
+            initialLabelId = templateToEdit.labelId,
+            initialPayee = templateToEdit.payee.orEmpty(),
+            initialPlace = templateToEdit.place.orEmpty(),
+            onConfirm = { name, accountId, categoryId, labelId, payee, place ->
+                onUpdateTemplate(templateToEdit.id, name, accountId, categoryId, labelId, payee, place)
+                editingTemplate = null
+            },
+            onDismiss = { editingTemplate = null },
+        )
+    }
+
+    val templateToDelete = pendingDeleteTemplate
+    if (templateToDelete != null) {
+        ConfirmationDialog(
+            title = "Delete this template?",
+            message = "\"${templateToDelete.name}\" will no longer be available when adding a transaction.",
+            confirmLabel = "Delete",
+            onConfirm = {
+                onDeleteTemplate(templateToDelete.id)
+                pendingDeleteTemplate = null
+            },
+            onDismiss = { pendingDeleteTemplate = null },
         )
     }
 }
