@@ -2,6 +2,7 @@ package com.example.wallet.core.design.components
 
 import android.os.Build
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
@@ -95,8 +96,9 @@ fun WalletBottomNavigation(
     fabOnClick: () -> Unit,
     fabContentDescription: String,
     modifier: Modifier = Modifier,
-    // Rotates the FAB's own "+" into an "×" while the menu is open — the fill itself always
-    // keeps its normal idle look (no drain/fade), matching every fanned-out circle.
+    // Drives the FAB's own "color drain" — its fill fades toward hollow glass and its "+"
+    // rotates into an "×" in lockstep with fabMenu's expansion, as if the color were flowing out
+    // of the FAB and into the fanned-out blobs.
     fabExpanded: Boolean = false,
     liquidFabBackdrop: LayerBackdrop? = null,
     // Rendered above the FAB, given its exact size (and this same liquidFabBackdrop, so its own
@@ -283,8 +285,20 @@ private fun CenterFabItem(
     // The "+" rotates 45° into an "×" — cheaper and smoother than crossfading two icons.
     val iconRotation by animateFloatAsState(
         targetValue = if (expanded) 45f else 0f,
-        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
         label = "fabIconRotation",
+    )
+    // 0f = full color, 1f = drained/hollow — same duration/easing as TemplateFabMenu's own
+    // `progress`, driven from the same `expanded` boolean flipping on the same frame, so the
+    // FAB's own drain and the goo blobs' fan-out stay in lockstep without sharing one animation
+    // value across two composables. Unlike the goo anchor blob (which can't fade smoothly — see
+    // TemplateFabMenu's own comment on why it shrinks instead of fading), this alpha animates
+    // perfectly fine: it's an ordinary composable draw, never passed through the blur/threshold
+    // RenderEffect that flattens any partial alpha to fully opaque.
+    val drainProgress by animateFloatAsState(
+        targetValue = if (expanded) 1f else 0f,
+        animationSpec = tween(durationMillis = 420, easing = LinearEasing),
+        label = "fabDrainProgress",
     )
 
     if (liquidFabBackdrop != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -304,10 +318,15 @@ private fun CenterFabItem(
                     // A crisp, near-opaque white ring rather than a soft highlight — the reference
                     // design's FAB reads as having a distinct white border, not just a glow.
                     highlight = { Highlight(width = 3.dp, alpha = 1f, style = HighlightStyle.Default(intensity = 1f)) },
-                    shadow = { Shadow(radius = 16.dp, color = tint.copy(alpha = 0.55f)) },
+                    shadow = { Shadow(radius = 16.dp, color = tint.copy(alpha = 0.55f * (1f - drainProgress))) },
                     onDrawSurface = {
-                        drawRect(tint, blendMode = BlendMode.Hue)
-                        drawRect(tint.copy(alpha = 0.75f))
+                        // The fill drains away as the menu expands, as if its color were being
+                        // pulled out into the fanned-out blobs — restored on collapse. Safe to
+                        // animate here (unlike the goo anchor): this is a plain draw, not routed
+                        // through the RenderEffect blur/threshold that can't do partial alpha.
+                        val surfaceAlpha = 1f - drainProgress
+                        drawRect(tint.copy(alpha = surfaceAlpha), blendMode = BlendMode.Hue)
+                        drawRect(tint.copy(alpha = 0.75f * surfaceAlpha))
                     },
                 )
                 .clickable(
@@ -343,8 +362,8 @@ private fun CenterFabItem(
                 },
             style = GlassStyle.Vivid,
             shape = CircleShape,
-            tint = tint,
-            glow = true,
+            tint = tint.copy(alpha = 1f - drainProgress),
+            glow = drainProgress < 0.5f,
             interaction = GlassInteraction.Pressable,
             interactionSource = interactionSource,
             elevation = 12.dp,

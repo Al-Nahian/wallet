@@ -112,13 +112,13 @@ private val fabMenuSlots = listOf(
  * translucent smudges. */
 @RequiresApi(Build.VERSION_CODES.S)
 private fun gooRenderEffect(): RenderEffect {
-    // DECAL (not MIRROR): the blob box is a tight fit around the FAB + two circles, so a blob
+    // DECAL (not MIRROR): the blob box is a tight fit around the FAB + circles, so a blob
     // sitting flush against the box's own edge is common (the anchor circle is bottom-aligned
     // exactly at the FAB). MIRROR reflects that edge-touching shape back into the layer, which
     // reads as the goo "spreading" far outside its circles (into the nav bar below); DECAL pads
     // with transparent instead, so the effect never produces content beyond what was actually
-    // drawn.
-    val blur = RenderEffect.createBlurEffect(36f, 36f, Shader.TileMode.DECAL)
+    // drawn — this made it safe to push the radius back up without reintroducing that bug.
+    val blur = RenderEffect.createBlurEffect(52f, 52f, Shader.TileMode.DECAL)
     val threshold = RenderEffect.createColorFilterEffect(
         ColorMatrixColorFilter(
             ColorMatrix(
@@ -172,7 +172,7 @@ fun TemplateFabMenu(
 ) {
     val progress by animateFloatAsState(
         targetValue = if (expanded) 1f else 0f,
-        animationSpec = tween(durationMillis = 650, easing = LinearEasing),
+        animationSpec = tween(durationMillis = 420, easing = LinearEasing),
         label = "templateFabMenuProgress",
     )
     // Nothing to draw once fully collapsed — avoids paying for the blur graphicsLayer at rest.
@@ -234,16 +234,28 @@ fun TemplateFabMenu(
                 contentAlignment = Alignment.BottomCenter,
             ) {
                 // Anchors the goo to the FAB itself — without this, blobs appear to spawn out of
-                // thin air instead of pinching off the button that opened them. Always full
-                // opacity, same as the FAB and every circle: this whole effect went through an
-                // earlier version that faded this anchor's alpha out as the blobs separated, but
-                // the goo threshold ColorMatrix (see gooRenderEffect) snaps every alpha above its
-                // cutoff to fully OPAQUE — there's no such thing as a "40% faded" shape inside
-                // this render effect, so that fade only ever produced an abrupt solid-to-gone
-                // flip, not a smooth cross-fade, and looked like a flash of solid color instead
-                // of a drain. Once the blobs move far enough apart the anchor is simply hidden
-                // behind the real FAB drawn on top of it (same position, same fixed look).
-                Box(Modifier.size(fabSize).clip(CircleShape).background(tint))
+                // thin air instead of pinching off the button that opened them. Stays large
+                // through most of the motion (shrinking away only in the last ~15%) so the
+                // blurred "neck" bridging it to each traveling circle stays visible for the
+                // whole fan-out — the actual liquid-looking part of this effect — rather than
+                // vanishing early and leaving three separate circles animating with no goo
+                // between them. Shrinks via SCALE, not alpha: an earlier version faded this
+                // anchor's alpha out instead, but the goo threshold ColorMatrix (see
+                // gooRenderEffect) snaps every alpha above its cutoff to fully OPAQUE — there's
+                // no such thing as a "40% faded" shape inside this render effect, so that fade
+                // only ever produced an abrupt solid-to-gone flip, flashing solid color instead
+                // of draining. A shrinking circle has no such cliff: a smaller pre-blur shape
+                // blurs to a smaller (still smooth) result. Timed to finish shrinking around
+                // when CenterFabItem's own drainProgress empties the real FAB, so nothing opaque
+                // is left sitting behind it once the FAB itself goes hollow.
+                val anchorScale = 1f - LinearEasing.transform(0.55f, 0.95f, progress)
+                Box(
+                    Modifier
+                        .size(fabSize)
+                        .scale(anchorScale)
+                        .clip(CircleShape)
+                        .background(tint),
+                )
                 slotMotion.forEach { motion ->
                     Box(
                         Modifier
