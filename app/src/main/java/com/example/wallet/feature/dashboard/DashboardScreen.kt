@@ -58,10 +58,11 @@ import com.example.wallet.core.design.components.LiquidGlassCard
 import com.example.wallet.core.design.components.StatCard
 import com.example.wallet.core.design.components.TransactionRow
 import com.example.wallet.core.design.components.WalletBottomNavSpace
-import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassShapes
+import com.example.wallet.core.design.glass.liquidGlassContentColor
 import com.example.wallet.domain.model.TransactionType
 import com.example.wallet.feature.accounts.icon
+import com.example.wallet.feature.recurring.RecurringPaymentColor
 import com.example.wallet.feature.recurring.RecurringTransactionUi
 import com.example.wallet.feature.recurring.label
 import java.util.Locale
@@ -361,11 +362,12 @@ private fun UpcomingRecurringRow(item: RecurringTransactionUi, onClick: () -> Un
     val sign = if (item.type == TransactionType.INCOME) "+" else "-"
     val title = item.payee ?: item.categoryName ?: "Recurring payment"
 
+    val contentColor = liquidGlassContentColor(RecurringPaymentColor)
     LiquidGlassCard(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = GlassShapes.small,
         cornerRadius = 14.dp,
-        tint = GlassColors.neutralGlassTint(WalletTheme.extendedColors.transfer),
+        tint = RecurringPaymentColor,
         lightweight = true,
     ) {
         ListItem(
@@ -373,12 +375,16 @@ private fun UpcomingRecurringRow(item: RecurringTransactionUi, onClick: () -> Un
                 Icon(
                     imageVector = if (item.autoPost) Icons.Filled.Autorenew else Icons.Filled.NotificationsActive,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = contentColor,
                 )
             },
-            headlineContent = { Text(title, fontSize = 15.sp) },
+            headlineContent = { Text(title, fontSize = 15.sp, color = contentColor) },
             supportingContent = {
-                Text("${item.frequency.label()} · Next: ${dateGroupLabel(item.nextDate)}", fontSize = 12.sp)
+                Text(
+                    "${item.frequency.label()} · Next: ${dateGroupLabel(item.nextDate)}",
+                    fontSize = 12.sp,
+                    color = contentColor.copy(alpha = 0.75f),
+                )
             },
             trailingContent = {
                 Text(

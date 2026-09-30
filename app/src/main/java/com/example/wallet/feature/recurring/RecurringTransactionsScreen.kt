@@ -22,7 +22,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.MaterialTheme
 import com.example.wallet.core.design.components.GlassScreenScaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,9 +44,15 @@ import com.example.wallet.core.design.components.ConfirmationDialog
 import com.example.wallet.core.design.components.EmptyState
 import com.example.wallet.core.design.components.GlassScreenTopBar
 import com.example.wallet.core.design.components.LiquidGlassCard
-import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassShapes
+import com.example.wallet.core.design.glass.liquidGlassContentColor
 import com.example.wallet.domain.model.TransactionType
+
+/** A distinct sky blue rather than the previous generic neutral gray — recurring payments should
+ * read as their own category of card at a glance, not blend in with the plain transfer tint every
+ * other neutral list row uses. Also used by [com.example.wallet.feature.dashboard.DashboardScreen]'s
+ * own "Upcoming Recurring Payments" preview row, so the two match. */
+val RecurringPaymentColor = Color(0xFF38BDF8)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -142,11 +147,12 @@ private fun RecurringTransactionRow(item: RecurringTransactionUi, onClick: () ->
         if (!item.autoPost) "Reminder only" else null,
     )
 
+    val contentColor = liquidGlassContentColor(RecurringPaymentColor)
     LiquidGlassCard(
         modifier = Modifier.fillMaxWidth(),
         shape = GlassShapes.small,
         cornerRadius = 14.dp,
-        tint = GlassColors.neutralGlassTint(WalletTheme.extendedColors.transfer),
+        tint = RecurringPaymentColor,
         lightweight = true,
     ) {
         ListItem(
@@ -155,11 +161,11 @@ private fun RecurringTransactionRow(item: RecurringTransactionUi, onClick: () ->
                 Icon(
                     imageVector = if (item.autoPost) Icons.Filled.Autorenew else Icons.Filled.NotificationsActive,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = contentColor,
                 )
             },
-            headlineContent = { Text(title, fontSize = 15.sp) },
-            supportingContent = { Text(subtitleParts.joinToString(" · "), fontSize = 12.sp) },
+            headlineContent = { Text(title, fontSize = 15.sp, color = contentColor) },
+            supportingContent = { Text(subtitleParts.joinToString(" · "), fontSize = 12.sp, color = contentColor.copy(alpha = 0.75f)) },
             trailingContent = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -172,7 +178,7 @@ private fun RecurringTransactionRow(item: RecurringTransactionUi, onClick: () ->
                         Icon(
                             Icons.Filled.Delete,
                             contentDescription = "Delete $title",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = contentColor,
                         )
                     }
                 }
