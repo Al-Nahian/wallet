@@ -26,12 +26,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.common.formatMoney
-import com.example.wallet.core.design.WalletTheme
+import com.example.wallet.core.design.accountAccentColor
 import com.example.wallet.core.design.components.EmptyState
 import com.example.wallet.core.design.components.LiquidGlassCard
 import com.example.wallet.core.design.components.WalletBottomNavSpace
-import com.example.wallet.core.design.glass.GlassColors
 import com.example.wallet.core.design.glass.GlassShapes
+import com.example.wallet.core.design.glass.liquidGlassContentColor
 
 @Composable
 fun AccountsScreen(
@@ -70,8 +70,13 @@ fun AccountsScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
+                    val accountIds = state.accounts.map { it.id }
                     items(state.accounts, key = { it.id }) { account ->
-                        AccountRow(account = account, onClick = { onAccountClick(account.id) })
+                        AccountRow(
+                            account = account,
+                            accentColor = accountAccentColor(account.id, accountIds),
+                            onClick = { onAccountClick(account.id) },
+                        )
                     }
                 }
             }
@@ -80,23 +85,25 @@ fun AccountsScreen(
 }
 
 @Composable
-private fun AccountRow(account: AccountUi, onClick: () -> Unit) {
+private fun AccountRow(account: AccountUi, accentColor: Color, onClick: () -> Unit) {
+    val contentColor = liquidGlassContentColor(accentColor)
     LiquidGlassCard(
         modifier = Modifier.fillMaxWidth(),
         shape = GlassShapes.small,
         cornerRadius = 14.dp,
-        tint = GlassColors.neutralGlassTint(WalletTheme.extendedColors.transfer),
+        tint = accentColor,
         lightweight = true,
     ) {
         ListItem(
             modifier = Modifier.clickable(onClick = onClick),
-            leadingContent = { Icon(imageVector = account.type.icon(), contentDescription = null) },
-            headlineContent = { Text(account.name) },
-            supportingContent = { Text(account.type.label()) },
+            leadingContent = { Icon(imageVector = account.type.icon(), contentDescription = null, tint = contentColor) },
+            headlineContent = { Text(account.name, color = contentColor) },
+            supportingContent = { Text(account.type.label(), color = contentColor.copy(alpha = 0.75f)) },
             trailingContent = {
                 Text(
                     text = formatMoney(account.balanceMinor, account.currency),
                     fontSize = 15.sp,
+                    color = contentColor,
                 )
             },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),

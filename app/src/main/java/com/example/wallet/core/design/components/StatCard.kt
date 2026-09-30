@@ -1,5 +1,6 @@
 package com.example.wallet.core.design.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,6 +38,7 @@ fun StatCard(
     contentColor: Color = liquidGlassContentColor(containerColor),
     icon: ImageVector = Icons.Filled.Insights,
     waveVariant: Int? = null,
+    onClick: (() -> Unit)? = null,
 ) {
     LiquidGlassCard(
         modifier = modifier.fillMaxWidth(),
@@ -44,7 +46,10 @@ fun StatCard(
         waveVariant = waveVariant ?: defaultWaveVariant(containerColor),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp).fillMaxWidth(),
+            modifier = Modifier
+                .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+                .padding(horizontal = 12.dp, vertical = 14.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             LiquidIconBubble(icon = icon, tint = containerColor, size = 28.dp)
@@ -67,12 +72,14 @@ fun StatCard(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Icon(
-                imageVector = Icons.Filled.ChevronRight,
-                contentDescription = null,
-                tint = contentColor.copy(alpha = 0.75f),
-                modifier = Modifier.size(16.dp),
-            )
+            if (onClick != null) {
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = null,
+                    tint = contentColor.copy(alpha = 0.75f),
+                    modifier = Modifier.size(16.dp),
+                )
+            }
         }
     }
 }

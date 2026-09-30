@@ -41,6 +41,10 @@ data class AccountDetailState(
     val account: AccountDetailUi? = null,
     val transactions: List<TransactionUi> = emptyList(),
     val errorMessage: String? = null,
+    // Same order the dashboard's accounts grid indexes into (see AccountDao's `type, name`
+    // ordering) — lets the UI compute this account's [accountAccentColor] to match its dashboard
+    // card exactly.
+    val activeAccountIds: List<String> = emptyList(),
 )
 
 /** Intermediate bundle of the first five combined flows — `combine` only has fixed-arity
@@ -103,6 +107,7 @@ class AccountDetailViewModel @Inject constructor(
                     currency = account.currency,
                     balanceMinor = calculateBalance(account),
                 ),
+                activeAccountIds = inputs.allAccounts.filter { !it.isArchived }.map { it.id },
                 transactions = inputs.allTransactions
                     .filter { it.accountId == accountId }
                     .sortedByDescending { it.date }

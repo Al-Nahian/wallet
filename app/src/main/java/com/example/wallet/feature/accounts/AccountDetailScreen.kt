@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.wallet.core.design.accountAccentColor
 import com.example.wallet.core.design.components.BalanceCard
 import com.example.wallet.core.design.components.ConfirmationDialog
 import com.example.wallet.core.design.components.EmptyState
@@ -96,10 +97,13 @@ fun AccountDetailScreen(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
+                        val accentColor = accountAccentColor(account.id, uiState.activeAccountIds)
                         BalanceCard(
                             label = "Balance",
                             amountMinor = account.balanceMinor,
                             currency = account.currency,
+                            containerColor = accentColor,
+                            icon = account.type.icon(),
                         )
 
                         Text(text = account.type.label(), style = MaterialTheme.typography.bodyMedium)

@@ -46,6 +46,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallet.core.common.dateGroupLabel
 import com.example.wallet.core.common.formatMoney
+import com.example.wallet.core.design.AccountAccentPalette
 import com.example.wallet.core.design.WalletTheme
 import com.example.wallet.core.design.components.AccountSummaryCard
 import com.example.wallet.core.design.components.BalanceCard
@@ -65,13 +66,11 @@ import com.example.wallet.feature.recurring.RecurringTransactionUi
 import com.example.wallet.feature.recurring.label
 import java.util.Locale
 
-/** A fixed rotation of accent colors for the accounts row and category breakdown — a UI variety
- * choice, not a category-taxonomy value, so unlike category colors (which always come from the
- * DB, plan.md §69 rule 8) this is fine to define here. */
-private val DashboardAccentPalette = listOf(
-    Color(0xFF42B5E8), Color(0xFF9C6ADE), Color(0xFFFF9F1C), Color(0xFF26A69A),
-    Color(0xFFEC407A), Color(0xFF7CB342),
-)
+/** Used for both the accounts grid and the category breakdown rotation — a UI variety choice, not
+ * a category-taxonomy value, so unlike category colors (which always come from the DB, plan.md
+ * §69 rule 8) this is fine to reuse here. [AccountAccentPalette] is shared with the account detail
+ * screen so an account's card reads the same color in both places. */
+private val DashboardAccentPalette = AccountAccentPalette
 
 /** Fixed (not theme-tinted) card colors for the dashboard's headline metrics, so each card reads
  * clearly against either a light or dark page background — brighter/more saturated than a plain
@@ -91,6 +90,9 @@ fun DashboardScreen(
     onSeeAllTransactions: () -> Unit,
     onManageBudgets: () -> Unit,
     onManageRecurring: () -> Unit,
+    onAccountClick: (String) -> Unit,
+    onSeeAllAccounts: () -> Unit,
+    onOpenReports: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -151,6 +153,7 @@ fun DashboardScreen(
                                             // same row otherwise risk landing on the same wave
                                             // shape by coincidence.
                                             waveVariant = index % 5,
+                                            onClick = { onAccountClick(account.id) },
                                         )
                                     }
                                 }
@@ -167,6 +170,7 @@ fun DashboardScreen(
                         containerColor = TotalBalanceColor,
                         icon = Icons.Filled.AccountBalance,
                         waveVariant = 0,
+                        onClick = onSeeAllAccounts,
                     )
                 }
                 item {
@@ -186,6 +190,7 @@ fun DashboardScreen(
                         containerColor = SavingsColor,
                         icon = Icons.Filled.Savings,
                         waveVariant = 1,
+                        onClick = onOpenReports,
                     )
                 }
                 item {
@@ -197,6 +202,7 @@ fun DashboardScreen(
                             containerColor = SavingsRateColor,
                             icon = Icons.Filled.Percent,
                             waveVariant = 2,
+                            onClick = onOpenReports,
                         )
                         StatCard(
                             label = "Avg. Daily Spend",
@@ -205,6 +211,7 @@ fun DashboardScreen(
                             containerColor = AvgDailySpendColor,
                             icon = Icons.AutoMirrored.Filled.TrendingUp,
                             waveVariant = 3,
+                            onClick = onOpenReports,
                         )
                     }
                 }

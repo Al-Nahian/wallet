@@ -202,6 +202,21 @@ fun WalletNavHost() {
                     },
                     onManageBudgets = { navController.navigate(BudgetRoutes.LIST) },
                     onManageRecurring = { navController.navigate(RecurringRoutes.LIST) },
+                    onAccountClick = { id -> navController.navigate(AccountRoutes.detail(id)) },
+                    onSeeAllAccounts = {
+                        navController.navigate(WalletDestination.Accounts.route) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onOpenReports = {
+                        navController.navigate(WalletDestination.Reports.route) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                 )
             }
 

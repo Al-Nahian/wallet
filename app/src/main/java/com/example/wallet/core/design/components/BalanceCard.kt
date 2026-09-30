@@ -1,5 +1,6 @@
 package com.example.wallet.core.design.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -38,6 +39,7 @@ fun BalanceCard(
     contentColor: Color = liquidGlassContentColor(containerColor),
     icon: ImageVector = Icons.Filled.AccountBalanceWallet,
     waveVariant: Int? = null,
+    onClick: (() -> Unit)? = null,
 ) {
     LiquidGlassCard(
         modifier = modifier.fillMaxWidth(),
@@ -45,7 +47,10 @@ fun BalanceCard(
         waveVariant = waveVariant ?: defaultWaveVariant(containerColor),
     ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             LiquidIconBubble(icon = icon, tint = containerColor, size = 36.dp)
@@ -64,11 +69,15 @@ fun BalanceCard(
                     color = contentColor,
                 )
             }
-            Icon(
-                imageVector = Icons.Filled.ChevronRight,
-                contentDescription = null,
-                tint = contentColor.copy(alpha = 0.75f),
-            )
+            // Only implies a drill-down when there's actually somewhere to drill into — a bare
+            // decorative chevron with no [onClick] misleads users into tapping a dead card.
+            if (onClick != null) {
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = null,
+                    tint = contentColor.copy(alpha = 0.75f),
+                )
+            }
         }
     }
 }

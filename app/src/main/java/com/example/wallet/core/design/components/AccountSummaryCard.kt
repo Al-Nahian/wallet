@@ -1,5 +1,6 @@
 package com.example.wallet.core.design.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,6 +40,7 @@ fun AccountSummaryCard(
     backgroundColor: Color,
     modifier: Modifier = Modifier,
     waveVariant: Int? = null,
+    onClick: (() -> Unit)? = null,
 ) {
     val contentColor = liquidGlassContentColor(backgroundColor)
     LiquidGlassCard(
@@ -48,7 +50,10 @@ fun AccountSummaryCard(
         lightweight = true,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp).fillMaxWidth(),
+            modifier = Modifier
+                .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+                .padding(horizontal = 12.dp, vertical = 14.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             LiquidIconBubble(icon = icon, tint = backgroundColor, size = 28.dp)
@@ -71,12 +76,14 @@ fun AccountSummaryCard(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Icon(
-                imageVector = Icons.Filled.ChevronRight,
-                contentDescription = null,
-                tint = contentColor.copy(alpha = 0.75f),
-                modifier = Modifier.size(16.dp),
-            )
+            if (onClick != null) {
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = null,
+                    tint = contentColor.copy(alpha = 0.75f),
+                    modifier = Modifier.size(16.dp),
+                )
+            }
         }
     }
 }
