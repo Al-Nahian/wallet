@@ -288,16 +288,14 @@ private fun CenterFabItem(
         animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
         label = "fabIconRotation",
     )
-    // A "color drain" on the FAB's own fill (fading it to hollow while the menu is open) was
-    // tried three times here — tied to raw linear drainProgress, then re-eased through the
-    // leftmost blob's own window, then a plain linear rescale of that same window — and every
-    // version eventually left the FAB permanently stuck fully transparent after a collapse, in a
-    // way that resisted diagnosis (even a pure linear, curve-free rescale reproduced it, ruling
-    // out an easing-curve edge case as the sole cause). Given a broken, permanently-hollow FAB is
-    // far worse than a FAB that simply never drains, the fill is now always constant — matching
-    // the FAB's own idle look at all times, same as [FabMenuIcon]'s own material. The blobs'
-    // goo/blur animation and this icon's own rotation below still carry the "something fluid is
-    // happening" read without depending on this fragile alpha path.
+    // Frame-by-frame extraction of the reference's own fluid-ref.mp4 (see references/) shows the
+    // FAB and every fanned-out circle staying fully solid/opaque pink for the entire open and
+    // close motion — there's no fade, hollow, or transparency change anywhere. The "liquid" read
+    // comes entirely from shape: a new circle visibly buds out of the FAB's edge as a swollen
+    // bump joined by a thick neck, the neck thins as it travels outward, then cleanly pinches off
+    // — a metaball melt, not an alpha animation. Several earlier attempts here tried draining the
+    // FAB's own fill to hollow while the menu was open; besides never matching the reference, one
+    // version got stuck permanently transparent after a collapse. The fill is simply constant.
 
     if (liquidFabBackdrop != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         Box(
