@@ -35,9 +35,10 @@ class CheckBudgetAlertsUseCase @Inject constructor(
         val transactions = transactionRepository.observeTransactions().first()
         val splits = transactionSplitRepository.observeAllSplits().first()
         val notifications = notificationRepository.observeAll().first()
+        val budgetCategoriesByBudget = budgetRepository.observeAllBudgetCategories().first().groupBy { it.budgetId }
 
         for (budget in budgets) {
-            val categoryIds = budgetRepository.observeBudgetCategories(budget.id).first().map { it.categoryId }.toSet()
+            val categoryIds = budgetCategoriesByBudget[budget.id].orEmpty().map { it.categoryId }.toSet()
             val usage = calculateBudgetUsage(budget, categoryIds, transactions, splits)
 
             val alreadyNotified = notifications

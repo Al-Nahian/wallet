@@ -11,7 +11,6 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 
 sealed interface BudgetsUiState {
@@ -31,9 +30,11 @@ class BudgetsViewModel @Inject constructor(
         budgetRepository.observeBudgets(),
         transactionRepository.observeTransactions(),
         transactionSplitRepository.observeAllSplits(),
-    ) { budgets, transactions, splits ->
+        budgetRepository.observeAllBudgetCategories(),
+    ) { budgets, transactions, splits, allBudgetCategories ->
+        val budgetCategoriesByBudget = allBudgetCategories.groupBy { it.budgetId }
         val summaries = budgets.map { budget ->
-            val categoryIds = budgetRepository.observeBudgetCategories(budget.id).first().map { it.categoryId }.toSet()
+            val categoryIds = budgetCategoriesByBudget[budget.id].orEmpty().map { it.categoryId }.toSet()
             BudgetSummary(budget, calculateBudgetUsage(budget, categoryIds, transactions, splits))
         }
         BudgetsUiState.Loaded(summaries)

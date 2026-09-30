@@ -26,6 +26,9 @@ interface BudgetDao {
 
 @Dao
 interface BudgetCategoryDao {
+    @Query("SELECT * FROM budget_categories")
+    fun observeAll(): Flow<List<BudgetCategoryEntity>>
+
     @Query("SELECT * FROM budget_categories WHERE budgetId = :budgetId")
     fun observeByBudget(budgetId: String): Flow<List<BudgetCategoryEntity>>
 

@@ -28,6 +28,9 @@ class BudgetRepositoryImpl @Inject constructor(
     override fun observeBudgetCategories(budgetId: String): Flow<List<BudgetCategory>> =
         budgetCategoryDao.observeByBudget(budgetId).map { entities -> entities.map { it.toDomain() } }
 
+    override fun observeAllBudgetCategories(): Flow<List<BudgetCategory>> =
+        budgetCategoryDao.observeAll().map { entities -> entities.map { it.toDomain() } }
+
     override suspend fun create(budget: Budget, categoryLimits: List<BudgetCategory>) {
         appDatabase.withTransaction {
             budgetDao.insert(budget.toEntity())

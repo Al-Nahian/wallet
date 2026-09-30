@@ -31,7 +31,6 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 
 data class AccountBalanceUi(
@@ -109,7 +108,8 @@ class DashboardViewModel @Inject constructor(
     val uiState: StateFlow<DashboardUiState> = combine(
         baseData,
         recurringTransactionRepository.observeActive(),
-    ) { (accounts, transactions, categories, splits, budgets), recurringRules ->
+        budgetRepository.observeAllBudgetCategories(),
+    ) { (accounts, transactions, categories, splits, budgets), recurringRules, allBudgetCategories ->
         val monthStart = startOfCurrentMonthMillis()
         val now = System.currentTimeMillis()
 
@@ -145,10 +145,11 @@ class DashboardViewModel @Inject constructor(
             .take(RECENT_TRANSACTIONS_LIMIT)
             .map { tx -> tx.toTransactionUi(accountsById, categoriesById, splitsByTransaction, transferLegsByTransferId) }
 
+        val budgetCategoriesByBudget = allBudgetCategories.groupBy { it.budgetId }
         val activeBudgets = budgets
             .filter { now in it.startDate..it.endDate }
             .map { budget ->
-                val categoryIds = budgetRepository.observeBudgetCategories(budget.id).first().map { it.categoryId }.toSet()
+                val categoryIds = budgetCategoriesByBudget[budget.id].orEmpty().map { it.categoryId }.toSet()
                 BudgetSummary(budget, calculateBudgetUsage(budget, categoryIds, transactions, splits))
             }
 
