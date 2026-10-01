@@ -1,6 +1,5 @@
 package com.example.wallet.core.design.glass
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -13,13 +12,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
-import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.highlight.HighlightStyle
@@ -64,10 +63,11 @@ private const val FlatBarOpacity = 0.92f
 fun GlassBottomBar(
     modifier: Modifier = Modifier,
     liquidBackdrop: LayerBackdrop? = null,
+    shape: Shape = GlassShapes.large,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val isDark = isSystemInDarkTheme()
-    val hasBlur = liquidBackdrop != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val hasBlur = liquidBackdrop != null && GlassCapabilities.supportsAdvancedBlur()
     val opacity = if (hasBlur) BlurredBarOpacity else FlatBarOpacity
     if (hasBlur) {
         Box(
@@ -75,20 +75,20 @@ fun GlassBottomBar(
                 .fillMaxWidth()
                 .drawBackdrop(
                     backdrop = liquidBackdrop!!,
-                    shape = { GlassShapes.large },
+                    shape = { shape },
                     // Dark: a 28dp blur diffuses whatever's behind the pill into soft,
                     // barely-recognizable color (the reference's frosted pill). Light adds
                     // vibrancy so blurred pastel cards still read as color through the fill
-                    // instead of washing to grey, plus a lens — the backdrop genuinely
-                    // refracts/bulges behind the pill's edges, the signature liquid-glass
-                    // cue (same lens the FAB already uses; it no-ops below API 33).
+                    // instead of washing to grey. No lens() here (unlike the FAB/blob circles):
+                    // it throws UnsupportedOperationException on any shape that isn't a
+                    // CornerBasedShape, and this bar's shape is [NotchedBottomBarShape] — a
+                    // plain Path-based Shape for the FAB's notch — not a rounded rect.
                     effects = {
                         if (isDark) {
                             blur(28.dp.toPx())
                         } else {
                             vibrancy()
                             blur(28.dp.toPx())
-                            lens(12.dp.toPx(), 24.dp.toPx(), depthEffect = true)
                         }
                     },
                     // A faint rim so the pill reads as a distinct floating surface instead of
@@ -114,7 +114,7 @@ fun GlassBottomBar(
         GlassSurface(
             modifier = modifier.fillMaxWidth(),
             style = GlassStyle.Regular,
-            shape = GlassShapes.large,
+            shape = shape,
             fill = (if (isDark) DarkBarColor else LightBarColor).copy(alpha = opacity),
             elevation = 0.dp,
             content = content,

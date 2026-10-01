@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.wallet.core.design.DarkPrimary
+import com.example.wallet.core.design.glass.GlassCapabilities
 import com.example.wallet.core.design.glass.GlassShapes
 import com.example.wallet.core.design.glass.GlassTokens
 import com.example.wallet.core.design.glass.GlassWindowBlur
@@ -141,7 +142,7 @@ private fun Easing.transform(from: Float, to: Float, progress: Float): Float =
     transform(((progress - from) * (1f / (to - from))).coerceIn(0f, 1f))
 
 private val ItemCircleSize = 50.dp
-private val FanRadius = 96.dp
+private val FanRadius = 87.dp
 private val MenuBoxWidth = 300.dp
 private val MenuBoxHeight = 220.dp
 
@@ -182,7 +183,7 @@ fun TemplateFabMenu(
     // feature's usual orange — the fanned-out circles should read as liquid budding off the "+"
     // button itself, not as a differently-colored menu layered on top of it.
     val tint = DarkPrimary
-    val renderEffect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    val renderEffect = if (GlassCapabilities.supportsAdvancedBlur()) {
         remember { gooRenderEffect().asComposeRenderEffect() }
     } else {
         null
@@ -332,7 +333,7 @@ private fun FabMenuIcon(
     onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    if (liquidBackdrop != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    if (liquidBackdrop != null && GlassCapabilities.supportsAdvancedBlur()) {
         Box(
             modifier = Modifier
                 .offset(x = offsetX, y = offsetY)
@@ -346,8 +347,10 @@ private fun FabMenuIcon(
                         backdropBlur(2.dp.toPx())
                         lens(12.dp.toPx(), 24.dp.toPx(), depthEffect = true)
                     },
-                    highlight = { Highlight(width = 3.dp, alpha = borderAlpha, style = HighlightStyle.Default(intensity = 1f)) },
-                    shadow = { BackdropShadow(radius = 16.dp, color = tint.copy(alpha = 0.55f)) },
+                    highlight = { Highlight(width = 1.5.dp, alpha = 0.35f * borderAlpha, style = HighlightStyle.Default(intensity = 0.4f)) },
+                    // Plain soft shadow, not a colored glow — matches CenterFabItem's own (see
+                    // its comment) so every circle looks like a piece of the same calm FAB.
+                    shadow = { BackdropShadow(radius = 10.dp, color = Color.Black.copy(alpha = 0.25f)) },
                     onDrawSurface = {
                         drawRect(tint, blendMode = BlendMode.Hue)
                         drawRect(tint.copy(alpha = 0.75f))
@@ -406,12 +409,16 @@ private fun FabMenuIcon(
  * template, styled like this app's other centered glass pickers (AccountPickerDialog,
  * CategoryPickerDialog) so it reads as the same component family. Picking one hands its id back
  * to the caller, which navigates to Add Transaction pre-filled via
- * `TransactionRoutes.createFromTemplate`. */
+ * `TransactionRoutes.createFromTemplate`. A "Create new template" row always sits above the list
+ * (previously this dialog only let you pick from existing templates, with no way to make a new
+ * one short of backing out and finding a transaction's own Template card first) — [onCreateNew]
+ * is wired to the same `TemplateRoutes.LIST` navigation Profile > Manage templates already uses. */
 @Composable
 fun TemplateShortcutPickerDialog(
     templates: List<Template>,
     categories: List<Category>,
     onSelected: (String) -> Unit,
+    onCreateNew: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val tint = DarkPrimary
@@ -447,9 +454,25 @@ fun TemplateShortcutPickerDialog(
                         )
                     }
                 }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onCreateNew)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                ) {
+                    GlassIconBubble(icon = Icons.Filled.Add, tint = tint, size = 40.dp)
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        text = "Create new template",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface,
+                    )
+                }
                 if (templates.isEmpty()) {
                     Text(
-                        text = "No templates yet — add one from a transaction's Template card first.",
+                        text = "No templates yet — create your first one above.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (isDark) Color.White.copy(alpha = 0.75f) else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),

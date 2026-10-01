@@ -1,6 +1,5 @@
 package com.example.wallet.core.design.components
 
-import android.os.Build
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -50,6 +49,9 @@ import androidx.compose.ui.unit.sp
 import com.example.wallet.core.design.DarkPrimary
 import com.example.wallet.core.design.NavActiveGreen
 import com.example.wallet.core.design.glass.GlassBottomBar
+import com.example.wallet.core.design.glass.GlassCapabilities
+import com.example.wallet.core.design.glass.GlassTokens
+import com.example.wallet.core.design.glass.NotchedBottomBarShape
 import com.example.wallet.core.design.glass.GlassInteraction
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassSurface
@@ -108,11 +110,26 @@ fun WalletBottomNavigation(
 ) {
     val midpoint = items.size / 2
     val fabSize = 60.dp
+    // How far up from the bar's own (unnotched) top edge the FAB's center sits — the reference
+    // image shows the FAB sitting almost entirely INSIDE the pocket, just barely breaking the
+    // flat top edge rather than poking half-out of it, with a visible colored margin below it
+    // before the pocket's own bottom curve. Shared between the FAB's own offset and
+    // overlayAboveFab's math below so they can't drift apart.
+    val fabRiseFraction = 0.35f
+    // The bar's top edge dips into a deep, wide "bucket" pocket under the FAB instead of sitting
+    // flush behind it — see NotchedBottomBarShape's own doc.
+    val notchShape = remember(fabSize) {
+        NotchedBottomBarShape(
+            cornerRadius = GlassTokens.cornerLarge,
+            notchWidth = fabSize * 1.5f,
+            notchDepthFraction = 0.62f,
+        )
+    }
     Box(
         modifier = modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
         contentAlignment = Alignment.TopCenter,
     ) {
-        GlassBottomBar(modifier = Modifier.fillMaxWidth(), liquidBackdrop = liquidFabBackdrop) {
+        GlassBottomBar(modifier = Modifier.fillMaxWidth(), liquidBackdrop = liquidFabBackdrop, shape = notchShape) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -151,7 +168,7 @@ fun WalletBottomNavigation(
         // would flatten/hide the FAB's own look (and its rotating icon) the moment the menu
         // opened. With the FAB on top, its normal idle appearance is never covered by anything.
         if (fabMenu != null) {
-            Box(modifier = Modifier.overlayAboveFab(fabSize)) {
+            Box(modifier = Modifier.overlayAboveFab(fabSize, fabRiseFraction)) {
                 fabMenu(fabSize, liquidFabBackdrop)
             }
         }
@@ -164,7 +181,7 @@ fun WalletBottomNavigation(
             size = fabSize,
             expanded = fabExpanded,
             liquidFabBackdrop = liquidFabBackdrop,
-            modifier = Modifier.offset(y = (-fabSize / 6)),
+            modifier = Modifier.offset(y = (-fabSize * fabRiseFraction)),
         )
     }
 }
@@ -173,20 +190,20 @@ fun WalletBottomNavigation(
  * gets its full requested size, never starved down by this small pill's own bounds), reports a
  * zero footprint to ITS OWN parent (so it can't inflate that parent's measured size the way an
  * ordinary same-size Box child would), and places the real content's bottom-center directly
- * above [fabSize]'s own popped-out position — the same `-fabSize / 6` upward shift
+ * above [fabSize]'s own popped-out position — the same `-fabSize * riseFraction` upward shift
  * [CenterFabItem] itself uses, so [TemplateFabMenu]'s internal "fan out from the FAB" math lines
  * up for free. */
-private fun Modifier.overlayAboveFab(fabSize: Dp): Modifier = layout { measurable, _ ->
+private fun Modifier.overlayAboveFab(fabSize: Dp, riseFraction: Float): Modifier = layout { measurable, _ ->
     val placeable = measurable.measure(Constraints())
     val fabSizePx = fabSize.roundToPx()
     // This layout node itself gets positioned at (parentCenterX, parentTop) by the outer Box's
     // TopCenter alignment (a zero-size node still receives that anchor point) — placement below
     // is relative to that. CenterFabItem's own bottom edge, in the same outer-box-local
-    // coordinates, sits at (-fabSizePx/6 + fabSizePx) = 5*fabSizePx/6 down from parentTop.
+    // coordinates, sits at (-fabSizePx*riseFraction + fabSizePx) down from parentTop.
     layout(0, 0) {
         placeable.place(
             x = -placeable.width / 2,
-            y = (5 * fabSizePx / 6) - placeable.height,
+            y = (fabSizePx * (1f - riseFraction)).toInt() - placeable.height,
         )
     }
 }
@@ -297,7 +314,7 @@ private fun CenterFabItem(
     // FAB's own fill to hollow while the menu was open; besides never matching the reference, one
     // version got stuck permanently transparent after a collapse. The fill is simply constant.
 
-    if (liquidFabBackdrop != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    if (liquidFabBackdrop != null && GlassCapabilities.supportsAdvancedBlur()) {
         Box(
             modifier = modifier
                 .size(size)
@@ -311,10 +328,14 @@ private fun CenterFabItem(
                         // the button still gets a real blur, just no refraction distortion.
                         lens(12.dp.toPx(), 24.dp.toPx(), depthEffect = true)
                     },
-                    // A crisp, near-opaque white ring rather than a soft highlight — the reference
-                    // design's FAB reads as having a distinct white border, not just a glow.
-                    highlight = { Highlight(width = 3.dp, alpha = 1f, style = HighlightStyle.Default(intensity = 1f)) },
-                    shadow = { Shadow(radius = 16.dp, color = tint.copy(alpha = 0.55f)) },
+                    // A faint, subtle rim rather than the earlier crisp near-opaque ring — that
+                    // combined with vibrancy() read as a bright cyan/white neon halo around the
+                    // button against the reference's plain, calm FAB.
+                    highlight = { Highlight(width = 1.5.dp, alpha = 0.35f, style = HighlightStyle.Default(intensity = 0.4f)) },
+                    // A plain soft drop shadow, not a colored glow — a wide, tinted, high-alpha
+                    // shadow read as a neon halo around the button instead of the reference's
+                    // subtle elevation shade.
+                    shadow = { Shadow(radius = 10.dp, color = Color.Black.copy(alpha = 0.25f)) },
                     onDrawSurface = {
                         drawRect(tint, blendMode = BlendMode.Hue)
                         drawRect(tint.copy(alpha = 0.75f))
