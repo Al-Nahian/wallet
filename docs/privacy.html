@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy — Wallet</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+    line-height: 1.65;
+    color: #1a1a1a;
+    background: #fafafa;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e8e8e8; background: #121212; }
+    a { color: #7fd99a; }
+  }
+  h1 { font-size: 1.8rem; }
+  h2 { font-size: 1.2rem; margin-top: 2em; }
+  .updated { color: #6b7280; font-size: 0.9rem; }
+  a { color: #2e8b57; }
+  code { background: rgba(127,127,127,0.15); padding: 1px 5px; border-radius: 4px; }
+  .back { display: inline-block; margin-bottom: 24px; }
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">&larr; Wallet</a>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: October 2026</p>
+
+  <p>
+    This policy explains what data the Wallet Android app ("Wallet", "the app") collects, how it's
+    used, and what choices you have. Wallet is built to be local-first: using the app does not
+    require an account, and most people will never have any data leave their device.
+  </p>
+
+  <h2>Data stored locally on your device</h2>
+  <p>
+    All the financial data you enter — accounts, transactions, categories, budgets, recurring
+    payments, savings goals, labels, and templates — is stored in a local database on your device.
+    This data is never transmitted anywhere unless you explicitly choose to sign in (see below).
+  </p>
+
+  <h2>SMS access</h2>
+  <p>
+    If you grant the SMS permission, Wallet reads incoming SMS messages on-device to automatically
+    detect and pre-fill transactions from bank and mobile-wallet alerts (e.g. bKash, Nagad,
+    Rocket, bank debit/credit notifications). This parsing happens entirely on your device:
+  </p>
+  <ul>
+    <li>Raw SMS content is never stored permanently and never leaves your device.</li>
+    <li>Only the extracted transaction summary (amount, merchant/payee, date) is kept, and only
+      after you review and confirm it.</li>
+    <li>This permission is optional — you can use Wallet fully by entering transactions manually
+      if you prefer not to grant it.</li>
+  </ul>
+
+  <h2>Notifications</h2>
+  <p>
+    The notifications permission is used only for the app's own in-app alerts — budget warnings,
+    upcoming recurring payments, goal milestones — and is never used to deliver advertising or
+    third-party content.
+  </p>
+
+  <h2>Optional account sign-in and cloud sync</h2>
+  <p>
+    Signing in is entirely optional and is never required to use the app. If you choose to sign in
+    with Google, Microsoft, or an email/password, Wallet uses
+    <a href="https://supabase.com/privacy" target="_blank" rel="noopener">Supabase</a> as its
+    authentication and backend provider. Signing in:
+  </p>
+  <ul>
+    <li>Stores a basic profile (display name, email address, avatar if provided by Google/Microsoft)
+      tied to your account, used only to identify your account within Wallet.</li>
+    <li>Optionally backs up your financial data to encrypted cloud storage so you can restore it
+      or sync it across your own devices.</li>
+    <li>Your data is protected by database-level access rules (Row Level Security) so that only
+      your own signed-in account can ever read or write your data — not other users, and not us.</li>
+  </ul>
+  <p>
+    Signing out does not delete your local data. You can request deletion of your cloud account
+    and all associated data at any time by contacting us (see below).
+  </p>
+
+  <h2>What we don't do</h2>
+  <ul>
+    <li>No advertising, and no third-party analytics or tracking SDKs are included in the app.</li>
+    <li>We never sell or share your financial data with third parties.</li>
+    <li>We don't read your SMS inbox for anything other than on-device transaction parsing.</li>
+  </ul>
+
+  <h2>Children's privacy</h2>
+  <p>Wallet is not directed at children under 13, and we do not knowingly collect data from them.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>
+    If this policy changes, the updated version will be posted here with a revised "Last updated"
+    date.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    Questions about this policy or your data, including deletion requests, can be sent to
+    <a href="mailto:najmealnahian2@gmail.com">najmealnahian2@gmail.com</a>.
+  </p>
+</body>
+</html>
