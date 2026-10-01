@@ -1,0 +1,69 @@
+package com.expensetracker.wallet.core.design.components
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.expensetracker.wallet.core.design.WalletTheme
+import com.expensetracker.wallet.core.design.glass.GlassColors
+import com.expensetracker.wallet.core.design.glass.GlassShapes
+
+/** A pill-shaped glass row for a third-party sign-in option (Google/Microsoft/Email…), with a
+ * leading brand icon — matches the standard "Continue with X" sign-in button convention, styled
+ * as glass chrome rather than a flat outlined button. */
+@Composable
+fun SocialSignInButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: @Composable () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    LiquidGlassCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            )
+            .semantics { role = Role.Button },
+        shape = GlassShapes.pill,
+        cornerRadius = 999.dp,
+        tint = GlassColors.neutralGlassTint(WalletTheme.extendedColors.transfer),
+        // No drop shadow: on this fully-rounded pill shape a shadow rendered as a visible darker
+        // crescent along the bottom edge instead of a soft lift.
+        lightweight = true,
+    ) {
+        Box(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentAlignment = Alignment.Center) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.width(24.dp), contentAlignment = Alignment.Center) { icon() }
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = text,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
+        }
+    }
+}

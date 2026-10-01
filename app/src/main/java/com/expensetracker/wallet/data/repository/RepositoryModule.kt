@@ -1,0 +1,63 @@
+package com.expensetracker.wallet.data.repository
+
+import com.expensetracker.wallet.domain.repository.AccountRepository
+import com.expensetracker.wallet.domain.repository.AutomationCandidateRepository
+import com.expensetracker.wallet.domain.repository.BudgetRepository
+import com.expensetracker.wallet.domain.repository.CategoryRepository
+import com.expensetracker.wallet.domain.repository.InstitutionRepository
+import com.expensetracker.wallet.domain.repository.LabelRepository
+import com.expensetracker.wallet.domain.repository.NotificationRepository
+import com.expensetracker.wallet.domain.repository.RecurringTransactionRepository
+import com.expensetracker.wallet.domain.repository.TemplateRepository
+import com.expensetracker.wallet.domain.repository.TransactionRepository
+import com.expensetracker.wallet.domain.repository.TransactionSplitRepository
+import com.expensetracker.wallet.domain.repository.UserRepository
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class RepositoryModule {
+
+    @Binds
+    abstract fun bindAccountRepository(impl: AccountRepositoryImpl): AccountRepository
+
+    @Binds
+    abstract fun bindInstitutionRepository(impl: InstitutionRepositoryImpl): InstitutionRepository
+
+    @Binds
+    abstract fun bindNotificationRepository(impl: NotificationRepositoryImpl): NotificationRepository
+
+    @Binds
+    abstract fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
+
+    @Binds
+    abstract fun bindTransactionRepository(impl: TransactionRepositoryImpl): TransactionRepository
+
+    @Binds
+    abstract fun bindCategoryRepository(impl: CategoryRepositoryImpl): CategoryRepository
+
+    @Binds
+    abstract fun bindTransactionSplitRepository(impl: TransactionSplitRepositoryImpl): TransactionSplitRepository
+
+    @Binds
+    abstract fun bindLabelRepository(impl: LabelRepositoryImpl): LabelRepository
+
+    @Binds
+    abstract fun bindBudgetRepository(impl: BudgetRepositoryImpl): BudgetRepository
+
+    @Binds
+    abstract fun bindRecurringTransactionRepository(
+        impl: RecurringTransactionRepositoryImpl,
+    ): RecurringTransactionRepository
+
+    @Binds
+    abstract fun bindAutomationCandidateRepository(
+        impl: AutomationCandidateRepositoryImpl,
+    ): AutomationCandidateRepository
+
+    @Binds
+    abstract fun bindTemplateRepository(impl: TemplateRepositoryImpl): TemplateRepository
+}

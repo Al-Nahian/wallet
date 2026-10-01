@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -7,18 +10,30 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+// local.properties is git-ignored (never committed) — Supabase credentials live only here and
+// in each developer's own machine, read into BuildConfig below rather than hardcoded.
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        load(FileInputStream(file))
+    }
+}
+
 android {
-    namespace = "com.example.wallet"
+    namespace = "com.expensetracker.wallet"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.wallet"
+        applicationId = "com.expensetracker.wallet"
         minSdk = 24
         targetSdk = 34
         versionCode = 2
         versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "SUPABASE_URL", "\"${localProperties.getProperty("supabase.url", "")}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${localProperties.getProperty("supabase.anonKey", "")}\"")
     }
 
     buildTypes {
@@ -30,6 +45,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Supabase-kt's Auth module requires API 26+ (java.time etc.) — desugaring keeps minSdk
+        // 24 (real Bangladeshi users still on Android 7) instead of dropping them to satisfy one
+        // dependency.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -38,6 +57,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {
@@ -57,6 +77,14 @@ android {
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+configurations.all {
+    resolutionStrategy {
+        // Gradle's default "highest version wins" would otherwise pull in auth-kt's transitive
+        // androidx.browser:browser:1.10.0 (needs compileSdk 36) over the explicit 1.8.0 above.
+        force("androidx.browser:browser:1.8.0")
+    }
 }
 
 dependencies {
@@ -119,6 +147,25 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-kotlinx-serialization:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // Supabase (Phase 16 — Auth/Postgrest; see plan.md §38-§43, §84-§85). Ktor's OkHttp engine
+    // reuses the OkHttp dependency already above rather than pulling in a second HTTP stack.
+    // Pinned to 3.1.4 (not the latest 3.6.0): supabase-kt moved to Kotlin 2.2 metadata at BOM
+    // 3.2.0, incompatible with this project's Kotlin 2.1.21 compiler plugin. 3.1.4 is the newest
+    // patch still built against kotlin-stdlib 2.1.20. ktor-client-okhttp is pinned to the matching
+    // 3.1.2 for the same reason (its own newer releases pull a newer kotlin-stdlib too).
+    implementation(platform("io.github.jan-tennert.supabase:bom:3.1.4"))
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
+    implementation("io.github.jan-tennert.supabase:auth-kt")
+    implementation("io.ktor:ktor-client-okhttp:3.1.2")
+    // auth-kt pulls in androidx.browser (Custom Tabs for the OAuth flow) transitively; its newer
+    // releases require compileSdk 36 + a newer AGP than this project is on. Pinned to the last
+    // version compatible with compileSdk 35/AGP 8.6.1 rather than bumping the whole toolchain.
+    implementation("androidx.browser:browser:1.8.0")
+
+    // Required by isCoreLibraryDesugaringEnabled above (Supabase-kt's Auth module needs API 26+
+    // APIs; this backports them onto minSdk 24).
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
