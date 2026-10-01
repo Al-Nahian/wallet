@@ -315,6 +315,12 @@ class TransactionFormViewModel @Inject constructor(
         }
     }
 
+    /** Same [createLabelUseCase], but suspend + [Result] instead of fire-and-forget — for the
+     * template form's own single-select label picker ([GlassTemplateRow]'s "Add label"), which
+     * manages its own local `labelId` state rather than this view model's [selectedLabelIds] set
+     * and needs to await the new label's id to select it, not just fire a side effect. */
+    suspend fun createStandaloneLabel(name: String) = createLabelUseCase(name)
+
     /** Applies a saved template's fixed account/category/label/payee/place to the form in one
      * tap — only amount and type are left for the user to fill in themselves. The label is added
      * to whatever's already selected rather than replacing it; payee/place only overwrite the

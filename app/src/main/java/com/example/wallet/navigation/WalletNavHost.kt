@@ -228,6 +228,10 @@ fun WalletNavHost() {
                         showTemplatePicker = false
                         navController.navigate(TransactionRoutes.createFromTemplate(templateId))
                     },
+                    onCreateNew = {
+                        showTemplatePicker = false
+                        navController.navigate(TemplateRoutes.LIST)
+                    },
                     onDismiss = { showTemplatePicker = false },
                 )
             }

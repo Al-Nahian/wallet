@@ -4,12 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.wallet.domain.model.Account
 import com.example.wallet.domain.model.Category
+import com.example.wallet.domain.model.CategoryGroup
 import com.example.wallet.domain.model.Label
 import com.example.wallet.domain.model.Template
 import com.example.wallet.domain.repository.AccountRepository
 import com.example.wallet.domain.repository.CategoryRepository
 import com.example.wallet.domain.repository.LabelRepository
 import com.example.wallet.domain.repository.TemplateRepository
+import com.example.wallet.domain.usecase.label.CreateLabelUseCase
 import com.example.wallet.domain.usecase.template.CreateTemplateUseCase
 import com.example.wallet.domain.usecase.template.DeleteTemplateUseCase
 import com.example.wallet.domain.usecase.template.TemplateValidationException
@@ -28,6 +30,7 @@ data class TemplatesUiState(
     val templates: List<Template> = emptyList(),
     val accounts: List<Account> = emptyList(),
     val categories: List<Category> = emptyList(),
+    val categoryGroups: List<CategoryGroup> = emptyList(),
     val labels: List<Label> = emptyList(),
 )
 
@@ -40,19 +43,29 @@ class TemplatesViewModel @Inject constructor(
     private val createTemplateUseCase: CreateTemplateUseCase,
     private val updateTemplateUseCase: UpdateTemplateUseCase,
     private val deleteTemplateUseCase: DeleteTemplateUseCase,
+    private val createLabelUseCase: CreateLabelUseCase,
 ) : ViewModel() {
 
     val uiState: StateFlow<TemplatesUiState> = combine(
         templateRepository.observeTemplates(),
         accountRepository.observeActiveAccounts(),
         categoryRepository.observeCategories(),
+        categoryRepository.observeGroups(),
         labelRepository.observeLabels(),
-    ) { templates, accounts, categories, labels -> TemplatesUiState(templates, accounts, categories, labels) }
+    ) { templates, accounts, categories, categoryGroups, labels ->
+        TemplatesUiState(templates, accounts, categories, categoryGroups, labels)
+    }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = TemplatesUiState(),
         )
+
+    /** Lets the template form's own label picker create a label inline (plan.md §16's "Add
+     * label" affordance, same [CreateLabelUseCase] the transaction form uses) without leaving the
+     * dialog — suspend + Result rather than fire-and-forget, so the caller can auto-select the
+     * new label and show a validation error (e.g. a duplicate name) right there. */
+    suspend fun createLabel(name: String) = createLabelUseCase(name)
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.wallet.core.design.components.CategoryPickerDialog
 import com.example.wallet.core.design.components.ConfirmationDialog
 import com.example.wallet.core.design.components.EmptyState
 import com.example.wallet.core.design.components.GlassIconBubble
@@ -54,7 +57,12 @@ import com.example.wallet.core.design.glass.GlassFab
 import com.example.wallet.core.design.glass.GlassStyle
 import com.example.wallet.core.design.glass.GlassWindowBlur
 import com.example.wallet.core.design.glass.glassDialogContainerColor
+import com.example.wallet.domain.model.Category
+import com.example.wallet.domain.model.CategoryGroup
+import com.example.wallet.domain.model.Label
 import com.example.wallet.domain.model.Template
+import com.example.wallet.feature.labels.LabelFormDialog
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -158,7 +166,10 @@ fun TemplatesScreen(
             title = "New template",
             accountOptions = accountOptions,
             categoryOptions = categoryOptions,
+            categories = uiState.categories,
+            categoryGroups = uiState.categoryGroups,
             labelOptions = labelOptions,
+            onCreateLabel = viewModel::createLabel,
             onConfirm = { name, accountId, categoryId, labelId, payee, place ->
                 viewModel.createTemplate(name, accountId, categoryId, labelId, payee, place)
                 showCreateDialog = false
@@ -173,7 +184,10 @@ fun TemplatesScreen(
             title = "Edit template",
             accountOptions = accountOptions,
             categoryOptions = categoryOptions,
+            categories = uiState.categories,
+            categoryGroups = uiState.categoryGroups,
             labelOptions = labelOptions,
+            onCreateLabel = viewModel::createLabel,
             initialName = templateToEdit.name,
             initialAccountId = templateToEdit.accountId,
             initialCategoryId = templateToEdit.categoryId,
@@ -212,7 +226,10 @@ fun TemplateFormDialog(
     title: String,
     accountOptions: List<Pair<String, String>>,
     categoryOptions: List<Pair<String, String>>,
+    categories: List<Category>,
+    categoryGroups: List<CategoryGroup>,
     labelOptions: List<Pair<String, String>>,
+    onCreateLabel: suspend (String) -> Result<Label>,
     onConfirm: (name: String, accountId: String?, categoryId: String?, labelId: String?, payee: String?, place: String?) -> Unit,
     onDismiss: () -> Unit,
     initialName: String = "",
@@ -303,19 +320,118 @@ fun TemplateFormDialog(
         )
     }
     if (showCategoryPicker) {
-        TemplateOptionPickerDialog(
-            title = "Select category",
-            options = categoryOptions,
-            onSelected = { categoryId = it },
+        // The real two-step group → subcategory picker (plan.md §14) rather than the flat
+        // id-to-name TemplateOptionPickerDialog every other field here uses: that flat list was
+        // built from subcategories alone with no group context, so same-named subcategories under
+        // different groups (e.g. an "Other" under both Food and Transport) were indistinguishable
+        // and, with enough categories, easy to tap past without realizing more existed below the
+        // visible rows — reported as "subcategories not selectable."
+        CategoryPickerDialog(
+            groups = categoryGroups,
+            categories = categories,
+            selectedCategoryId = categoryId,
+            onSelected = { id ->
+                categoryId = id
+                showCategoryPicker = false
+            },
             onDismiss = { showCategoryPicker = false },
         )
     }
     if (showLabelPicker) {
-        TemplateOptionPickerDialog(
-            title = "Select label",
+        TemplateLabelPickerDialog(
             options = labelOptions,
             onSelected = { labelId = it },
+            onCreateLabel = onCreateLabel,
             onDismiss = { showLabelPicker = false },
+        )
+    }
+}
+
+/** Single-select label picker for a template (unlike the transaction form's own multi-select
+ * [com.example.wallet.feature.transactions.TransactionFormScreen]'s label row — a [Template] has
+ * exactly one [com.example.wallet.domain.model.Template.labelId]), with an "Add label" row so a
+ * label can be created inline instead of leaving the template dialog to find one on the main
+ * Labels screen first. */
+@Composable
+private fun TemplateLabelPickerDialog(
+    options: List<Pair<String, String>>,
+    onSelected: (String) -> Unit,
+    onCreateLabel: suspend (String) -> Result<Label>,
+    onDismiss: () -> Unit,
+) {
+    var showCreateLabel by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    Dialog(onDismissRequest = onDismiss) {
+        GlassWindowBlur()
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = glassDialogContainerColor(GlassStyle.Thick),
+        ) {
+            Column(modifier = Modifier.padding(vertical = 16.dp).heightIn(max = 480.dp)) {
+                Text(
+                    text = "Select label",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                )
+                if (options.isEmpty()) {
+                    Text(
+                        text = "No labels yet — create your first one below.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                    )
+                } else {
+                    LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
+                        items(options, key = { it.first }) { (id, optionName) ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onSelected(id)
+                                        onDismiss()
+                                    }
+                                    .padding(horizontal = 24.dp, vertical = 14.dp),
+                            ) {
+                                Text(text = optionName, style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                    }
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showCreateLabel = true }
+                        .padding(horizontal = 24.dp, vertical = 14.dp),
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = null, tint = DarkPrimary, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Add label", color = DarkPrimary)
+                }
+            }
+        }
+    }
+
+    if (showCreateLabel) {
+        LabelFormDialog(
+            title = "New label",
+            onConfirm = { name ->
+                scope.launch {
+                    onCreateLabel(name)
+                        .onSuccess { label ->
+                            showCreateLabel = false
+                            onSelected(label.id)
+                            onDismiss()
+                        }
+                        .onFailure { error ->
+                            showCreateLabel = false
+                            Toast.makeText(context, error.message ?: "Couldn't create that label.", Toast.LENGTH_SHORT).show()
+                        }
+                }
+            },
+            onDismiss = { showCreateLabel = false },
         )
     }
 }
